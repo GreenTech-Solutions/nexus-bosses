@@ -1,0 +1,21 @@
+{
+  "name": "nexus-bosses",
+  "version": "1.0.0",
+  "title": "Nexus Bosses",
+  "author": "Alex Green",
+  "factorio_version": "2.1",
+  "description": "Nine summonable bosses in three circles on Nexus. Craft a summon beacon, light it on Nexus and defend your base. Beating a whole circle opens the next one; beating all three opens the warp drive (a startup setting). Nexus has no ordinary nests or worms: its enemies come only from the beacons.",
+  "dependencies": [
+    "base >= 2.1.0",
+    "space-age >= 2.1.0",
+    "Nexus-Updated >= 1.4.1",
+    "Nexus-Threat-Updated >= 1.1.0",
+    "Big-Monsters >= 2.2.1",
+    "Toxic_biters >= 2.1.0",
+    "Arachnids_enemy >= 1.2.1",
+    "Electric_flying_enemies >= 0.2.1",
+    "? mferrari_lib",
+    "? razi-protocol"
+  ],
+  "space_travel_required": true
+}
