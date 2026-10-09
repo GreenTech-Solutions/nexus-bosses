@@ -1,0 +1,7 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2026-10-09
+  Features:
+    - Nine summonable bosses in three circles on Nexus: craft a summon beacon, light it on Nexus, defend it through the countdown and defeat the boss; beating all three circles opens the warp drive
+  Locale:
+    - English and Russian
