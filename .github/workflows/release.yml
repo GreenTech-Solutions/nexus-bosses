@@ -1,0 +1,46 @@
+name: Release
+
+# Check and release through GreenTech-Solutions/factorio-mod-tools: the check runs on every push and pull request, the
+# release (version, changelog.txt, info.json, mod portal, GitHub release) on a push to master.
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the mod
+        uses: GreenTech-Solutions/factorio-mod-tools@v1
+
+  release:
+    name: release
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Release
+        uses: GreenTech-Solutions/factorio-mod-tools/release@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          factorio-token: ${{ secrets.FACTORIO_TOKEN }}
