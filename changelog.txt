@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.0
+Date: 2026-10-12
+  Features:
+    - [graphics] emblems for Whisper, Chorus, Convergence and Silence; own icons for all nine trophies; a summon circle under a lit beacon and sparks on a feeding Storm Guardian
+    - [sound] sounds for the beacon, the countdown, the precursors, every boss and its mechanic, the victory and Silence; music during a fight, and the Nexus music of TFMG-music when that mod is installed
+---------------------------------------------------------------------------------------------------
 Version: 2.0.0
 Date: 2026-10-12
   Features:
