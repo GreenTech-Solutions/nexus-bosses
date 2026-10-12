@@ -1,4 +1,19 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.0.0
+Date: 2026-10-12
+  Features:
+    - the signal of Nexus: stages Whisper, Chorus and Convergence, precursor waves during the countdown, a mechanic for every boss of the mod, a trophy from every boss and the warp key that researches Silence and opens the routes of the warp drive
+  Gui:
+    - health bar of the boss at the top of the screen, with what its mechanic is doing
+  Balancing:
+    - beacons cost 50/75/110 omega alloy and 2/3/5 advanced photon processors; the Arachnid Queen comes with two leviathans; the Storm Guardian has 3 000 000 health
+  Compatibility:
+    - Big Monsters keeps its random events unless the new map setting "Big Monsters only through the beacons" is on; its bosses come from the side of the beacon
+  Graphics:
+    - own icons for six trophies and the warp key
+  Locale:
+    - English and Russian rewritten: names, lore, tactics and messages
+---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2026-10-09
   Features:
