@@ -46,6 +46,15 @@ Someone answered the signal before you. The ship of the Long Echo broke up on Ne
 
 The logs are not required: every boss can be beaten blind.
 
+## Bearings and storms
+
+- **Signal bearing**, a technology opened by the first log you find, gives the **direction finder**: a radar tuned to the signal. Choose a boss in its window, and every sector it scans draws a bearing toward that boss's lair, narrower each time. Two precise bearings from finders far apart cross at the lair; it is marked on the map, and the remains of the boss lie there.
+- **A fight in the lair:** light the beacon of a boss within 30 tiles of its lair and the victory drops a second trophy of a better quality (uncommon the first time, then rare, epic, legendary) and loot worth half the beacon. The lairs lie farther out than the wrecks, so you bring your defences with you.
+- **Storms wake the ruins:** while a storm of Nexus Threat rages, lightning wakes the attractor ruins near you. A woken ruin glows, calls lightning down around itself and drops a **charged shard**.
+- **Charged beacons** of the Storm Guardian take one, two or three shards, and each one holds back part of the storm that feeds it.
+
+All of it is optional: without finders and shards the trials go as before.
+
 ## Rewards
 
 - **A trophy from every boss**, every time. One of each makes the warp key.
