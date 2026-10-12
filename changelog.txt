@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.2.0
+Date: 2026-10-12
+  Features:
+    - [expedition] nine wrecks of the Long Echo on rings around the spawn on Nexus, one log for every boss; a signal detector shortcut points to the nearest unfound wreck and every victory marks one on the map; the Codex of the signal shows the stages, the victories and the logs found; how to fight a boss is now only in its log, not in the beacon or technology descriptions
+    - [graphics] thumbnail: the emblem of the signal with the nine trophies on its orbit
+---------------------------------------------------------------------------------------------------
 Version: 2.1.0
 Date: 2026-10-12
   Features:
