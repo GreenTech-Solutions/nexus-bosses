@@ -18,3 +18,7 @@ jobs:
         run: tools/portal/details.sh
         env:
           FACTORIO_TOKEN: ${{ secrets.FACTORIO_TOKEN }}
+      - name: Set the gallery
+        run: tools/portal/images.sh
+        env:
+          FACTORIO_TOKEN: ${{ secrets.FACTORIO_TOKEN }}
