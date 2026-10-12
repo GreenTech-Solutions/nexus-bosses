@@ -1,137 +1,103 @@
--- The trials: three circles and the end. No science cost, only triggers.
---   nexus-trials-1         after planet-discovery-nexus; researched by building the shield stabilizer. The stabilizer
---                          belongs to Nexus-Threat and exists only while its startup setting nexus-threat-activation is
---                          on; without it the trigger would name an entity that does not exist (the whole pack would
---                          not load), so the first circle gets a scripted trigger instead and the script researches it
---                          as soon as planet-discovery-nexus is researched (scripts/nb_progress.lua)
---   nexus-trials-2, -3     researched by the script (LuaForce::script_trigger_research) when the three bosses of the
---                          previous circle are beaten
---   nexus-trials-complete  the same after circle III; added to the prerequisites of warp-drive-engine
--- The technology names end with numbers, which the game would treat as levels of one technology for localisation
--- purposes, so the names and descriptions are given explicitly.
+-- The stages of the signal of Nexus and the silence after them. No science cost, only triggers.
+--   nexus-whisper      researched by building a shield stabilizer. The stabilizer exists only while the startup setting
+--                      nexus-threat-activation of Nexus-Threat is on; without it the trigger is scripted and
+--                      scripts/nb_progress.lua researches the stage once planet-discovery-nexus is researched
+--   nexus-chorus,      scripted: researched when the three bosses of the previous stage are dead. Each one also
+--   nexus-convergence  sharpens the weapons the next stage needs
+--   nexus-silence      crafting the warp key (one trophy of each boss); it opens the routes of the warp drive
+--                      (prototypes/nb_nexus.lua). Not made when the startup setting nexus-bosses-gate-warp-drive is off
 
 local cfg = require("lib.nb_data")
 local proto = require("prototypes.nb_util")
+local nexus = require("prototypes.nb_nexus")
 
-local DIGITS = "__base__/graphics/icons/signal/signal_%d.png"
-local CHECK = "__base__/graphics/icons/signal/signal-checked-green.png"
+local GATED = settings.startup["nexus-bosses-gate-warp-drive"].value
+local base_icon = proto.icon_layer(data.raw.technology[cfg.PLANET_TECH])
 
-local base_icon = proto.icon_layer(data.raw.technology and data.raw.technology[cfg.PLANET_TECH])
-  or { icon = "__base__/graphics/technology/military.png", icon_size = 256 }
-
--- Tech icons have a canvas of 128 px in these layer coordinates, item icons of 32 px.
-local function base_layer()
-  return { icon = base_icon.icon, icon_size = base_icon.icon_size }
-end
-
-local function circle_icons(circle_index)
-  local icons = { base_layer() }
-  -- the first boss of the circle in the lower right corner, the number of the circle in the lower left one
-  local first_boss = assert(cfg.CIRCLES[circle_index].bosses[1])
-  local boss_icon = proto.first_icon(cfg.BOSSES[first_boss].icon_from)
-  if boss_icon then
-    icons[#icons + 1] = {
-      icon = boss_icon.icon,
-      icon_size = boss_icon.icon_size,
-      scale = 64 / boss_icon.icon_size,
-      shift = { 30, 30 },
-      draw_background = true,
-    }
-  end
-  icons[#icons + 1] = {
-    icon = string.format(DIGITS, circle_index),
-    icon_size = 64,
-    scale = 1,
-    shift = { -30, 30 },
-    draw_background = true,
-  }
-  return icons
-end
-
-local function complete_icons()
+---The technology of Nexus with an icon in the lower right corner.
+---@param corner {icon: string, icon_size: integer}
+local function icons(corner)
   return {
-    base_layer(),
-    { icon = CHECK, icon_size = 64, scale = 1.3, shift = { 20, 20 }, draw_background = true },
+    { icon = base_icon.icon, icon_size = base_icon.icon_size },
+    { icon = corner.icon, icon_size = corner.icon_size, scale = 64 / corner.icon_size, shift = { 30, 30 }, draw_background = true },
   }
 end
 
--- The entity the shield stabilizer item places: the trigger of the first circle. nil when Nexus-Threat does not make it.
-local stabilizer_item = data.raw.item and data.raw.item["shield-stabilizer"]
-local stabilizer_name = stabilizer_item and stabilizer_item.place_result or "shield-stabilizer-1"
----@type string|nil
-local stabilizer = stabilizer_name
-if not proto.find_entity(stabilizer_name) then
-  log("[nexus-bosses] the entity " .. stabilizer_name .. " does not exist (Nexus-Threat is switched off?): the first " ..
-    "circle is researched by the script once " .. cfg.PLANET_TECH .. " is researched")
-  stabilizer = nil
-end
-
-local function unlock_effects(circle_index)
+---Damage bonuses that exist in this game.
+---@param categories string[]
+---@param modifier number
+local function damage_bonus(categories, modifier)
   local effects = {}
-  for _, id in ipairs(cfg.CIRCLES[circle_index].bosses) do
-    effects[#effects + 1] = { type = "unlock-recipe", recipe = cfg.beacon_name(id) }
+  for _, category in ipairs(categories) do
+    if data.raw["ammo-category"][category] then
+      effects[#effects + 1] = { type = "ammo-damage", ammo_category = category, modifier = modifier }
+    end
   end
   return effects
 end
 
+-- what beating a stage gives on top of the next beacons: the Chorus is weak to energy weapons, the Convergence shrugs
+-- them off
+local BONUSES = {
+  [2] = damage_bonus({ "laser", "tesla", "electric" }, 0.2),
+  [3] = damage_bonus({ "bullet", "railgun", "rocket", "cannon-shell" }, 0.2),
+}
+
+local stabilizer = data.raw.item["shield-stabilizer"]
+local stabilizer_entity = stabilizer and stabilizer.place_result
+
 for index, circle in ipairs(cfg.CIRCLES) do
-  local research_trigger
+  local effects = {}
+  for _, id in ipairs(circle.bosses) do
+    effects[#effects + 1] = { type = "unlock-recipe", recipe = cfg.beacon_name(id) }
+  end
+  for _, bonus in ipairs(BONUSES[index] or {}) do
+    effects[#effects + 1] = bonus
+  end
+  if index == #cfg.CIRCLES and GATED then
+    effects[#effects + 1] = { type = "unlock-recipe", recipe = cfg.WARP_KEY }
+  end
+
+  local trigger
   local description = { "technology-description." .. circle.tech }
-  if index == 1 and stabilizer then
-    research_trigger = { type = "build-entity", entity = stabilizer }
+  if index == 1 and stabilizer_entity then
+    trigger = { type = "build-entity", entity = stabilizer_entity }
   elseif index == 1 then
-    research_trigger = {
-      type = "scripted",
-      trigger_description = { "nexus-bosses.trigger-trials-start" },
-    }
+    trigger = { type = "scripted", trigger_description = { "nexus-bosses.trigger-start" } }
     description = { "technology-description." .. circle.tech .. "-scripted" }
   else
-    research_trigger = {
+    trigger = {
       type = "scripted",
-      trigger_description = { "nexus-bosses.trigger-circle-" .. (index - 1) },
+      trigger_description = { "nexus-bosses.trigger-stage", { "nexus-bosses.stage-" .. cfg.CIRCLES[index - 1].stage } },
     }
-    local previous_boss = cfg.CIRCLES[index - 1].bosses[1]
-    local trigger_icon = proto.first_icon(cfg.BOSSES[previous_boss].icon_from)
-    if trigger_icon then
-      research_trigger.icons = { { icon = trigger_icon.icon, icon_size = trigger_icon.icon_size } }
-    end
   end
 
   data:extend({
     {
       type = "technology",
       name = circle.tech,
-      localised_name = { "technology-name." .. circle.tech },
       localised_description = description,
-      icons = circle_icons(index),
+      icons = icons(proto.entity_icon(cfg.BOSSES[circle.bosses[1]].entity)),
       essential = true,
-      show_levels_info = false, -- the number of the circle is already on the icon
       prerequisites = { index == 1 and cfg.PLANET_TECH or cfg.CIRCLES[index - 1].tech },
-      research_trigger = research_trigger,
-      effects = unlock_effects(index),
-      order = "fa-b[nexus-trials]-" .. index,
+      research_trigger = trigger,
+      effects = effects,
+      order = "fa-b[nexus-signal]-" .. index,
     },
   })
 end
 
-local last_boss = cfg.CIRCLES[#cfg.CIRCLES].bosses[1]
-local last_icon = proto.first_icon(cfg.BOSSES[last_boss].icon_from)
-data:extend({
-  {
-    type = "technology",
-    name = cfg.COMPLETE_TECH,
-    localised_name = { "technology-name." .. cfg.COMPLETE_TECH },
-    -- the description tells what the end of the trials opens: the warp drive, or nothing but the victory
-    localised_description = { "technology-description." .. cfg.COMPLETE_TECH
-      .. (settings.startup["nexus-bosses-gate-warp-drive"].value and "" or "-ungated") },
-    icons = complete_icons(),
-    essential = true,
-    prerequisites = { cfg.CIRCLES[#cfg.CIRCLES].tech },
-    research_trigger = {
-      type = "scripted",
-      trigger_description = { "nexus-bosses.trigger-circle-" .. #cfg.CIRCLES },
-      icons = last_icon and { { icon = last_icon.icon, icon_size = last_icon.icon_size } } or nil,
+if GATED then
+  data:extend({
+    {
+      type = "technology",
+      name = cfg.SILENCE_TECH,
+      icons = icons({ icon = "__nexus-bosses__/graphics/icons/warp-key.png", icon_size = 64 }),
+      essential = true,
+      prerequisites = { cfg.CIRCLES[#cfg.CIRCLES].tech },
+      research_trigger = { type = "craft-item", item = cfg.WARP_KEY },
+      effects = nexus.routes,
+      order = "fa-b[nexus-signal]-z",
     },
-    order = "fa-b[nexus-trials]-z",
-  },
-})
+  })
+end

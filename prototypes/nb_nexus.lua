@@ -1,4 +1,4 @@
--- Nexus without ordinary enemies, and the way to the Oort cloud behind the trials.
+-- Nexus without ordinary enemies, and the routes of the warp drive behind the trials.
 -- Runs in data-final-fixes after razi-protocol (optional dependency), which is the mod that puts the nests there.
 
 local cfg = require("lib.nb_data")
@@ -51,25 +51,27 @@ else
   log("[nexus-bosses] the planet " .. cfg.PLANET .. " has no autoplace controls: no enemy control zeroed")
 end
 
--- 2. The warp drive (Oort cloud, Sol) waits for the end of the trials, unless the startup setting
---    "nexus-bosses-gate-warp-drive" is off. Without razi-protocol the warp drive of Nexus opens more than the way to
---    the Oort cloud (the shattered planet and promethium hang behind it as well), so the trials gate that too.
-local gate = settings.startup["nexus-bosses-gate-warp-drive"].value
-local warp_drive = data.raw.technology and data.raw.technology["warp-drive-engine"]
-if not gate then
+-- 2. The routes of the warp drive (Oort cloud, Sol; without razi-protocol also the shattered planet and the edge of the
+--    system) move to the technology that the warp key researches (prototypes/nb_technologies.lua), unless the startup
+--    setting "nexus-bosses-gate-warp-drive" is off. The warp drive itself is researched as before: without the key it
+--    has nowhere to go. The module returns the moved effects.
+local routes = {}
+local warp_drive = data.raw.technology["warp-drive-engine"]
+if not settings.startup["nexus-bosses-gate-warp-drive"].value then
   log("[nexus-bosses] the trials gate nothing (setting nexus-bosses-gate-warp-drive is off)")
 elseif warp_drive then
-  warp_drive.prerequisites = warp_drive.prerequisites or {}
-  local present = false
-  for _, prerequisite in ipairs(warp_drive.prerequisites) do
-    if prerequisite == cfg.COMPLETE_TECH then
-      present = true
-      break
+  local kept = {}
+  for _, effect in ipairs(warp_drive.effects or {}) do
+    if effect.type == "unlock-space-location" then
+      routes[#routes + 1] = effect
+    else
+      kept[#kept + 1] = effect
     end
   end
-  if not present then
-    table.insert(warp_drive.prerequisites, cfg.COMPLETE_TECH)
-  end
+  warp_drive.effects = kept
+  log("[nexus-bosses] " .. #routes .. " routes of warp-drive-engine move to " .. cfg.SILENCE_TECH)
 else
-  log("[nexus-bosses] the technology warp-drive-engine does not exist: the trials do not gate anything")
+  log("[nexus-bosses] the technology warp-drive-engine does not exist: the trials gate nothing")
 end
+
+return { routes = routes }

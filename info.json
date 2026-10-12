@@ -4,7 +4,7 @@
   "title": "Nexus Bosses",
   "author": "Alex Green",
   "factorio_version": "2.1",
-  "description": "Nine summonable bosses in three circles on Nexus. Craft a summon beacon, light it on Nexus and defend your base. Beating a whole circle opens the next one; beating all three opens the warp drive (a startup setting). Nexus has no ordinary nests or worms: its enemies come only from the beacons.",
+  "description": "Nexus is still transmitting, and nine things on it answer the signal. Light a summon beacon, hold it against the precursors, kill the boss that comes and take its trophy. The nine trophies make the warp key that opens the routes of the warp drive.",
   "dependencies": [
     "base >= 2.1.0",
     "space-age >= 2.1.0",

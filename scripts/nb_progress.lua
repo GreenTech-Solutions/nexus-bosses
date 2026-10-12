@@ -1,18 +1,15 @@
--- Progress of the trials per force: which bosses are beaten, which circles are done, and what it opens.
--- storage.progress[force_name] = { defeated = { [boss_id] = true } }
+-- Progress of the trials per force: storage.progress[force_name] = { defeated = { [boss_id] = true } }.
+-- The three bosses of a stage research the next stage; every victory drops a trophy where the boss fell; the warp key
+-- (one trophy of each boss) researches nexus-silence by the crafting trigger of the game.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
 
 local M = {}
 
----@class NbForceProgress
----@field defeated table<string, boolean>
-
 ---@param force_name string
----@return NbForceProgress
+---@return {defeated: table<string, boolean>}
 local function record_of(force_name)
-  ---@type NbForceProgress|nil
   local record = storage.progress[force_name]
   if not record then
     record = { defeated = {} }
@@ -22,19 +19,9 @@ local function record_of(force_name)
 end
 
 ---@param force_name string
----@param boss_id string
----@return boolean
-function M.is_defeated(force_name, boss_id)
-  ---@type NbForceProgress|nil
-  local record = storage.progress[force_name]
-  return record ~= nil and record.defeated[boss_id] == true
-end
-
----@param force_name string
 ---@param circle_index integer
----@return boolean all three bosses of the circle are beaten
+---@return boolean
 function M.circle_done(force_name, circle_index)
-  ---@type NbForceProgress|nil
   local record = storage.progress[force_name]
   if not record then
     return false
@@ -47,83 +34,82 @@ function M.circle_done(force_name, circle_index)
   return true
 end
 
----Researches a technology with a scripted trigger for the force. Setting `researched` is the fallback for a
----technology whose trigger the game would not fire (its prerequisites are not researched, for instance).
+---Researches a technology with a scripted trigger.
 ---@param force LuaForce
 ---@param tech_name string
----@return boolean true when the technology was researched by this call
+---@return boolean true when this call researched it
 local function research(force, tech_name)
   local technology = force.technologies[tech_name]
-  if not technology or technology.researched then
+  if technology.researched then
     return false
   end
   force.script_trigger_research(tech_name)
   if not technology.researched then
+    -- the trigger does not fire while the prerequisites are not researched (an old save, a reset)
     technology.researched = true
   end
-  return technology.researched == true
+  return true
 end
 
----True when the first circle has a scripted trigger: Nexus-Threat is switched off, so there is no shield stabilizer to
----build and the script has to open the circle (see prototypes/nb_technologies.lua).
----@return boolean
+---@return boolean the first circle has a scripted trigger (no shield stabilizer in this game)
 local function first_circle_is_scripted()
-  local technology = prototypes.technology[cfg.CIRCLES[1].tech]
-  local trigger = technology and technology.research_trigger
-  return trigger ~= nil and trigger.type == "scripted"
+  local trigger = prototypes.technology[cfg.CIRCLES[1].tech].research_trigger --[[@as ResearchTrigger]]
+  return trigger.type == "scripted"
 end
 
----Researches the first circle for the force when its trigger is scripted and Nexus is discovered.
+---Opens the first circle when its trigger is scripted and Nexus is discovered.
 ---@param force LuaForce
----@return boolean true when the circle was researched by this call
 function M.sync_first_circle(force)
-  if not first_circle_is_scripted() then
-    return false
+  if first_circle_is_scripted() and force.technologies[cfg.PLANET_TECH].researched then
+    research(force, cfg.CIRCLES[1].tech)
   end
-  local discovered = force.technologies[cfg.PLANET_TECH]
-  if not (discovered and discovered.researched) then
-    return false
-  end
-  return research(force, cfg.CIRCLES[1].tech)
 end
 
----Researches the first circle for the force when a shield stabilizer of the force stands on Nexus already: a game that
----built one before this mod was added never fires the build trigger of the circle.
+---Opens the first circle when a shield stabilizer of the force already stands on Nexus: a game that built one before
+---this mod was added never fires the build trigger.
 ---@param force LuaForce
----@return boolean true when the circle was researched by this call
 function M.sync_built_stabilizer(force)
-  if first_circle_is_scripted() then
-    return false
-  end
-  local technology = force.technologies[cfg.CIRCLES[1].tech]
-  if not technology or technology.researched then
-    return false
-  end
   local surface = util.nexus()
-  if not surface then
-    return false
+  if first_circle_is_scripted() or not surface or force.technologies[cfg.CIRCLES[1].tech].researched then
+    return
   end
-  local names = {}
-  for name in pairs(prototypes.get_entity_filtered({ { filter = "type", type = "assembling-machine" } })) do
-    if name:find("^shield%-stabilizer%-") then
-      names[#names + 1] = name
-    end
+  local stabilizer = prototypes.item["shield-stabilizer"].place_result --[[@as LuaEntityPrototype]]
+  if surface.count_entities_filtered({ name = stabilizer.name, force = force, limit = 1 }) > 0 then
+    research(force, cfg.CIRCLES[1].tech)
   end
-  if #names == 0 or surface.count_entities_filtered({ name = names, force = force, limit = 1 }) == 0 then
-    return false
-  end
-  return research(force, cfg.CIRCLES[1].tech)
 end
 
----A technology was researched: the discovery of Nexus opens the first circle when there is no stabilizer to build.
 ---@param technology LuaTechnology
 function M.on_research_finished(technology)
-  if technology and technology.valid and technology.name == cfg.PLANET_TECH then
-    M.sync_first_circle(technology.force)
+  local force = technology.force
+  if technology.name == cfg.PLANET_TECH then
+    M.sync_first_circle(force)
+  elseif technology.name == cfg.SILENCE_TECH then
+    util.say(force, { "nexus-bosses.msg-silence" }, util.COLORS.good)
+    util.play(force, util.SOUND_VICTORY)
   end
 end
 
----Marks the boss as beaten for the force.
+---Researches the next stage for every finished one that has not opened it yet.
+---@param force LuaForce
+---@param announce boolean
+function M.sync_unlocks(force, announce)
+  for index, circle in ipairs(cfg.CIRCLES) do
+    if M.circle_done(force.name, index) then
+      if circle.reward and research(force, circle.reward) and announce then
+        util.say(force, { "nexus-bosses.msg-stage-done-" .. circle.stage }, util.COLORS.good)
+      elseif not circle.reward and announce then
+        local silence = force.technologies[cfg.SILENCE_TECH]
+        if not silence then
+          util.say(force, { "nexus-bosses.msg-stage-done-" .. circle.stage .. "-ungated" }, util.COLORS.good)
+        elseif not silence.researched then
+          util.say(force, { "nexus-bosses.msg-stage-done-" .. circle.stage }, util.COLORS.good)
+        end
+      end
+    end
+  end
+end
+
 ---@param force LuaForce
 ---@param boss_id string
 ---@return boolean true for the first victory over this boss
@@ -134,34 +120,24 @@ function M.mark_defeated(force, boss_id)
   return first
 end
 
----Researches the reward technology of every finished circle that is not researched yet.
+---The trophy of the boss falls where the boss fell, marked on the map.
 ---@param force LuaForce
----@param announce boolean print a message for every circle opened by this call
----@return integer[] the finished circles that opened something
-function M.sync_unlocks(force, announce)
-  local opened = {}
-  for index, circle in ipairs(cfg.CIRCLES) do
-    if M.circle_done(force.name, index) and research(force, circle.reward) then
-      opened[#opened + 1] = index
-      if announce then
-        if circle.reward == cfg.COMPLETE_TECH then
-          local gated = settings.startup["nexus-bosses-gate-warp-drive"].value
-          util.say(force, { gated and "nexus-bosses.msg-trials-complete" or "nexus-bosses.msg-trials-complete-ungated" },
-            util.COLORS.good)
-        else
-          util.say(force, { "nexus-bosses.msg-circle-complete", cfg.ROMAN[index], { "technology-name." .. circle.reward } },
-            util.COLORS.good)
-        end
-      end
-    end
-  end
-  return opened
+---@param surface LuaSurface
+---@param boss_id string
+---@param position MapPosition
+function M.drop_trophy(force, surface, boss_id, position)
+  local stack = { name = cfg.trophy_name(boss_id), count = 1 }
+  local spilled = surface.spill_item_stack({ position = position, stack = stack, enable_looted = true, allow_belts = false })
+  local where = spilled[1] and spilled[1].position or position
+  force.add_chart_tag(surface, { position = where, icon = { type = "item", name = stack.name } })
+  local x, y = util.xy(where)
+  util.say(force, { "nexus-bosses.msg-trophy", { "item-name." .. stack.name }, math.floor(x), math.floor(y), surface.name },
+    util.COLORS.good)
 end
 
----After the Storm Guardian falls the storms stay weaker for good. The multiplier lives in Nexus-Threat; if its
----interface is missing (Nexus-Threat replaced or its activation switched off) the flag stays and the call is
----repeated when the configuration changes.
----@return boolean true when the multiplier was applied
+---After the Storm Guardian falls the storms stay weaker for good (the multiplier lives in Nexus-Threat; without its
+---interface the flag waits for it and the call is repeated when the configuration changes).
+---@return boolean applied
 function M.apply_storm_multiplier()
   if not storage.storm_weakened then
     return true
@@ -170,29 +146,24 @@ function M.apply_storm_multiplier()
   if not (interface and interface.set_storm_multiplier) then
     return false
   end
-  local ok = pcall(function()
+  return (pcall(function()
     remote.call("nexus-threat", "set_storm_multiplier", cfg.STORM_MULTIPLIER)
-  end)
-  return ok
+  end))
 end
 
----The victory over the Storm Guardian.
 ---@param force LuaForce
 function M.storm_guardian_fell(force)
   storage.storm_weakened = true
   if M.apply_storm_multiplier() then
-    util.say(force, { "nexus-bosses.msg-storm-weakened", cfg.STORM_MULTIPLIER }, util.COLORS.good)
-  else
-    util.say(force, { "nexus-bosses.msg-storm-unavailable" }, util.COLORS.warning)
+    util.say(force, { "nexus-bosses.msg-storm-weakened" }, util.COLORS.good)
   end
 end
 
----Two forces became one: the destination keeps every victory of both.
 ---@param source_name string
 ---@param destination LuaForce
 function M.on_forces_merged(source_name, destination)
   local source = storage.progress[source_name]
-  if source and destination and destination.valid then
+  if source then
     local target = record_of(destination.name)
     for boss_id in pairs(source.defeated) do
       target.defeated[boss_id] = true
@@ -202,11 +173,16 @@ function M.on_forces_merged(source_name, destination)
   storage.progress[source_name] = nil
 end
 
----The configuration changed: technologies may have been reset, Nexus-Threat may have appeared.
 function M.on_configuration_changed()
-  for force_name in pairs(storage.progress) do
+  for force_name, record in pairs(storage.progress) do
+    -- bosses of an older version of the mod
+    for boss_id in pairs(record.defeated) do
+      if not cfg.BOSSES[boss_id] then
+        record.defeated[boss_id] = nil
+      end
+    end
     local force = game.forces[force_name]
-    if force and force.valid then
+    if force then
       M.sync_unlocks(force, false)
     end
   end

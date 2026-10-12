@@ -1,24 +1,18 @@
--- Remote interface "nexus-bosses" for tests and debugging.
---   get_state()                        the active summon, the victories per force, the state of the circles
---   set_ignore_player_presence(bool)   debug/test switch: the countdown of a summon runs even when no player of the
---                                      force stands on Nexus (a headless run has no players). Default false.
+-- Remote interface "nexus-bosses", for tests and debugging.
+--   get_state()                        the active summon and the victories per force
+--   set_ignore_player_presence(bool)   the countdown runs without a player on Nexus (a headless test has none);
+--                                      the bosses of Big Monsters still need one
 --   abort_summon(destroy_bosses?)      ends the active summon without a victory; true also destroys its entities
 
 local state = require("scripts.nb_state")
 local summon = require("scripts.nb_summon")
 
 remote.add_interface("nexus-bosses", {
-  get_state = function()
-    return state.snapshot()
-  end,
-
+  get_state = state.snapshot,
   set_ignore_player_presence = function(value)
-    if type(value) ~= "boolean" then
-      error("nexus-bosses.set_ignore_player_presence: expected a boolean, got " .. type(value))
-    end
+    assert(type(value) == "boolean", "nexus-bosses.set_ignore_player_presence: expected a boolean")
     storage.ignore_presence = value
   end,
-
   abort_summon = function(destroy_bosses)
     return summon.abort(destroy_bosses == true)
   end,
