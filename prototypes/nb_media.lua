@@ -3,7 +3,8 @@
 --   ambient-sound  nexus-bosses-fight-*: script tracks, the music of a fight (force.play_music);
 --                  nexus-bosses-signal: the Nexus music of TFMG-music, only with that mod (its author asks for it to be
 --                  used as a dependency)
---   animation      nexus-bosses-summon-circle under a lit beacon; sprite nexus-bosses-spark on a feeding Storm Guardian
+--   animation      nexus-bosses-summon-circle under a lit beacon; sprite nexus-bosses-spark on a feeding Storm Guardian;
+--                  sprite nexus-bosses-vignette: the edges of the screen darken in a hallucination (scripts/nb_whisper.lua)
 
 local cfg = require("lib.nb_data")
 
@@ -69,6 +70,13 @@ prototypes[#prototypes + 1] = {
   animation_speed = 0.25,
   scale = 1.2,
   blend_mode = "additive",
+}
+prototypes[#prototypes + 1] = {
+  type = "sprite",
+  name = "nexus-bosses-vignette",
+  filename = "__nexus-bosses__/graphics/effects/vignette.png",
+  size = 512,
+  flags = { "no-crop" },
 }
 prototypes[#prototypes + 1] = {
   type = "sprite",

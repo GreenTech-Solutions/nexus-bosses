@@ -5,6 +5,7 @@ local cfg = require("lib.nb_data")
 local progress = require("scripts.nb_progress")
 local expedition = require("scripts.nb_expedition")
 local bearing = require("scripts.nb_bearing")
+local story = require("scripts.nb_story")
 
 local M = {}
 
@@ -29,10 +30,36 @@ local function paragraph(parent, caption, style)
   return label
 end
 
+local EXPEDITION = "expedition"
+
+---The page of the expedition: the prologue from its camp and the epilogue from the last stand of its commander.
+---@param page LuaGuiElement
+---@param force_name string
+local function fill_expedition(page, force_name)
+  page.clear()
+  paragraph(page, { "nexus-bosses.codex-expedition-title" }, "heading_2_label")
+  paragraph(page, { "nexus-bosses.codex-expedition-intro" })
+  page.add({ type = "line" })
+  if story.is_found(force_name, "camp") then
+    paragraph(page, { "nexus-bosses.log-camp" })
+  else
+    paragraph(page, { "nexus-bosses.codex-no-camp" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+  end
+  page.add({ type = "line" })
+  if story.is_found(force_name, "last_stand") then
+    paragraph(page, { "nexus-bosses.log-last-stand" })
+  else
+    paragraph(page, { "nexus-bosses.codex-no-last-stand" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+  end
+end
+
 ---@param page LuaGuiElement
 ---@param force_name string
 ---@param boss_id string
 local function fill_page(page, force_name, boss_id)
+  if boss_id == EXPEDITION then
+    return fill_expedition(page, force_name)
+  end
   page.clear()
   local boss = cfg.BOSSES[boss_id]
   local stage = cfg.CIRCLES[boss.circle].stage
@@ -82,6 +109,16 @@ function M.open(player, selected)
   local body = frame.add({ type = "flow", direction = "horizontal" })
   local list = body.add({ type = "frame", direction = "vertical", style = "inside_deep_frame" })
   list.style.padding = 8
+  local intro = list.add({
+    type = "button",
+    name = BOSS .. EXPEDITION,
+    caption = { "", story.is_found(force_name, "camp") and "[img=utility/check_mark_green] " or "",
+      { "nexus-bosses.codex-expedition-title" } },
+    tags = { boss = EXPEDITION },
+  })
+  intro.style.horizontally_stretchable = true
+  intro.style.minimal_width = 220
+  intro.toggled = selected == EXPEDITION
   for _, circle in ipairs(cfg.CIRCLES) do
     list.add({ type = "label", caption = { "nexus-bosses.stage-" .. circle.stage }, style = "caption_label" })
     for _, id in ipairs(circle.bosses) do

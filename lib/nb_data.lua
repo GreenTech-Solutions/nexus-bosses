@@ -46,6 +46,13 @@ M.SILENCE_TECH = "nexus-silence"
 M.WRECK_PREFIX = "nexus-expedition-wreck-"
 M.WRECK_VARIANTS = 3
 M.EXPEDITION_RINGS = { { 100, 250 }, { 250, 450 }, { 450, 700 } }
+-- The story of the expedition (2.4): its camp, where the first log lies (opens with the Whisper), and the last stand of
+-- its commander, the epilogue (opens with Silence)
+M.CAMP = "nexus-expedition-camp"
+M.CAMP_RING = { 100, 150 }
+M.LAST_STAND = "nexus-expedition-last-stand"
+M.LAST_STAND_RING = { 1150, 1250 }
+M.BADGE = "nexus-bosses-commander-badge"
 M.SHORTCUT_DETECTOR = "nexus-bosses-detector"
 M.SHORTCUT_CODEX = "nexus-bosses-codex"
 
@@ -59,6 +66,10 @@ M.LAIR_SCORCH = "nexus-bosses-lair-scorchmark"
 -- the second trophy of a fight in the lair: one step better with every such fight
 M.LAIR_QUALITIES = { "uncommon", "rare", "epic", "legendary" }
 M.LAIR_LOOT_SHARE = 0.5 -- of the beacon recipe
+-- Pylons (2.4): a broken pylon of suppression stands in every found lair; a trophy of its boss of a better quality
+-- repairs it, and a boss called in that lair comes with less health, by the quality of the trophy
+M.PYLON = "nexus-bosses-pylon"
+M.PYLON_SHARES = { uncommon = 0.1, rare = 0.2, epic = 0.3, legendary = 0.4 }
 
 -- Storms (2.3): a storm of Nexus-Threat wakes the lightning attractor ruins of Nexus; a charged shard from one weakens
 -- the Storm Guardian, through the charged beacons
@@ -229,6 +240,8 @@ M.REQUIRED = {
   { "container", "crash-site-spaceship-wreck-medium-2", "base" },
   { "container", "crash-site-spaceship-wreck-medium-3", "base" },
   { "radar", "radar", "base" },
+  { "container", "crash-site-spaceship", "base" },
+  { "container", "crash-site-spaceship-wreck-big-1", "base" },
 }
 
 ---@param id string

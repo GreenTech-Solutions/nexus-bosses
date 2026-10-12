@@ -85,3 +85,28 @@ if data.raw.corpse["big-scorchmark"] then
   scorch.time_before_removed = YEAR_TICKS
   data:extend({ scorch })
 end
+
+-- The pylon of suppression of a lair (2.4): a container of one slot, drawn as a ruin of Fulgora. A trophy put in it
+-- repairs it (scripts/nb_bearing.lua); the repaired look is drawn by the script.
+local ruin = data.raw["simple-entity"]["fulgoran-ruin-stonehenge"]
+local picture = ruin and util.table.deepcopy(ruin.pictures and ruin.pictures[1] or ruin.picture) --[[@as table|nil]]
+if picture then
+  picture["line_length"] = nil
+end
+data:extend({
+  {
+    type = "container",
+    name = cfg.PYLON,
+    icon = "__nexus-bosses__/graphics/technology/tech-silence.png",
+    icon_size = 256,
+    flags = { "placeable-neutral", "not-rotatable", "not-blueprintable", "not-deconstructable", "placeable-off-grid" },
+    max_health = 5000,
+    collision_box = ruin and ruin.collision_box or { { -1.5, -1.3 }, { 1.5, 1.3 } },
+    selection_box = { { -1.6, -1.4 }, { 1.6, 1.4 } },
+    inventory_size = 1,
+    inventory_type = "normal",
+    picture = picture or { filename = "__core__/graphics/empty.png", size = 1 },
+    open_sound = { filename = "__base__/sound/machine-open.ogg", volume = 0.5 },
+    close_sound = { filename = "__base__/sound/machine-close.ogg", volume = 0.5 },
+  },
+})

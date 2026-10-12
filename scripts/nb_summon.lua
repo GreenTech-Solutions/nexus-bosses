@@ -20,6 +20,7 @@ local progress = require("scripts.nb_progress")
 local gui = require("scripts.nb_gui")
 local expedition = require("scripts.nb_expedition")
 local bearing = require("scripts.nb_bearing")
+local story = require("scripts.nb_story")
 
 local M = {}
 
@@ -246,6 +247,7 @@ local function victory(summon, force, surface)
     progress.storm_guardian_fell(force)
   end
   progress.sync_unlocks(force, true)
+  story.sync(force)
 end
 
 -- The boss appears ----------------------------------------------------------------------------------------------------
@@ -261,6 +263,15 @@ local function complete_spawn(summon, force, surface)
   destroy_visuals(summon, force)
   summon.phase = "active"
   summon.active_seconds = 0
+  -- the pylon of the lair takes its share of the health of every boss that must die
+  local share = summon.pylon_share or 0
+  if share > 0 then
+    for _, record in ipairs(summon.tracked) do
+      if record.required and records.alive(record) then
+        record.entity.health = record.entity.health * (1 - share)
+      end
+    end
+  end
 
   local main = records.main(summon)
   local where = main and records.position(main) or summon.position
@@ -566,6 +577,7 @@ function M.on_built(entity, player)
     by_unit = {},
     charge = charge,
     lair = bearing.in_lair(force.name, boss_id, entity.position),
+    pylon_share = bearing.pylon_share(force.name, boss_id, entity.position),
   }
   summon.watch = { entity.name }
   if boss.kind == "bm" then
@@ -598,6 +610,10 @@ function M.on_built(entity, player)
   if charge > 0 then
     util.say(force, { "nexus-bosses.msg-beacon-charged", charge, cfg.CHARGES }, util.COLORS.good)
   end
+  if summon.pylon_share > 0 then
+    util.say(force, { "nexus-bosses.msg-pylon-weakens", boss_name(boss_id), math.floor(summon.pylon_share * 100) },
+      util.COLORS.good)
+  end
   util.play(force, "call")
 end
 
@@ -622,6 +638,7 @@ function M.on_configuration_changed()
     summon.music_index = summon.music_index or 0
     summon.music_until = summon.music_until or 0
     summon.charge = summon.charge or 0
+    summon.pylon_share = summon.pylon_share or 0
   end
   M.restore_events()
 end
@@ -675,6 +692,7 @@ function M.snapshot()
     spawn_note = summon.spawn_note,
     charge = summon.charge,
     lair = summon.lair,
+    pylon_share = summon.pylon_share,
     spawn_distance = summon.spawn_distance,
     bm = summon.bm and { attempts = summon.bm.attempts, window_left = summon.bm.window, last_error = summon.bm.error },
   }
