@@ -25,7 +25,7 @@ not under the GPL; files were converted to OGG, trimmed, resized or recoloured w
 | File | Source | Author | License |
 | --- | --- | --- | --- |
 | `music/fight-urgent.ogg`, `music/fight-pulse.ogg` | [Dark Sci-Fi Audio Pack](https://opengameart.org/content/dark-sci-fi-audio-pack) | SRG774 | CC0 |
-| Nexus music (from the mod TFMG-music, a required dependency; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
+| Nexus music and the music of the vault (from the mod TFMG-music, a required dependency; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
 
 ## Graphics
 
@@ -39,9 +39,11 @@ not under the GPL; files were converted to OGG, trimmed, resized or recoloured w
 | `graphics/shortcuts/detector-*.png`, `codex-*.png` (recoloured, resized) | [radar-sweep](https://game-icons.net/1x1/lorc/radar-sweep.html), [open-book](https://game-icons.net/1x1/lorc/open-book.html) | Lorc, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `graphics/icons/storm-shard.png` (recoloured, resized) | [crystal-bars](https://game-icons.net/1x1/lorc/crystal-bars.html) | Lorc, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `graphics/icons/commander-badge.png` (recoloured, resized) | [medal](https://game-icons.net/1x1/lorc/medal.html) | Lorc, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `graphics/icons/glyph-1.png`, `glyph-3.png` (recoloured, on a disc) | [light-thorny-triskelion](https://game-icons.net/1x1/lorc/light-thorny-triskelion.html), [star-swirl](https://game-icons.net/1x1/lorc/star-swirl.html) | Lorc, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `graphics/icons/glyph-2.png`, `glyph-4..8.png`, `builders-relic.png`, `graphics/entity/builders-relic.png` (recoloured, on a disc) | abstract [020](https://game-icons.net/1x1/viscious-speed/abstract-020.html), [036](https://game-icons.net/1x1/viscious-speed/abstract-036.html), [038](https://game-icons.net/1x1/viscious-speed/abstract-038.html), [047](https://game-icons.net/1x1/viscious-speed/abstract-047.html), [077](https://game-icons.net/1x1/viscious-speed/abstract-077.html), [097](https://game-icons.net/1x1/viscious-speed/abstract-097.html) | viscious-speed, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `graphics/effects/vignette.png` | made for this mod | the mod author | GPLv3, as the code |
 | `graphics/effects/summon-circle.png` (resized) | [teleport circle sprite sheet](https://opengameart.org/content/teleport-circle-sprite-sheet) | gfroad | CC0 |
 | `graphics/effects/spark.png` (resized) | [Particle Pack](https://kenney.nl/assets/particle-pack) | Kenney | CC0 |
 
-The wrecks of the expedition reuse the spaceship wrecks of the base game, the camp and the last stand its ship and big wreck, the direction finder the radar, the pylons of suppression a ruin of Fulgora, and the remains of a lair the corpses of the bosses. The beacon reuses the omega beacon of Nexus-Graphics; the bosses are creatures of Big Monsters, Arachnids enemy, Toxic
+The wrecks of the expedition reuse the spaceship wrecks of the base game, the camp and the last stand its ship and big wreck, the direction finder the radar, the pylons of suppression, the obelisks, the hatch and the stairs ruins of Fulgora, the glyph lock the constant combinator, the reliquary a crash site chest, and the remains of a lair the corpses of the bosses. The beacon reuses the omega beacon of Nexus-Graphics; the bosses are creatures of Big Monsters, Arachnids enemy, Toxic
 biters, Electric flying enemies and Space Age, referenced from those mods and not redistributed.

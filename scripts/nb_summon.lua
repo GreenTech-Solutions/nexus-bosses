@@ -21,6 +21,7 @@ local gui = require("scripts.nb_gui")
 local expedition = require("scripts.nb_expedition")
 local bearing = require("scripts.nb_bearing")
 local story = require("scripts.nb_story")
+local vault = require("scripts.nb_vault")
 
 local M = {}
 
@@ -248,6 +249,7 @@ local function victory(summon, force, surface)
   end
   progress.sync_unlocks(force, true)
   story.sync(force)
+  vault.sync(force)
 end
 
 -- The boss appears ----------------------------------------------------------------------------------------------------
