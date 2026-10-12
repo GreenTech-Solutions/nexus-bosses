@@ -53,7 +53,15 @@ The logs are not required: every boss can be beaten blind.
 - **Storms wake the ruins:** while a storm of Nexus Threat rages, lightning wakes the attractor ruins near you. A woken ruin glows, calls lightning down around itself and drops a **charged shard**.
 - **Charged beacons** of the Storm Guardian take one, two or three shards, and each one holds back part of the storm that feeds it.
 
-All of it is optional: without finders and shards the trials go as before.
+- **Pylons of suppression:** every lair has a dead pylon. Put a trophy of that boss of a better quality in it and it wakes: the boss called in that lair comes with 10, 20, 30 or 40 % less health, by the quality of the trophy.
+
+## The story
+
+- **The camp of the Long Echo** shows on the map when the Whisper opens: a broken ship, broken walls, chests with what the expedition left, and its first log.
+- **The last stand:** once the signal is gone, a faint beacon answers from far beyond the lairs. The commander of the expedition went there alone; his last log and his badge are still there.
+- **Hallucinations of the Whisper:** at night, far from your buildings, the signal plays with you: shades at the edge of the screen, whispers, false alarms. More often with every stage, gone after Silence. A player setting turns them down or off.
+
+All of it is optional: without finders, shards and pylons the trials go as before.
 
 ## Rewards
 
