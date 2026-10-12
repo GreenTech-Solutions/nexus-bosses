@@ -15,7 +15,8 @@
     "Arachnids_enemy >= 1.2.1",
     "Electric_flying_enemies >= 0.2.1",
     "? mferrari_lib",
-    "? razi-protocol"
+    "? razi-protocol",
+    "? TFMG-music"
   ],
   "space_travel_required": true
 }

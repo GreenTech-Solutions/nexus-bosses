@@ -11,10 +11,9 @@ M.COLORS = {
   good = { r = 0.5, g = 1, b = 0.5 },
 }
 
--- the alarms of mferrari_lib come with Big Monsters
-M.SOUND_ALARM = "mf_sound_alarm_1"
-M.SOUND_SIREN = "mf_sound_siren"
-M.SOUND_VICTORY = "utility/achievement_unlocked"
+-- the music of a fight: prototypes/nb_media.lua, lengths in seconds
+---@type {name: string, seconds: integer}[]
+M.FIGHT_TRACKS = { { name = "nexus-bosses-fight-urgent", seconds = 57 }, { name = "nexus-bosses-fight-pulse", seconds = 71 } }
 
 ---@param position MapPosition
 ---@return number x
@@ -83,10 +82,11 @@ function M.say(receiver, message, color)
   receiver.print(message, { color = color or M.COLORS.info })
 end
 
+---A sound of the mod (prototypes/nb_media.lua) for every player of the force.
 ---@param force LuaForce
----@param path string
-function M.play(force, path)
-  force.play_sound({ path = path })
+---@param name string the sound without the prefix "nexus-bosses-"
+function M.play(force, name)
+  force.play_sound({ path = "nexus-bosses-" .. name })
 end
 
 ---@param position MapPosition

@@ -129,6 +129,7 @@ local function release_spores(summon, surface, force, hulk)
     end
   end
   if #turrets > 0 then
+    util.play(force, "hulk-spores")
     util.say(force, { "nexus-bosses.msg-hulk-spores", math.min(SPORE_TURRETS, #turrets), SPORE_SECONDS },
       util.COLORS.warning)
   end

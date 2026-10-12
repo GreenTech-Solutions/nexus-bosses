@@ -58,7 +58,7 @@ local function lay_nests(summon, surface, force, queen)
   if laid > 0 then
     local x, y = util.xy(queen.position)
     util.say(force, { "nexus-bosses.msg-queen-nests", math.floor(x), math.floor(y), surface.name }, util.COLORS.warning)
-    util.play(force, util.SOUND_ALARM)
+    util.play(force, "queen-nests")
   end
 end
 
