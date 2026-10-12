@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.4.0
+Date: 2026-10-12
+  Features:
+    - [sound] TFMG: Music is a required dependency, so Nexus always plays its music
+    - [vault] after Silence a glyph lock at a vault ruin of Fulgora: four obelisks light the code in order, a console takes it, every three wrong codes give a hint and a map setting skips the puzzle; the hatch leads down to the vault of the builders, five dark halls with the last log of the story, nine legendary trophies and the relic whose mining researches the Echo of the builders
+---------------------------------------------------------------------------------------------------
 Version: 2.3.1
 Date: 2026-10-12
   Bugfixes:
