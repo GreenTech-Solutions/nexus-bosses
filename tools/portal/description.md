@@ -32,7 +32,7 @@ The signal also gets into your head. At night, far from your base, you may see a
 - The Storm Guardian's death leaves the storms of Nexus weaker for good.
 - Silence opens the routes of the warp drive.
 
-Every trial has its own sounds and fight music, and the technologies carry one emblem of the signal in four states. With [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) installed, its track *FIELDS* plays on Nexus.
+Every trial has its own sounds and fight music, and the technologies carry one emblem of the signal in four states. Nexus itself plays *FIELDS* from [TFMG: Music](https://mods.factorio.com/mod/TFMG-music).
 
 ## Good to know
 
@@ -46,6 +46,6 @@ Every trial has its own sounds and fight music, and the technologies carry one e
 
 ## Requirements
 
-Nexus Extended Promethium Endgame with Nexus Threat, Big Monsters, Toxic biters, Arachnids enemy and Electric flying enemies: the bosses are built from their creatures. razi-protocol is optional.
+Nexus Extended Promethium Endgame with Nexus Threat, Big Monsters, Toxic biters, Arachnids enemy and Electric flying enemies: the bosses are built from their creatures. TFMG: Music gives Nexus its music. razi-protocol is optional.
 
 Source and bug reports: [GreenTech-Solutions/nexus-bosses](https://github.com/GreenTech-Solutions/nexus-bosses). Thanks to MFerrari for Big Monsters and the enemy mods, and to Karu_Kiruna for Nexus. Sounds, music and icons: [CREDITS.md](https://github.com/GreenTech-Solutions/nexus-bosses/blob/master/CREDITS.md).

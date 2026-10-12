@@ -7,7 +7,7 @@ the warp key, which researches Silence and opens the routes of the warp drive. T
 `tools/portal/description.md`. Bug reports: the issues of this repository.
 
 Requires Nexus-Updated (with Nexus-Threat-Updated and Nexus-Graphics-Updated), Big Monsters, Toxic Biters, Arachnids
-enemy and Electric flying enemies; razi-protocol is optional.
+enemy, Electric flying enemies and TFMG: Music (the music of Nexus); razi-protocol is optional.
 
 ## Code
 
