@@ -8,19 +8,13 @@
 --                      (prototypes/nb_nexus.lua). Not made when the startup setting nexus-bosses-gate-warp-drive is off
 
 local cfg = require("lib.nb_data")
-local proto = require("prototypes.nb_util")
 local nexus = require("prototypes.nb_nexus")
 
 local GATED = settings.startup["nexus-bosses-gate-warp-drive"].value
-local base_icon = proto.icon_layer(data.raw.technology[cfg.PLANET_TECH])
-
----The technology of Nexus with an icon in the lower right corner.
----@param corner {icon: string, icon_size: integer}
-local function icons(corner)
-  return {
-    { icon = base_icon.icon, icon_size = base_icon.icon_size },
-    { icon = corner.icon, icon_size = corner.icon_size, scale = 64 / corner.icon_size, shift = { 30, 30 }, draw_background = true },
-  }
+-- one emblem of the signal in four states: graphics/technology/tech-<stage>.png
+---@param stage string
+local function emblem(stage)
+  return "__nexus-bosses__/graphics/technology/tech-" .. stage .. ".png"
 end
 
 ---Damage bonuses that exist in this game.
@@ -77,7 +71,8 @@ for index, circle in ipairs(cfg.CIRCLES) do
       type = "technology",
       name = circle.tech,
       localised_description = description,
-      icons = icons(proto.entity_icon(cfg.BOSSES[circle.bosses[1]].entity)),
+      icon = emblem(circle.stage),
+      icon_size = 256,
       essential = true,
       prerequisites = { index == 1 and cfg.PLANET_TECH or cfg.CIRCLES[index - 1].tech },
       research_trigger = trigger,
@@ -92,7 +87,8 @@ if GATED then
     {
       type = "technology",
       name = cfg.SILENCE_TECH,
-      icons = icons({ icon = "__nexus-bosses__/graphics/icons/warp-key.png", icon_size = 64 }),
+      icon = emblem("silence"),
+      icon_size = 256,
       essential = true,
       prerequisites = { cfg.CIRCLES[#cfg.CIRCLES].tech },
       research_trigger = { type = "craft-item", item = cfg.WARP_KEY },

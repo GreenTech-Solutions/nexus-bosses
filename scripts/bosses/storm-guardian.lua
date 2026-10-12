@@ -16,6 +16,7 @@ local ESCORTS = 20
 local ESCORT_RADIUS = 20
 local HEAL_SHARE = 0.005
 local LIGHTNING_SECONDS = 3
+local FEED_SOUND_SECONDS = 6
 local LIGHTNING_RADIUS = 12
 local REDISPATCH_SECONDS = 45
 
@@ -87,6 +88,20 @@ function M.tick(summon, surface, force)
   end
   if feeding then
     guardian.health = guardian.health + guardian.max_health * HEAL_SHARE
+    rendering.draw_sprite({
+      sprite = "nexus-bosses-spark",
+      target = { entity = guardian, offset = { (math.random() - 0.5) * 3, -2 - math.random() * 2 } },
+      surface = surface,
+      tint = { r = 0.6, g = 0.85, b = 1 },
+      x_scale = 2,
+      y_scale = 2,
+      orientation = math.random(),
+      render_layer = "air-object",
+      time_to_live = 60, -- one a second: a feeding guardian always sparks
+    })
+    if seconds % FEED_SOUND_SECONDS == 0 then
+      util.play(force, "guardian-feeds")
+    end
     if seconds % LIGHTNING_SECONDS == 0 then
       -- Nexus has no lightning generator (execute_lightning fails there): the entity, as Nexus-Threat makes it
       surface.create_entity({

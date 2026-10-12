@@ -175,23 +175,13 @@ for _, id in ipairs(cfg.ORDER) do
 end
 
 -- Trophies: one drops where a boss dies, at every victory. The warp key takes one of each (only while the trials gate
--- the warp drive: without the gate there is no key). The trophies without an icon of their own show their boss.
+-- the warp drive: without the gate there is no key).
 local GATED = settings.startup["nexus-bosses-gate-warp-drive"].value
 local ICONS = "__nexus-bosses__/graphics/icons/"
-local OWN_TROPHY_ICONS = {
-  ["arachnid-queen"] = true,
-  ["watcher"] = true,
-  ["rogue-spidertron"] = true,
-  ["twin-maws"] = true,
-  ["colossus"] = true,
-  ["storm-guardian"] = true,
-}
 
 local key_ingredients = {}
 for _, id in ipairs(cfg.ORDER) do
   local boss = cfg.BOSSES[id]
-  local icon = OWN_TROPHY_ICONS[id] and { icon = ICONS .. "trophy-" .. id .. ".png", icon_size = 64 }
-    or proto.entity_icon(boss.entity)
   local name = cfg.trophy_name(id)
   data:extend({
     {
@@ -200,8 +190,7 @@ for _, id in ipairs(cfg.ORDER) do
       localised_name = { "item-name." .. name },
       localised_description = GATED and { "", { "item-description." .. name }, " ", { "nexus-bosses.trophy-key-part" } }
         or { "item-description." .. name },
-      icon = icon.icon,
-      icon_size = icon.icon_size,
+      icon = ICONS .. "trophy-" .. id .. ".png",
       subgroup = SUBGROUP,
       order = string.format("y-c[nexus-trophy]-%d%d", boss.circle, boss.slot),
       stack_size = 10,

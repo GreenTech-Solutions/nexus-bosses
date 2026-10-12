@@ -86,7 +86,7 @@ function M.on_research_finished(technology)
     M.sync_first_circle(force)
   elseif technology.name == cfg.SILENCE_TECH then
     util.say(force, { "nexus-bosses.msg-silence" }, util.COLORS.good)
-    util.play(force, util.SOUND_VICTORY)
+    util.play(force, "silence")
   end
 end
 
@@ -98,12 +98,14 @@ function M.sync_unlocks(force, announce)
     if M.circle_done(force.name, index) then
       if circle.reward and research(force, circle.reward) and announce then
         util.say(force, { "nexus-bosses.msg-stage-done-" .. circle.stage }, util.COLORS.good)
+        util.play(force, "stage-complete")
       elseif not circle.reward and announce then
         local silence = force.technologies[cfg.SILENCE_TECH]
         if not silence then
           util.say(force, { "nexus-bosses.msg-stage-done-" .. circle.stage .. "-ungated" }, util.COLORS.good)
         elseif not silence.researched then
           util.say(force, { "nexus-bosses.msg-stage-done-" .. circle.stage }, util.COLORS.good)
+          util.play(force, "stage-complete")
         end
       end
     end
@@ -131,6 +133,7 @@ function M.drop_trophy(force, surface, boss_id, position)
   local where = spilled[1] and spilled[1].position or position
   force.add_chart_tag(surface, { position = where, icon = { type = "item", name = stack.name } })
   local x, y = util.xy(where)
+  util.play(force, "trophy")
   util.say(force, { "nexus-bosses.msg-trophy", { "item-name." .. stack.name }, math.floor(x), math.floor(y), surface.name },
     util.COLORS.good)
 end

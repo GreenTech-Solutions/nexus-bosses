@@ -109,6 +109,7 @@ local function dive(summon, surface, force, record)
   surface.create_entity({ name = "big-demolisher-fissure-explosion", position = head })
   worm.destroy()
   util.say(force, { "nexus-bosses.msg-devourer-dives", DIVE_SECONDS }, util.COLORS.warning)
+  util.play(force, "devourer-burrow")
 end
 
 ---@param summon table
@@ -130,7 +131,7 @@ local function rise(summon, surface, force, record)
   give_orders(summon, surface, worm)
   local x, y = util.xy(position)
   util.say(force, { "nexus-bosses.msg-devourer-rises", math.floor(x), math.floor(y), surface.name }, util.COLORS.bad)
-  util.play(force, util.SOUND_SIREN)
+  util.play(force, "devourer-burrow")
 end
 
 ---@param summon table

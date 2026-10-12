@@ -115,6 +115,15 @@ local function create_visuals(summon, force, surface)
     text = string.format("[item=%s] %d", summon.item, summon.countdown),
     icon = { type = "item", name = summon.item },
   })
+  -- the antenna colours of the beacons (prototypes/nb_items.lua): blue, amber, red
+  local tint = ({ { r = 0.55, g = 0.85, b = 1 }, { r = 1, g = 0.8, b = 0.35 }, { r = 1, g = 0.4, b = 0.35 } })[summon.circle]
+  summon.circle_fx = rendering.draw_animation({
+    animation = "nexus-bosses-summon-circle",
+    target = summon.beacon,
+    surface = surface,
+    tint = tint,
+    render_layer = "lower-object",
+  })
   summon.label = rendering.draw_text({
     text = label_text(summon),
     surface = surface,
@@ -134,6 +143,10 @@ local function destroy_visuals(summon, force)
     summon.label.destroy()
     summon.label = nil
   end
+  if summon.circle_fx and summon.circle_fx.valid then
+    summon.circle_fx.destroy()
+  end
+  summon.circle_fx = nil
   if summon.tag and summon.tag.valid then
     summon.tag.destroy()
   end
@@ -221,7 +234,7 @@ local function victory(summon, force, surface)
   cleanup(summon, force)
   util.say(force, { first and "nexus-bosses.msg-boss-defeated" or "nexus-bosses.msg-boss-defeated-again", boss_name(boss) },
     util.COLORS.good)
-  util.play(force, util.SOUND_VICTORY)
+  util.play(force, "victory")
   progress.drop_trophy(force, surface, boss, summon.last_position or summon.position)
   if boss == "storm-guardian" then
     progress.storm_guardian_fell(force)
@@ -250,7 +263,12 @@ local function complete_spawn(summon, force, surface)
   util.say(force, { "nexus-bosses.arrive-" .. summon.boss }, util.COLORS.bad)
   util.say(force, { "nexus-bosses.msg-boss-appeared", boss_name(summon.boss), math.floor(x), math.floor(y), surface.name },
     util.COLORS.bad)
-  util.play(force, util.SOUND_SIREN)
+  util.play(force, "arrive-" .. summon.boss)
+  if summon.boss == "storm-guardian" then
+    util.play(force, "arrive-storm-guardian-stinger")
+  end
+  summon.music_index = 0
+  summon.music_until = 0
   if summon.spawn_note == "closer" then
     util.say(force, { "nexus-bosses.msg-spawn-closer", math.floor(summon.spawn_distance) }, util.COLORS.warning)
   end
@@ -297,7 +315,6 @@ local function launch(summon, force, surface)
   summon.beacon.minable_flag = false
   summon.beacon.destructible = false
   update_visuals(summon)
-  util.play(force, util.SOUND_SIREN)
 
   if summon.bm then
     local state = summon.bm
@@ -352,13 +369,13 @@ local function step_countdown(summon, force, surface)
       local x, y = util.xy(origin)
       util.say(force, { "nexus-bosses.msg-precursors", util.compass(summon.angle), math.floor(x), math.floor(y),
         surface.name }, util.COLORS.warning)
-      util.play(force, util.SOUND_ALARM)
+      util.play(force, "precursors")
     end
   end
   if summon.countdown % 10 == 0 or summon.countdown <= 5 then
     alert(force, summon.beacon, summon, { "nexus-bosses.alert-countdown", boss_name(summon.boss), summon.countdown })
     if summon.countdown == 10 or summon.countdown == 3 then
-      util.play(force, util.SOUND_ALARM)
+      util.play(force, "countdown")
     end
   end
 end
@@ -401,6 +418,13 @@ local function step_active(summon, force, surface)
     return
   end
   summon.active_seconds = summon.active_seconds + 1
+  if game.tick >= summon.music_until then
+    -- the tracks take turns while the boss lives
+    summon.music_index = summon.music_index % #util.FIGHT_TRACKS + 1
+    local track = util.FIGHT_TRACKS[summon.music_index] --[[@as {name: string, seconds: integer}]]
+    force.play_music({ name = track.name, fade_in_duration = 120, fade_out_duration = 120 })
+    summon.music_until = game.tick + track.seconds * 60
+  end
   local module = module_of(summon)
   if module then
     if module.tick then
@@ -558,7 +582,7 @@ function M.on_built(entity, player)
   util.say(force, { "nexus-bosses.call-" .. boss_id }, util.COLORS.warning)
   util.say(force, { "nexus-bosses.msg-countdown-started", boss_name(boss_id), countdown, util.compass(summon.angle) },
     util.COLORS.warning)
-  util.play(force, util.SOUND_ALARM)
+  util.play(force, "call")
 end
 
 -- Load and configuration -------------------------------------------------------------------------------------------
@@ -577,6 +601,10 @@ function M.on_configuration_changed()
     -- a summon of an older version of the mod: its prototypes may be gone
     storage.summon = nil
     unregister_death_events()
+  elseif summon then
+    -- 2.0 had no music
+    summon.music_index = summon.music_index or 0
+    summon.music_until = summon.music_until or 0
   end
   M.restore_events()
 end
