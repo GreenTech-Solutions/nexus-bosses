@@ -51,10 +51,12 @@ else
   log("[nexus-bosses] the planet " .. cfg.PLANET .. " has no autoplace controls: no enemy control zeroed")
 end
 
--- 2. The routes of the warp drive (Oort cloud, Sol; without razi-protocol also the shattered planet and the edge of the
---    system) move to the technology that the warp key researches (prototypes/nb_technologies.lua), unless the startup
---    setting "nexus-bosses-gate-warp-drive" is off. The warp drive itself is researched as before: without the key it
---    has nowhere to go. The module returns the moved effects.
+-- 2. The routes of the warp drive (Oort cloud, Sol, the shattered planet, the edge of the system) move to the technology
+--    that the warp key researches (prototypes/nb_technologies.lua), unless the startup setting
+--    "nexus-bosses-gate-warp-drive" is off. The warp drive itself is researched as before: without the key it has
+--    nowhere to go. Only the Oort cloud and Sol are gated for real: Space Age opens the edge of the system
+--    (stellar-discovery-solar-system-edge) and the shattered planet (promethium-science-pack) by its own technologies,
+--    with or without razi-protocol. The module returns the moved effects.
 local routes = {}
 local warp_drive = data.raw.technology["warp-drive-engine"]
 if not settings.startup["nexus-bosses-gate-warp-drive"].value then
