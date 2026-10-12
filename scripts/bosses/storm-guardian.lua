@@ -1,7 +1,8 @@
 -- Storm Guardian: a walking electric giant with 20 walkers and 20 flyers. While a storm of Nexus-Threat rages it feeds
 -- on it: it heals 0.5 % of its health every second and calls lightning down around itself. Between the storms it is
 -- only a very big target. Without Nexus-Threat's storms (its startup setting nexus-threat-activation off) it never
--- feeds.
+-- feeds. Every charged shard in its beacon (summon.charge, up to cfg.CHARGES) takes a share of the storm from it: a
+-- third less healing and lightning each, none at all with three.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -19,18 +20,6 @@ local LIGHTNING_SECONDS = 3
 local FEED_SOUND_SECONDS = 6
 local LIGHTNING_RADIUS = 12
 local REDISPATCH_SECONDS = 45
-
----@return boolean
-local function storm_active()
-  local interface = remote.interfaces["nexus-threat"]
-  if not (interface and interface.get_state) then
-    return false
-  end
-  local ok, state = pcall(function()
-    return remote.call("nexus-threat", "get_state")
-  end)
-  return ok and type(state) == "table" and state.storm_active == true
-end
 
 ---@param summon table
 ---@param surface LuaSurface
@@ -80,14 +69,15 @@ function M.tick(summon, surface, force)
   end
   local guardian = record.entity
   local state = summon.guardian
-  local feeding = storm_active()
+  local share = 1 - (summon.charge or 0) / cfg.CHARGES
+  local feeding = share > 0 and util.storm_active()
   if feeding ~= state.feeding then
     state.feeding = feeding
     util.say(force, { feeding and "nexus-bosses.msg-guardian-feeds" or "nexus-bosses.msg-guardian-starves" },
       feeding and util.COLORS.bad or util.COLORS.good)
   end
   if feeding then
-    guardian.health = guardian.health + guardian.max_health * HEAL_SHARE
+    guardian.health = guardian.health + guardian.max_health * HEAL_SHARE * share
     rendering.draw_sprite({
       sprite = "nexus-bosses-spark",
       target = { entity = guardian, offset = { (math.random() - 0.5) * 3, -2 - math.random() * 2 } },
@@ -102,7 +92,7 @@ function M.tick(summon, surface, force)
     if seconds % FEED_SOUND_SECONDS == 0 then
       util.play(force, "guardian-feeds")
     end
-    if seconds % LIGHTNING_SECONDS == 0 then
+    if seconds % LIGHTNING_SECONDS == 0 and math.random() < share then
       -- Nexus has no lightning generator (execute_lightning fails there): the entity, as Nexus-Threat makes it
       surface.create_entity({
         name = "lightning",
@@ -115,7 +105,12 @@ end
 ---@param summon table
 ---@return LocalisedString|nil
 function M.status(summon)
-  return { summon.guardian.feeding and "nexus-bosses.status-guardian-feeds" or "nexus-bosses.status-guardian-starves" }
+  if summon.guardian.feeding then
+    return { "nexus-bosses.status-guardian-feeds" }
+  elseif (summon.charge or 0) >= cfg.CHARGES then
+    return { "nexus-bosses.status-guardian-charged" }
+  end
+  return { "nexus-bosses.status-guardian-starves" }
 end
 
 return M

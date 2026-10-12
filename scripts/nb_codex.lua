@@ -4,6 +4,7 @@
 local cfg = require("lib.nb_data")
 local progress = require("scripts.nb_progress")
 local expedition = require("scripts.nb_expedition")
+local bearing = require("scripts.nb_bearing")
 
 local M = {}
 
@@ -45,6 +46,18 @@ local function fill_page(page, force_name, boss_id)
   end
   page.add({ type = "line" })
   paragraph(page, { progress.is_defeated(force_name, boss_id) and "nexus-bosses.codex-defeated" or "nexus-bosses.codex-alive" })
+  local lair = bearing.lair_position(boss_id)
+  if lair and bearing.is_found(force_name, boss_id) then
+    local x, y = lair.x, lair.y
+    local quality = bearing.next_quality(force_name, boss_id)
+    paragraph(page, { "nexus-bosses.codex-lair", math.floor(x), math.floor(y), cfg.PLANET, bearing.wins_of(force_name, boss_id),
+      string.format("[item=%s,quality=%s]", cfg.trophy_name(boss_id), quality) })
+  else
+    local technology = game.forces[force_name].technologies[cfg.BEARING_TECH]
+    if technology and technology.researched then
+      paragraph(page, { "nexus-bosses.codex-no-lair" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+    end
+  end
 end
 
 ---@param player LuaPlayer

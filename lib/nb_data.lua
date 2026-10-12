@@ -49,6 +49,24 @@ M.EXPEDITION_RINGS = { { 100, 250 }, { 250, 450 }, { 450, 700 } }
 M.SHORTCUT_DETECTOR = "nexus-bosses-detector"
 M.SHORTCUT_CODEX = "nexus-bosses-codex"
 
+-- Bearings (2.3): direction finders point at the lair of a boss; a beacon lit in it gives more at the victory
+M.BEARING_TECH = "nexus-signal-bearing"
+M.FINDER = "nexus-bosses-direction-finder"
+M.LAIR_RINGS = { { 250, 450 }, { 450, 700 }, { 700, 1000 } }
+M.LAIR_RADIUS = 30
+M.LAIR_REMAINS_PREFIX = "nexus-bosses-lair-remains-"
+M.LAIR_SCORCH = "nexus-bosses-lair-scorchmark"
+-- the second trophy of a fight in the lair: one step better with every such fight
+M.LAIR_QUALITIES = { "uncommon", "rare", "epic", "legendary" }
+M.LAIR_LOOT_SHARE = 0.5 -- of the beacon recipe
+
+-- Storms (2.3): a storm of Nexus-Threat wakes the lightning attractor ruins of Nexus; a charged shard from one weakens
+-- the Storm Guardian, through the charged beacons
+M.RUIN_ATTRACTOR = "fulgoran-ruin-attractor"
+M.SHARD = "nexus-bosses-storm-shard"
+M.CHARGES = 3
+M.CHARGED_BOSS = "storm-guardian"
+
 M.ALLOY_ITEM = "omega-alloy"
 M.PROCESSOR_ITEM = "advanced-photon-processor"
 
@@ -210,6 +228,7 @@ M.REQUIRED = {
   { "container", "crash-site-spaceship-wreck-medium-1", "base" },
   { "container", "crash-site-spaceship-wreck-medium-2", "base" },
   { "container", "crash-site-spaceship-wreck-medium-3", "base" },
+  { "radar", "radar", "base" },
 }
 
 ---@param id string
@@ -224,14 +243,43 @@ function M.trophy_name(id)
   return M.TROPHY_PREFIX .. id
 end
 
+---A beacon of the Storm Guardian with charged shards in it.
+---@param charge integer 1..M.CHARGES
+---@return string
+function M.charged_beacon_name(charge)
+  return M.beacon_name(M.CHARGED_BOSS) .. "-charged-" .. charge
+end
+
 ---@param name string entity or item name
 ---@return string|nil boss id when the name is a beacon
+---@return integer charge: the shards in a charged beacon, 0 for any other
 function M.boss_of_beacon(name)
   if name:sub(1, #M.BEACON_PREFIX) ~= M.BEACON_PREFIX then
-    return nil
+    return nil, 0
   end
   local id = name:sub(#M.BEACON_PREFIX + 1)
-  return M.BOSSES[id] and id or nil
+  if M.BOSSES[id] then
+    return id, 0
+  end
+  for charge = 1, M.CHARGES do
+    if name == M.charged_beacon_name(charge) then
+      return M.CHARGED_BOSS, charge
+    end
+  end
+  return nil, 0
+end
+
+---Every beacon name: one a boss and the charged ones.
+---@return string[]
+function M.beacon_names()
+  local names = {}
+  for _, id in ipairs(M.ORDER) do
+    names[#names + 1] = M.beacon_name(id)
+  end
+  for charge = 1, M.CHARGES do
+    names[#names + 1] = M.charged_beacon_name(charge)
+  end
+  return names
 end
 
 return M

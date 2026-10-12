@@ -89,6 +89,19 @@ function M.play(force, name)
   force.play_sound({ path = "nexus-bosses-" .. name })
 end
 
+---A storm of Nexus-Threat rages (false without its interface or with its storms off).
+---@return boolean
+function M.storm_active()
+  local interface = remote.interfaces["nexus-threat"]
+  if not (interface and interface.get_state) then
+    return false
+  end
+  local ok, state = pcall(function()
+    return remote.call("nexus-threat", "get_state")
+  end)
+  return ok and type(state) == "table" and state.storm_active == true
+end
+
 ---@param position MapPosition
 ---@return ChunkPosition.struct
 function M.chunk_of(position)

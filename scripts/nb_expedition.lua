@@ -12,6 +12,7 @@
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
+local bearing = require("scripts.nb_bearing")
 
 local M = {}
 
@@ -159,6 +160,7 @@ function M.on_wreck_opened(player, entity, codex)
     if all_logs(force.name) then
       util.say(force, { "nexus-bosses.msg-all-logs" }, util.COLORS.good)
     end
+    bearing.on_log_found(force)
   end
   player.opened = nil
   codex.open(player, boss_id)
@@ -260,6 +262,16 @@ function M.detector_tick(tick)
           detector[index] = tick + ping_interval(best_distance --[[@as number]])
         end
       end
+    end
+  end
+end
+
+---A force that found a log before 2.3 learns the bearings.
+function M.sync_bearing()
+  for force_name, logs in pairs(storage.expedition.logs) do
+    local force = game.forces[force_name]
+    if force and next(logs) then
+      bearing.on_log_found(force)
     end
   end
 end

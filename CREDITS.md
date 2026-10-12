@@ -37,8 +37,9 @@ not under the GPL; files were converted to OGG, trimmed, resized or recoloured w
 | `graphics/icons/trophy-last-commander.png` (recoloured) | [rank-3](https://game-icons.net/1x1/skoll/rank-3.html) | Skoll, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `graphics/technology/tech-*.png` (combined, recoloured) | [4 summoning circles](https://opengameart.org/content/4-summoning-circles); [lightning-dome](https://game-icons.net/1x1/delapouite/lightning-dome.html) | Luke.RUSTLTD; Delapouite, [game-icons.net](https://game-icons.net) | CC0; [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `graphics/shortcuts/detector-*.png`, `codex-*.png` (recoloured, resized) | [radar-sweep](https://game-icons.net/1x1/lorc/radar-sweep.html), [open-book](https://game-icons.net/1x1/lorc/open-book.html) | Lorc, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `graphics/icons/storm-shard.png` (recoloured, resized) | [crystal-bars](https://game-icons.net/1x1/lorc/crystal-bars.html) | Lorc, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `graphics/effects/summon-circle.png` (resized) | [teleport circle sprite sheet](https://opengameart.org/content/teleport-circle-sprite-sheet) | gfroad | CC0 |
 | `graphics/effects/spark.png` (resized) | [Particle Pack](https://kenney.nl/assets/particle-pack) | Kenney | CC0 |
 
-The wrecks of the expedition reuse the spaceship wrecks of the base game. The beacon reuses the omega beacon of Nexus-Graphics; the bosses are creatures of Big Monsters, Arachnids enemy, Toxic
+The wrecks of the expedition reuse the spaceship wrecks of the base game, the direction finder the radar, and the remains of a lair the corpses of the bosses. The beacon reuses the omega beacon of Nexus-Graphics; the bosses are creatures of Big Monsters, Arachnids enemy, Toxic
 biters, Electric flying enemies and Space Age, referenced from those mods and not redistributed.
