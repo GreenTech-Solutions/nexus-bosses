@@ -43,6 +43,13 @@ Health at the default settings, for one player.
 - **Storm Guardian dead:** half as much lightning in the storms of Nexus, for good.
 - **The warp key:** researches Silence, which opens the routes of the warp drive (the Oort cloud and Sol).
 
+## Sound and look
+
+- Every event has its own sound: the beacon calling, the countdown, the precursors, the arrival of each boss, the nests, the spores, the Storm Guardian feeding on a storm, the Devourer diving, the victory, a finished stage, Silence.
+- Music plays while a boss lives. With [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) installed, its track FIELDS plays on Nexus as well.
+- One emblem of the signal in four states marks the technologies; a summon circle burns under a lit beacon in the colour of its stage.
+- Authors and licenses of the sounds, music and icons: [CREDITS.md](https://github.com/GreenTech-Solutions/nexus-bosses/blob/master/CREDITS.md).
+
 ## Settings
 
 - **Startup:** boss health, beacon cost, whether the trials gate the warp drive.
