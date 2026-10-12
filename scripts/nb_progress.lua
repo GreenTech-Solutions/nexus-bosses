@@ -19,6 +19,15 @@ local function record_of(force_name)
 end
 
 ---@param force_name string
+---@param boss_id string
+---@return boolean
+function M.is_defeated(force_name, boss_id)
+  ---@type {defeated: table<string, boolean>}|nil
+  local record = storage.progress[force_name]
+  return record ~= nil and record.defeated[boss_id] == true
+end
+
+---@param force_name string
 ---@param circle_index integer
 ---@return boolean
 function M.circle_done(force_name, circle_index)

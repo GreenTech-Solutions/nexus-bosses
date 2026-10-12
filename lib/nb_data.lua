@@ -42,6 +42,13 @@ M.WARP_KEY = "nexus-warp-key"
 -- Researched by crafting the warp key; takes over the routes (unlock-space-location) of the warp drive.
 M.SILENCE_TECH = "nexus-silence"
 
+-- The expedition (2.2): a wreck with a log for every boss, on a ring around the spawn of the force, one ring a stage
+M.WRECK_PREFIX = "nexus-expedition-wreck-"
+M.WRECK_VARIANTS = 3
+M.EXPEDITION_RINGS = { { 100, 250 }, { 250, 450 }, { 450, 700 } }
+M.SHORTCUT_DETECTOR = "nexus-bosses-detector"
+M.SHORTCUT_CODEX = "nexus-bosses-codex"
+
 M.ALLOY_ITEM = "omega-alloy"
 M.PROCESSOR_ITEM = "advanced-photon-processor"
 
@@ -200,6 +207,9 @@ M.REQUIRED = {
   { "unit", "bm_fake_human_machine_gunner_5", "Big-Monsters" },
   { "segmented-unit", "big-demolisher", "space-age" },
   { "planet", "nexus", "Nexus" },
+  { "container", "crash-site-spaceship-wreck-medium-1", "base" },
+  { "container", "crash-site-spaceship-wreck-medium-2", "base" },
+  { "container", "crash-site-spaceship-wreck-medium-3", "base" },
 }
 
 ---@param id string

@@ -18,6 +18,7 @@ local nexus = require("scripts.nb_nexus")
 local spawn = require("scripts.nb_spawn")
 local progress = require("scripts.nb_progress")
 local gui = require("scripts.nb_gui")
+local expedition = require("scripts.nb_expedition")
 
 local M = {}
 
@@ -236,6 +237,7 @@ local function victory(summon, force, surface)
     util.COLORS.good)
   util.play(force, "victory")
   progress.drop_trophy(force, surface, boss, summon.last_position or summon.position)
+  expedition.reveal_next(force, summon.last_position or summon.position)
   if boss == "storm-guardian" then
     progress.storm_guardian_fell(force)
   end

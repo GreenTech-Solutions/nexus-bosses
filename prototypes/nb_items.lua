@@ -108,14 +108,14 @@ for _, id in ipairs(cfg.ORDER) do
   local circle = cfg.CIRCLES[boss.circle]
   local name = cfg.beacon_name(id)
   local order = string.format("y-b[nexus-summon]-%d%d", boss.circle, boss.slot)
-  -- stage, who comes, how to fight it, then the rules of every beacon
+  -- stage, who comes, where to learn how to fight it, then the rules of every beacon
   local description = {
     "",
     { "nexus-bosses.beacon-stage", { "nexus-bosses.stage-" .. circle.stage } },
     " ",
     { "nexus-bosses.lore-" .. id },
     "\n\n",
-    { "nexus-bosses.tactic-" .. id },
+    { "nexus-bosses.beacon-dossier" },
     "\n\n",
     { "nexus-bosses.beacon-rules" },
   }
