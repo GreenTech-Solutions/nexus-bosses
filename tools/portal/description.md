@@ -21,7 +21,7 @@ Someone answered the signal before you. The expedition of the *Long Echo* broke 
 - **The logs.** A wreck of the expedition lies out there for every boss, and only its log tells how that boss fights. A signal detector points the way, and every victory reveals another wreck. You can fight blind, but you probably shouldn't.
 - **The lairs.** Every boss has a lair far from your base. Set up direction finders, wait for their bearings to narrow, and where two of them cross you find it. Call a boss in its own lair and it pays better: a second trophy, better each time, and loot. Every lair holds a dead pylon; wake it with a fine enough trophy and the boss comes weaker.
 - **The storms.** When a storm of Nexus Threat breaks, the old lightning ruins near you wake up. Walk into the lightning to pick up a charged shard. The Storm Guardian feeds on storms, and the shards take some of that storm away from it.
-- **The story.** The expedition's camp shows up when the Whisper starts. Where its commander went is something you only learn after Silence.
+- **The story.** The expedition's camp shows up when the Whisper starts. Where its commander went is something you only learn after Silence, and what he found there is locked behind the glyphs of its builders.
 
 The signal also gets into your head. At night, far from your base, you may see and hear things that are not there, more often the deeper you go. A player setting turns it down or off.
 
