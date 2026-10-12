@@ -9,6 +9,8 @@ local state = require("scripts.nb_state")
 local nexus = require("scripts.nb_nexus")
 local progress = require("scripts.nb_progress")
 local summon = require("scripts.nb_summon")
+local expedition = require("scripts.nb_expedition")
+local codex = require("scripts.nb_codex")
 require("scripts.nb_interface")
 
 local beacon_filters = {}
@@ -48,12 +50,36 @@ script.on_event(defines.events.on_segmented_unit_died, summon.on_segmented_unit_
 
 script.on_event(defines.events.on_surface_created, function(event)
   nexus.on_surface_created(event.surface_index)
+  local surface = game.get_surface(event.surface_index)
+  if surface and surface.name == cfg.PLANET then
+    expedition.spawn_open_stages()
+  end
 end)
+
+script.on_event(defines.events.on_gui_opened, function(event)
+  local entity = event.entity
+  if entity and entity.name:sub(1, #cfg.WRECK_PREFIX) == cfg.WRECK_PREFIX then
+    expedition.on_wreck_opened(game.get_player(event.player_index) --[[@as LuaPlayer]], entity, codex)
+  end
+end)
+
+script.on_event(defines.events.on_lua_shortcut, function(event)
+  local player = game.get_player(event.player_index) --[[@as LuaPlayer]]
+  if event.prototype_name == cfg.SHORTCUT_DETECTOR then
+    expedition.toggle_detector(player)
+  elseif event.prototype_name == cfg.SHORTCUT_CODEX then
+    codex.toggle(player)
+  end
+end)
+
+script.on_event(defines.events.on_gui_click, codex.on_gui_click)
+script.on_event(defines.events.on_gui_closed, codex.on_gui_closed)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed, nexus.on_settings_changed)
 
 script.on_event(defines.events.on_research_finished, function(event)
   progress.on_research_finished(event.research)
+  expedition.on_research_finished(event.research)
 end)
 
 script.on_event(defines.events.on_forces_merged, function(event)
@@ -65,14 +91,22 @@ script.on_nth_tick(60, function(event)
   nexus.on_second(event.tick)
 end)
 
+script.on_nth_tick(30, function(event)
+  expedition.detector_tick(event.tick)
+end)
+
 script.on_init(function()
   state.init()
+  expedition.init()
   nexus.on_init()
   progress.on_configuration_changed() -- a game that has discovered Nexus already
+  expedition.spawn_open_stages()
 end)
 
 script.on_configuration_changed(function()
   state.init()
+  expedition.init()
+  expedition.spawn_open_stages()
   nexus.on_configuration_changed()
   progress.on_configuration_changed()
   summon.on_configuration_changed()

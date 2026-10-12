@@ -8,6 +8,7 @@
 
 local cfg = require("lib.nb_data")
 local summon = require("scripts.nb_summon")
+local expedition = require("scripts.nb_expedition")
 
 local M = {}
 
@@ -26,6 +27,7 @@ function M.snapshot()
     ignore_player_presence = storage.ignore_presence,
     storm_weakened = storage.storm_weakened,
     summon = summon.snapshot(),
+    expedition = expedition.snapshot(),
     defeated = {},
   }
   for force_name, record in pairs(storage.progress) do
