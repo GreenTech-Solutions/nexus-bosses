@@ -1,5 +1,3 @@
--- Settings of the mod. The startup ones change prototypes (health of the bosses, price of the beacons, what the trials
--- gate), the map ones are read while the game runs.
 data:extend({
   {
     type = "double-setting",
@@ -37,9 +35,9 @@ data:extend({
   },
   {
     type = "bool-setting",
-    name = "nexus-bosses-big-monsters-elsewhere-off",
+    name = "nexus-bosses-big-monsters-beacons-only",
     setting_type = "runtime-global",
-    default_value = true,
+    default_value = false,
     order = "b",
   },
 })

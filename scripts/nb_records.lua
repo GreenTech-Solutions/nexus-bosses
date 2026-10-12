@@ -1,42 +1,52 @@
--- The entities of the active summon that the mod watches ("records" in summon.tracked).
--- A record is {entity, name, unit_number, required, role, segmented, dead, gone}:
+-- The entities of the active summon ("records" in summon.tracked):
 --   required   the victory needs this one dead
---   role       "boss" | "escort" | "guard" (informational, the mod commands "boss" and "escort" units)
---   segmented  the entity is a LuaSegmentedUnit, not a LuaEntity
---   dead       a death event was seen
---   gone       the object vanished without a death event (destroyed by a script, the game, another mod)
+--   role       "boss" | "escort" | "nest" | "guard"; the mod gives orders to "boss" and "escort" units
+--   segmented  a LuaSegmentedUnit, not a LuaEntity
+--   initial    health when it appeared: the full bar of the health display (Big Monsters spawns below the maximum)
+--   hidden     the entity is gone for a while on purpose (the Devourer underground) and counts as alive
+--   dead, gone a death event was seen / the object vanished without one
 
 local M = {}
 
 ---@param summon table
 ---@param entity LuaEntity|LuaSegmentedUnit
----@param name string
 ---@param required boolean
 ---@param role string
 ---@param segmented boolean|nil
----@return table the record
-function M.add(summon, entity, name, required, role, segmented)
+---@return table
+function M.add(summon, entity, required, role, segmented)
   local record = {
     entity = entity,
-    name = name,
+    name = segmented and entity.prototype.name or entity.name, -- a LuaSegmentedUnit has no name
     unit_number = entity.unit_number,
     required = required,
     role = role,
     segmented = segmented or false,
+    initial = entity.health,
+    hidden = false,
     dead = false,
     gone = false,
   }
   summon.tracked[#summon.tracked + 1] = record
-  if record.unit_number then
-    summon.by_unit[record.unit_number] = record
-  end
+  summon.by_unit[record.unit_number] = record
   return record
 end
 
----Marks the record of a dead entity.
+---The record now follows another entity (the Devourer that surfaced again).
+---@param summon table
+---@param record table
+---@param entity LuaEntity|LuaSegmentedUnit
+function M.replace(summon, record, entity)
+  summon.by_unit[record.unit_number] = nil
+  record.entity = entity
+  record.unit_number = entity.unit_number
+  record.hidden = false
+  summon.by_unit[record.unit_number] = record
+end
+
 ---@param summon table
 ---@param unit_number integer
----@return table|nil the record when it was found and not dead yet
+---@return table|nil the record, when it was alive
 function M.mark_dead(summon, unit_number)
   local record = summon.by_unit[unit_number]
   if record and not record.dead then
@@ -46,17 +56,22 @@ function M.mark_dead(summon, unit_number)
   return nil
 end
 
----Flags the records whose object is gone without a death event.
+---@param record table
+---@return boolean
+function M.alive(record)
+  return not (record.dead or record.gone) and (record.hidden or record.entity.valid)
+end
+
+---Flags the records whose object vanished without a death event.
 ---@param summon table
 function M.refresh(summon)
   for _, record in ipairs(summon.tracked) do
-    if not record.dead and not record.gone and not (record.entity and record.entity.valid) then
+    if not (record.dead or record.gone or record.hidden or record.entity.valid) then
       record.gone = true
     end
   end
 end
 
----Counts of the required records: still alive, dead, gone.
 ---@param summon table
 ---@return integer alive
 ---@return integer dead
@@ -77,48 +92,98 @@ function M.status(summon)
   return alive, dead, gone
 end
 
----Valid living unit entities the mod may give orders to (not segmented units, not required-only spawners).
+---Health of the required entities as a share of their health when they appeared.
+---@param summon table
+---@return number 0..1
+function M.health_share(summon)
+  local now, full = 0, 0
+  for _, record in ipairs(summon.tracked) do
+    if record.required then
+      full = full + record.initial
+      if record.hidden then
+        now = now + (record.hidden_health or 0)
+      elseif M.alive(record) then
+        now = now + record.entity.health
+      end
+    end
+  end
+  if full <= 0 then
+    return 0
+  end
+  return math.min(1, now / full)
+end
+
+---Living records of a role.
+---@param summon table
+---@param role string
+---@return table[]
+function M.of_role(summon, role)
+  local list = {}
+  for _, record in ipairs(summon.tracked) do
+    if record.role == role and M.alive(record) and not record.hidden then
+      list[#list + 1] = record
+    end
+  end
+  return list
+end
+
+---Units the mod may give orders to.
 ---@param summon table
 ---@return LuaEntity[]
 function M.commandable_units(summon)
   local units = {}
   for _, record in ipairs(summon.tracked) do
-    local entity = record.entity
-    if not (record.dead or record.gone or record.segmented) and entity.valid and entity.commandable
-      and (record.role == "boss" or record.role == "escort") then
-      units[#units + 1] = entity
+    if (record.role == "boss" or record.role == "escort") and not record.segmented and M.alive(record)
+      and not record.hidden and record.entity.commandable then
+      units[#units + 1] = record.entity
     end
   end
   return units
 end
 
----Plain data of the records for the remote interface.
+---The first living required entity: where the fight is.
+---@param summon table
+---@return table|nil
+function M.main(summon)
+  for _, record in ipairs(summon.tracked) do
+    if record.required and M.alive(record) and not record.hidden then
+      return record
+    end
+  end
+  return nil
+end
+
+---@param record table
+---@return MapPosition|nil
+function M.position(record)
+  if record.segmented then
+    return record.entity.get_body_nodes()[1]
+  end
+  return record.entity.position
+end
+
+---Plain data for the remote interface.
 ---@param summon table
 ---@return table[]
 function M.snapshot(summon)
   local list = {}
   for _, record in ipairs(summon.tracked) do
-    local entity = record.entity
-    local valid = entity ~= nil and entity.valid
     local item = {
       name = record.name,
       unit_number = record.unit_number,
       required = record.required,
       role = record.role,
       segmented = record.segmented,
+      hidden = record.hidden,
       dead = record.dead,
       gone = record.gone,
-      valid = valid,
+      initial = record.initial,
     }
-    if valid then
-      item.health = entity.health
-      if record.segmented then
-        local head = entity.get_body_nodes()[1]
-        if head then
-          item.position = { x = head.x, y = head.y }
-        end
-      else
-        item.position = { x = entity.position.x, y = entity.position.y }
+    if M.alive(record) and not record.hidden then
+      item.health = record.entity.health
+      local position = M.position(record)
+      if position then
+        item.position = { x = position.x, y = position.y }
       end
     end
     list[#list + 1] = item
