@@ -40,7 +40,7 @@ Every trial has its own sounds and fight music, and the technologies carry one e
 - **One trial at a time** on the whole server.
 - **The bosses of Big Monsters need explored land** around your spawn. If there is none, the beacon comes back with a message.
 - **Settings:** boss health, beacon cost, countdown length, whether the trials gate the warp drive, and whether Big Monsters' bosses come only from the beacons.
-- **Without razi-protocol** Silence also opens the route to the shattered planet; the gate can be turned off in the startup settings.
+- **Silence opens the Oort cloud and Sol.** The edge of the system and the shattered planet open by their own technologies, as without this mod. The gate can be turned off in the startup settings.
 - **Big Monsters' "allow nuker" is off by default** with this mod, so the Last Commander's soldiers carry no atomic rockets. You can turn it back on.
 - Administrators can stop a stuck trial with `/nexus-bosses-abort`.
 
