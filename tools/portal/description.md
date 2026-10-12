@@ -7,7 +7,7 @@ Source and bug reports: [GreenTech-Solutions/nexus-bosses](https://github.com/Gr
 ## A trial
 
 1. **Craft a beacon** on Nexus, in an assembling machine: omega alloy and advanced photon processors.
-2. **Light it.** The countdown (60 s by default) runs while someone of your force is on Nexus. Its tooltip tells who comes and what hurts it.
+2. **Light it.** The countdown (60 s by default) runs while someone of your force is on Nexus. Its tooltip tells who comes.
 3. **Hold it.** Twice during the countdown a precursor wave comes for the beacon from the side the boss will come from. Lose the beacon and it is gone; pick it up to call the summon off.
 4. **Kill the boss.** A health bar at the top of the screen follows the fight. The trophy drops where the boss falls and is marked on the map.
 
@@ -15,37 +15,48 @@ The three bosses of a stage open the next one: Whisper, Chorus, Convergence. The
 
 ## The bosses
 
-Health at the default settings, for one player.
+Here you learn only who they are. How to fight each one, what hurts it and what it does when hurt, is in the logs of the expedition (below).
 
 ### Whisper
 
-- **Arachnid Queen** (500 000) with two leviathans. At two thirds and at one third of her health she lays nests that breed warriors and spitters until you break them. Laser and fire hurt her more than usual.
-- **Watcher** (Big Monsters' flying saucer, about 56 000). Keeps its distance and burns with a laser. Most damage slides off; laser and electricity get through.
-- **Rogue Spidertron** (Big Monsters' spidertron, about 26 000). Heavy armour against everything and a lot of rockets.
+- **Arachnid Queen**: the mother of the arachnid hives of Nexus, with leviathans at her side.
+- **Watcher**: a flying saucer of Big Monsters that has watched Nexus longer than anyone has lived on it.
+- **Rogue Spidertron**: a spidertron of Big Monsters that lost its owner long ago and kept its rocket launchers.
 
 ### Chorus
 
-- **Twin Maws**: a fire worm (500 000) and an acid worm (1 200 000) break out 45-65 tiles from the beacon. They outrange turrets, so you go to them. The fire maw is weak to laser and electricity, the acid maw to fire.
-- **Colossus** (Big Monsters' giants, about 1 200 000): a biterzilla, a giant spitter, a brood mother or a human champion, and you learn which when it shows up. Some fold to physical damage, others to laser.
-- **Plague Hulk** (2 000 000): a crashed ship of Toxic biters that sends boss biters at your base every two minutes. Ten infected turrets guard it, its artillery shells your base, and every sortie's spores shut down three of your turrets for 15 seconds.
+- **Twin Maws**: two boss worms that break out of the ground near the beacon and stay there.
+- **Colossus**: a giant of Big Monsters. You learn which one when it shows up.
+- **Plague Hulk**: a crashed ship full of toxic boss biters, guarded by infected turrets.
 
 ### Convergence
 
-- **Storm Guardian** (3 000 000) with twenty walkers and twenty flyers. During a storm of Nexus Threat it heals and calls lightning around itself; between storms it does not heal. Laser and fire barely scratch it. Kill it and the storms of Nexus lose half of their lightning for good.
-- **Devourer** (5 000 000, heals 3 000 a second): a demolisher that claims the land around the beacon. At half health it dives and breaks out on the other side of the beacon. Laser, fire and impact do nothing.
-- **Last Commander** (Big Monsters' ultimate boss, about 5 000 000): fast, with a long cannon and a stream of soldiers. A third of every damage type is lost on it.
+- **Storm Guardian**: a walking electric giant with an army of its own. It comes with the storms of Nexus Threat.
+- **Devourer**: a demolisher grown beyond any other. It claims the land around the beacon.
+- **Last Commander**: the ultimate boss of Big Monsters, a commander with a cannon and a stream of soldiers.
+
+## The expedition
+
+Someone answered the signal before you. The ship of the Long Echo broke up on Nexus, and its crew kept a log about every boss they met.
+
+- **Nine wrecks**, one for each boss, lie on rings around your spawn: the wrecks of a stage appear when the stage opens, and every stage lies farther out. Open a wreck to find its log.
+- **Signal detector** (a shortcut button): an arrow by your character points to the nearest unfound wreck, and the pings come faster as you close in. It works on Nexus.
+- **Every victory** marks the nearest unfound wreck on the map.
+- **Codex of the signal** (a shortcut button, or opening a wreck): the stages and their bosses, which are defeated, and the logs you found. A boss without its log is only a name.
+
+The logs are not required: every boss can be beaten blind.
 
 ## Rewards
 
 - **A trophy from every boss**, every time. One of each makes the warp key.
-- **Whisper silenced:** laser and electric damage +20 %, which the Chorus is weak to.
-- **Chorus silenced:** bullet, railgun, rocket and cannon damage +20 %, for the Convergence.
+- **Whisper silenced:** laser and electric damage +20 %.
+- **Chorus silenced:** bullet, railgun, rocket and cannon damage +20 %.
 - **Storm Guardian dead:** half as much lightning in the storms of Nexus, for good.
 - **The warp key:** researches Silence, which opens the routes of the warp drive (the Oort cloud and Sol).
 
 ## Sound and look
 
-- Every event has its own sound: the beacon calling, the countdown, the precursors, the arrival of each boss, the nests, the spores, the Storm Guardian feeding on a storm, the Devourer diving, the victory, a finished stage, Silence.
+- Every event has its own sound: the beacon calling, the countdown, the precursors, the arrival of each boss, the nests, the spores, the Storm Guardian feeding on a storm, the Devourer diving, the victory, a finished stage, Silence, the ping of the detector.
 - Music plays while a boss lives. With [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) installed, its track FIELDS plays on Nexus as well.
 - One emblem of the signal in four states marks the technologies; a summon circle burns under a lit beacon in the colour of its stage.
 - Authors and licenses of the sounds, music and icons: [CREDITS.md](https://github.com/GreenTech-Solutions/nexus-bosses/blob/master/CREDITS.md).
