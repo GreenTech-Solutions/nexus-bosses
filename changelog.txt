@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.3.1
+Date: 2026-10-12
+  Bugfixes:
+    - [locale] the gate of the warp drive holds only the Oort cloud and Sol; Space Age opens the edge of the system and the shattered planet by its own technologies, with or without razi-protocol
+---------------------------------------------------------------------------------------------------
 Version: 2.3.0
 Date: 2026-10-12
   Features:
