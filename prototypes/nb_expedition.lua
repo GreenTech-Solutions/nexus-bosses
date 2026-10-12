@@ -17,6 +17,33 @@ for variant = 1, cfg.WRECK_VARIANTS do
   prototypes[#prototypes + 1] = wreck
 end
 
+---A container of the story: a copy of a crash site container that can be opened, not mined or destroyed.
+---@param source string
+---@param name string
+---@param slots integer
+local function story_container(source, name, slots)
+  local container = util.table.deepcopy(data.raw.container[source])
+  container.name = name
+  container.localised_name = { "entity-name." .. name }
+  container.localised_description = { "entity-description." .. name }
+  container.minable = nil
+  container.flags = { "placeable-neutral", "not-rotatable", "placeable-off-grid", "not-blueprintable", "not-deconstructable" }
+  container.inventory_size = slots
+  container.order = "z[" .. name .. "]"
+  return container
+end
+prototypes[#prototypes + 1] = story_container("crash-site-spaceship", cfg.CAMP, 8)
+prototypes[#prototypes + 1] = story_container("crash-site-spaceship-wreck-big-1", cfg.LAST_STAND, 4)
+prototypes[#prototypes + 1] = {
+  type = "item",
+  name = cfg.BADGE,
+  icon = "__nexus-bosses__/graphics/icons/commander-badge.png",
+  subgroup = data.raw["item-subgroup"]["omega-threat"] and "omega-threat" or "other",
+  order = "y-e[nexus-commander-badge]",
+  stack_size = 1,
+  weight = 1000000,
+}
+
 local first_stage = cfg.CIRCLES[1].tech
 prototypes[#prototypes + 1] = {
   type = "shortcut",

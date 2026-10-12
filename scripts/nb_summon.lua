@@ -19,6 +19,8 @@ local spawn = require("scripts.nb_spawn")
 local progress = require("scripts.nb_progress")
 local gui = require("scripts.nb_gui")
 local expedition = require("scripts.nb_expedition")
+local bearing = require("scripts.nb_bearing")
+local story = require("scripts.nb_story")
 
 local M = {}
 
@@ -237,11 +239,15 @@ local function victory(summon, force, surface)
     util.COLORS.good)
   util.play(force, "victory")
   progress.drop_trophy(force, surface, boss, summon.last_position or summon.position)
+  if summon.lair then
+    bearing.lair_victory(force, surface, boss, summon.last_position or summon.position)
+  end
   expedition.reveal_next(force, summon.last_position or summon.position)
   if boss == "storm-guardian" then
     progress.storm_guardian_fell(force)
   end
   progress.sync_unlocks(force, true)
+  story.sync(force)
 end
 
 -- The boss appears ----------------------------------------------------------------------------------------------------
@@ -257,6 +263,15 @@ local function complete_spawn(summon, force, surface)
   destroy_visuals(summon, force)
   summon.phase = "active"
   summon.active_seconds = 0
+  -- the pylon of the lair takes its share of the health of every boss that must die
+  local share = summon.pylon_share or 0
+  if share > 0 then
+    for _, record in ipairs(summon.tracked) do
+      if record.required and records.alive(record) then
+        record.entity.health = record.entity.health * (1 - share)
+      end
+    end
+  end
 
   local main = records.main(summon)
   local where = main and records.position(main) or summon.position
@@ -520,7 +535,7 @@ end
 ---@param entity LuaEntity
 ---@param player LuaPlayer|nil
 function M.on_built(entity, player)
-  local boss_id = cfg.boss_of_beacon(entity.name)
+  local boss_id, charge = cfg.boss_of_beacon(entity.name)
   -- a mod may forward the build event of the same beacon
   if not boss_id or (storage.summon and storage.summon.beacon_unit == entity.unit_number) then
     return
@@ -560,6 +575,9 @@ function M.on_built(entity, player)
     active_seconds = 0,
     tracked = {},
     by_unit = {},
+    charge = charge,
+    lair = bearing.in_lair(force.name, boss_id, entity.position),
+    pylon_share = bearing.pylon_share(force.name, boss_id, entity.position),
   }
   summon.watch = { entity.name }
   if boss.kind == "bm" then
@@ -584,6 +602,18 @@ function M.on_built(entity, player)
   util.say(force, { "nexus-bosses.call-" .. boss_id }, util.COLORS.warning)
   util.say(force, { "nexus-bosses.msg-countdown-started", boss_name(boss_id), countdown, util.compass(summon.angle) },
     util.COLORS.warning)
+  if summon.lair then
+    util.say(force, { "nexus-bosses.msg-lair-fight", boss_name(boss_id),
+      string.format("[item=%s,quality=%s]", cfg.trophy_name(boss_id), bearing.next_quality(force.name, boss_id)) },
+      util.COLORS.good)
+  end
+  if charge > 0 then
+    util.say(force, { "nexus-bosses.msg-beacon-charged", charge, cfg.CHARGES }, util.COLORS.good)
+  end
+  if summon.pylon_share > 0 then
+    util.say(force, { "nexus-bosses.msg-pylon-weakens", boss_name(boss_id), math.floor(summon.pylon_share * 100) },
+      util.COLORS.good)
+  end
   util.play(force, "call")
 end
 
@@ -604,9 +634,11 @@ function M.on_configuration_changed()
     storage.summon = nil
     unregister_death_events()
   elseif summon then
-    -- 2.0 had no music
+    -- 2.0 had no music, 2.2 no charge or lair
     summon.music_index = summon.music_index or 0
     summon.music_until = summon.music_until or 0
+    summon.charge = summon.charge or 0
+    summon.pylon_share = summon.pylon_share or 0
   end
   M.restore_events()
 end
@@ -658,6 +690,9 @@ function M.snapshot()
     tracked = records.snapshot(summon),
     health_share = records.health_share(summon),
     spawn_note = summon.spawn_note,
+    charge = summon.charge,
+    lair = summon.lair,
+    pylon_share = summon.pylon_share,
     spawn_distance = summon.spawn_distance,
     bm = summon.bm and { attempts = summon.bm.attempts, window_left = summon.bm.window, last_error = summon.bm.error },
   }

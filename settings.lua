@@ -40,4 +40,12 @@ data:extend({
     default_value = false,
     order = "b",
   },
+  {
+    type = "string-setting",
+    name = "nexus-bosses-hallucinations",
+    setting_type = "runtime-per-user",
+    default_value = "normal",
+    allowed_values = { "off", "rare", "normal" },
+    order = "a",
+  },
 })

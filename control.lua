@@ -11,16 +11,34 @@ local progress = require("scripts.nb_progress")
 local summon = require("scripts.nb_summon")
 local expedition = require("scripts.nb_expedition")
 local codex = require("scripts.nb_codex")
+local bearing = require("scripts.nb_bearing")
+local storms = require("scripts.nb_storms")
+local story = require("scripts.nb_story")
+local whisper = require("scripts.nb_whisper")
 require("scripts.nb_interface")
 
 local beacon_filters = {}
-for _, id in ipairs(cfg.ORDER) do
-  beacon_filters[#beacon_filters + 1] = { filter = "name", name = cfg.beacon_name(id) }
+for _, name in ipairs(cfg.beacon_names()) do
+  beacon_filters[#beacon_filters + 1] = { filter = "name", name = name }
+end
+local built_filters = { { filter = "name", name = cfg.FINDER } }
+for _, filter in ipairs(beacon_filters) do
+  built_filters[#built_filters + 1] = filter
+end
+
+---@param entity LuaEntity
+---@param player LuaPlayer|nil
+local function built(entity, player)
+  if entity.name == cfg.FINDER then
+    bearing.on_built(entity)
+  else
+    summon.on_built(entity, player)
+  end
 end
 
 ---@param event EventData.on_built_entity|EventData.on_robot_built_entity|EventData.script_raised_built|EventData.script_raised_revive
 local function on_built(event)
-  summon.on_built(event.entity, event.player_index and game.get_player(event.player_index) or nil)
+  built(event.entity, event.player_index and game.get_player(event.player_index) or nil)
 end
 
 for _, event_id in ipairs({
@@ -29,12 +47,25 @@ for _, event_id in ipairs({
   defines.events.script_raised_built,
   defines.events.script_raised_revive,
 }) do
-  script.on_event(event_id, on_built, beacon_filters)
+  script.on_event(event_id, on_built, built_filters)
 end
 
 script.on_event(defines.events.on_entity_cloned, function(event)
-  summon.on_built(event.destination, nil)
-end, beacon_filters)
+  built(event.destination, nil)
+end, built_filters)
+
+script.on_event(defines.events.on_sector_scanned, function(event)
+  bearing.on_sector_scanned(event.radar)
+end, { { filter = "name", name = cfg.FINDER } })
+
+script.on_event(defines.events.on_object_destroyed, function(event)
+  if event.type == defines.target_type.entity then
+    bearing.on_destroyed(event.useful_id)
+  end
+end)
+
+script.on_event(defines.events.on_chunk_generated, storms.on_chunk_generated)
+script.on_event(defines.events.on_gui_selection_state_changed, bearing.on_selection_changed)
 
 ---@param event EventData.on_player_mined_entity|EventData.on_robot_mined_entity
 local function on_mined(event)
@@ -53,13 +84,22 @@ script.on_event(defines.events.on_surface_created, function(event)
   local surface = game.get_surface(event.surface_index)
   if surface and surface.name == cfg.PLANET then
     expedition.spawn_open_stages()
+    story.sync_all()
   end
 end)
 
 script.on_event(defines.events.on_gui_opened, function(event)
   local entity = event.entity
-  if entity and entity.name:sub(1, #cfg.WRECK_PREFIX) == cfg.WRECK_PREFIX then
-    expedition.on_wreck_opened(game.get_player(event.player_index) --[[@as LuaPlayer]], entity, codex)
+  if not entity then
+    return
+  end
+  local player = game.get_player(event.player_index) --[[@as LuaPlayer]]
+  if entity.name:sub(1, #cfg.WRECK_PREFIX) == cfg.WRECK_PREFIX then
+    expedition.on_wreck_opened(player, entity, codex)
+  elseif entity.name == cfg.FINDER then
+    bearing.open_panel(player, entity)
+  elseif story.key_of(entity) then
+    story.on_opened(player, entity)
   end
 end)
 
@@ -73,13 +113,21 @@ script.on_event(defines.events.on_lua_shortcut, function(event)
 end)
 
 script.on_event(defines.events.on_gui_click, codex.on_gui_click)
-script.on_event(defines.events.on_gui_closed, codex.on_gui_closed)
+script.on_event(defines.events.on_gui_closed, function(event)
+  local entity = event.entity
+  if entity and entity.valid and entity.name == cfg.PYLON then
+    bearing.on_pylon_closed(game.get_player(event.player_index) --[[@as LuaPlayer]], entity)
+  else
+    codex.on_gui_closed(event)
+  end
+end)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed, nexus.on_settings_changed)
 
 script.on_event(defines.events.on_research_finished, function(event)
   progress.on_research_finished(event.research)
   expedition.on_research_finished(event.research)
+  story.sync(event.research.force)
 end)
 
 script.on_event(defines.events.on_forces_merged, function(event)
@@ -89,23 +137,40 @@ end)
 script.on_nth_tick(60, function(event)
   summon.step()
   nexus.on_second(event.tick)
+  storms.on_second(event.tick)
 end)
 
 script.on_nth_tick(30, function(event)
   expedition.detector_tick(event.tick)
+  whisper.clear_shades(event.tick)
+end)
+
+script.on_nth_tick(whisper.CHECK_TICKS, function(event)
+  whisper.on_tick(event.tick)
 end)
 
 script.on_init(function()
   state.init()
   expedition.init()
+  bearing.init()
+  storms.init()
+  story.init()
+  whisper.init()
   nexus.on_init()
   progress.on_configuration_changed() -- a game that has discovered Nexus already
   expedition.spawn_open_stages()
+  story.sync_all()
 end)
 
 script.on_configuration_changed(function()
   state.init()
   expedition.init()
+  bearing.init()
+  storms.init()
+  story.init()
+  whisper.init()
+  expedition.sync_bearing()
+  story.sync_all()
   expedition.spawn_open_stages()
   nexus.on_configuration_changed()
   progress.on_configuration_changed()

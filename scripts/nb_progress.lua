@@ -47,7 +47,7 @@ end
 ---@param force LuaForce
 ---@param tech_name string
 ---@return boolean true when this call researched it
-local function research(force, tech_name)
+function M.research(force, tech_name)
   local technology = force.technologies[tech_name]
   if technology.researched then
     return false
@@ -70,7 +70,7 @@ end
 ---@param force LuaForce
 function M.sync_first_circle(force)
   if first_circle_is_scripted() and force.technologies[cfg.PLANET_TECH].researched then
-    research(force, cfg.CIRCLES[1].tech)
+    M.research(force, cfg.CIRCLES[1].tech)
   end
 end
 
@@ -84,7 +84,7 @@ function M.sync_built_stabilizer(force)
   end
   local stabilizer = prototypes.item["shield-stabilizer"].place_result --[[@as LuaEntityPrototype]]
   if surface.count_entities_filtered({ name = stabilizer.name, force = force, limit = 1 }) > 0 then
-    research(force, cfg.CIRCLES[1].tech)
+    M.research(force, cfg.CIRCLES[1].tech)
   end
 end
 
@@ -105,7 +105,7 @@ end
 function M.sync_unlocks(force, announce)
   for index, circle in ipairs(cfg.CIRCLES) do
     if M.circle_done(force.name, index) then
-      if circle.reward and research(force, circle.reward) and announce then
+      if circle.reward and M.research(force, circle.reward) and announce then
         util.say(force, { "nexus-bosses.msg-stage-done-" .. circle.stage }, util.COLORS.good)
         util.play(force, "stage-complete")
       elseif not circle.reward and announce then
@@ -136,15 +136,17 @@ end
 ---@param surface LuaSurface
 ---@param boss_id string
 ---@param position MapPosition
-function M.drop_trophy(force, surface, boss_id, position)
-  local stack = { name = cfg.trophy_name(boss_id), count = 1 }
+---@param quality string|nil the second trophy of a fight in the lair
+function M.drop_trophy(force, surface, boss_id, position, quality)
+  local stack = { name = cfg.trophy_name(boss_id), count = 1, quality = quality }
   local spilled = surface.spill_item_stack({ position = position, stack = stack, enable_looted = true, allow_belts = false })
   local where = spilled[1] and spilled[1].position or position
-  force.add_chart_tag(surface, { position = where, icon = { type = "item", name = stack.name } })
+  force.add_chart_tag(surface, { position = where, icon = { type = "item", name = stack.name, quality = quality } })
   local x, y = util.xy(where)
   util.play(force, "trophy")
-  util.say(force, { "nexus-bosses.msg-trophy", { "item-name." .. stack.name }, math.floor(x), math.floor(y), surface.name },
-    util.COLORS.good)
+  local item = string.format("[item=%s,quality=%s]", stack.name, quality or "normal")
+  util.say(force, { "nexus-bosses.msg-trophy", { "", item, " ", { "item-name." .. stack.name } }, math.floor(x), math.floor(y),
+    surface.name }, util.COLORS.good)
 end
 
 ---After the Storm Guardian falls the storms stay weaker for good (the multiplier lives in Nexus-Threat; without its

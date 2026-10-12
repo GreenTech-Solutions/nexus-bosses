@@ -103,11 +103,22 @@ end
 
 local conditions = proto.nexus_surface_conditions()
 
-for _, id in ipairs(cfg.ORDER) do
+local SHARD_ICON = "__nexus-bosses__/graphics/icons/storm-shard.png"
+
+---A beacon: item, recipe and entity. A charged beacon of the Storm Guardian has shards in its recipe.
+---@param id string boss
+---@param charge integer shards, 0 for a plain beacon
+local function make_beacon(id, charge)
   local boss = cfg.BOSSES[id]
   local circle = cfg.CIRCLES[boss.circle]
-  local name = cfg.beacon_name(id)
-  local order = string.format("y-b[nexus-summon]-%d%d", boss.circle, boss.slot)
+  local name = charge > 0 and cfg.charged_beacon_name(charge) or cfg.beacon_name(id)
+  local order = string.format("y-b[nexus-summon]-%d%d-%d", boss.circle, boss.slot, charge)
+  local localised_name = { "nexus-bosses.beacon-name", { "nexus-bosses.boss-" .. id } }
+  local icons = beacon_icons(id)
+  local ingredients = {
+    { type = "item", name = cfg.ALLOY_ITEM, amount = cost(circle.alloy) },
+    { type = "item", name = cfg.PROCESSOR_ITEM, amount = cost(circle.processors) },
+  }
   -- stage, who comes, where to learn how to fight it, then the rules of every beacon
   local description = {
     "",
@@ -119,14 +130,21 @@ for _, id in ipairs(cfg.ORDER) do
     "\n\n",
     { "nexus-bosses.beacon-rules" },
   }
+  if charge > 0 then
+    localised_name = { "nexus-bosses.beacon-name-charged", { "nexus-bosses.boss-" .. id }, tostring(charge) }
+    icons[#icons + 1] = { icon = SHARD_ICON, icon_size = 64, scale = 0.25, shift = { -7, 7 } }
+    ingredients[#ingredients + 1] = { type = "item", name = cfg.SHARD, amount = charge }
+    table.insert(description, 2, { "nexus-bosses.beacon-charged", tostring(charge), tostring(cfg.CHARGES) })
+    table.insert(description, 3, "\n\n")
+  end
 
   data:extend({
     {
       type = "item",
       name = name,
-      localised_name = { "nexus-bosses.beacon-name", { "nexus-bosses.boss-" .. id } },
+      localised_name = localised_name,
       localised_description = description,
-      icons = beacon_icons(id),
+      icons = icons,
       subgroup = SUBGROUP,
       order = order,
       stack_size = 5,
@@ -139,10 +157,7 @@ for _, id in ipairs(cfg.ORDER) do
       enabled = false,
       energy_required = circle.seconds,
       categories = { "crafting-with-fluid" },
-      ingredients = {
-        { type = "item", name = cfg.ALLOY_ITEM, amount = cost(circle.alloy) },
-        { type = "item", name = cfg.PROCESSOR_ITEM, amount = cost(circle.processors) },
-      },
+      ingredients = ingredients,
       results = { { type = "item", name = name, amount = 1 } },
       surface_conditions = conditions,
       allow_productivity = false,
@@ -152,9 +167,9 @@ for _, id in ipairs(cfg.ORDER) do
     {
       type = "simple-entity-with-owner",
       name = name,
-      localised_name = { "nexus-bosses.beacon-name", { "nexus-bosses.boss-" .. id } },
+      localised_name = localised_name,
       localised_description = description,
-      icons = beacon_icons(id),
+      icons = icons,
       flags = { "placeable-neutral", "player-creation", "not-rotatable", "not-blueprintable" },
       minable = { mining_time = 1, result = name },
       placeable_by = { item = name, count = 1 },
@@ -172,6 +187,26 @@ for _, id in ipairs(cfg.ORDER) do
       order = order,
     },
   })
+end
+
+for _, id in ipairs(cfg.ORDER) do
+  make_beacon(id, 0)
+end
+
+-- A charged shard: dropped by a ruin that a storm woke (scripts/nb_storms.lua). It does not discharge.
+data:extend({
+  {
+    type = "item",
+    name = cfg.SHARD,
+    icon = SHARD_ICON,
+    subgroup = SUBGROUP,
+    order = "y-b[nexus-summon]-z[shard]",
+    stack_size = 10,
+    weight = 20000,
+  },
+})
+for charge = 1, cfg.CHARGES do
+  make_beacon(cfg.CHARGED_BOSS, charge)
 end
 
 -- Trophies: one drops where a boss dies, at every victory. The warp key takes one of each (only while the trials gate

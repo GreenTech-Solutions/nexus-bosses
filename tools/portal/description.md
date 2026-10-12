@@ -1,84 +1,51 @@
-Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus-Updated), is still transmitting. Nine things on it answer the signal. Craft a summon beacon, light it on Nexus, hold it through the countdown, kill what comes and take its trophy. The signal grows from a Whisper to a Chorus to a Convergence; the nine trophies make the warp key, and with it comes Silence: the routes of the warp drive open.
+Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus-Updated), is still transmitting, and nine things on it answer the signal.
 
-You pick the moment. Nothing attacks Nexus on its own: no nests, no random raids. A fight starts when you light a beacon, at the spot you chose, with the defences you built for it.
+Nothing attacks Nexus on its own: no nests, no random raids. You build a summon beacon, choose the ground, raise the defences you think you need, and light it. Then something comes.
 
-Source and bug reports: [GreenTech-Solutions/nexus-bosses](https://github.com/GreenTech-Solutions/nexus-bosses).
+## How it plays
 
-## A trial
+Craft a beacon on Nexus and light it. While the countdown runs, the boss's precursors come for the beacon from the side the boss will take, so you see trouble coming. Hold the beacon, kill what arrives and take its trophy.
 
-1. **Craft a beacon** on Nexus, in an assembling machine: omega alloy and advanced photon processors.
-2. **Light it.** The countdown (60 s by default) runs while someone of your force is on Nexus. Its tooltip tells who comes.
-3. **Hold it.** Twice during the countdown a precursor wave comes for the beacon from the side the boss will come from. Lose the beacon and it is gone; pick it up to call the summon off.
-4. **Kill the boss.** A health bar at the top of the screen follows the fight. The trophy drops where the boss falls and is marked on the map.
+The signal grows in three stages, each with three bosses. Beat a stage and the next one opens. One trophy from every boss makes the warp key, and the key brings Silence: the signal stops, and the routes of the warp drive open.
 
-The three bosses of a stage open the next one: Whisper, Chorus, Convergence. The trophies of all nine make the warp key.
+- **Whisper:** the Arachnid Queen, the Watcher, a Rogue Spidertron.
+- **Chorus:** the Twin Maws, a Colossus, the Plague Hulk.
+- **Convergence:** the Storm Guardian, the Devourer, the Last Commander.
 
-## The bosses
+The game tells you who is coming, and nothing more.
 
-Here you learn only who they are. How to fight each one, what hurts it and what it does when hurt, is in the logs of the expedition (below).
+## Between the fights
 
-### Whisper
+Someone answered the signal before you. The expedition of the *Long Echo* broke up on Nexus, and what it left is scattered across the planet.
 
-- **Arachnid Queen**: the mother of the arachnid hives of Nexus, with leviathans at her side.
-- **Watcher**: a flying saucer of Big Monsters that has watched Nexus longer than anyone has lived on it.
-- **Rogue Spidertron**: a spidertron of Big Monsters that lost its owner long ago and kept its rocket launchers.
+- **The logs.** A wreck of the expedition lies out there for every boss, and only its log tells how that boss fights. A signal detector points the way, and every victory reveals another wreck. You can fight blind, but you probably shouldn't.
+- **The lairs.** Every boss has a lair far from your base. Set up direction finders, wait for their bearings to narrow, and where two of them cross you find it. Call a boss in its own lair and it pays better: a second trophy, better each time, and loot. Every lair holds a dead pylon; wake it with a fine enough trophy and the boss comes weaker.
+- **The storms.** When a storm of Nexus Threat breaks, the old lightning ruins near you wake up. Walk into the lightning to pick up a charged shard. The Storm Guardian feeds on storms, and the shards take some of that storm away from it.
+- **The story.** The expedition's camp shows up when the Whisper starts. Where its commander went is something you only learn after Silence.
 
-### Chorus
-
-- **Twin Maws**: two boss worms that break out of the ground near the beacon and stay there.
-- **Colossus**: a giant of Big Monsters. You learn which one when it shows up.
-- **Plague Hulk**: a crashed ship full of toxic boss biters, guarded by infected turrets.
-
-### Convergence
-
-- **Storm Guardian**: a walking electric giant with an army of its own. It comes with the storms of Nexus Threat.
-- **Devourer**: a demolisher grown beyond any other. It claims the land around the beacon.
-- **Last Commander**: the ultimate boss of Big Monsters, a commander with a cannon and a stream of soldiers.
-
-## The expedition
-
-Someone answered the signal before you. The ship of the Long Echo broke up on Nexus, and its crew kept a log about every boss they met.
-
-- **Nine wrecks**, one for each boss, lie on rings around your spawn: the wrecks of a stage appear when the stage opens, and every stage lies farther out. Open a wreck to find its log.
-- **Signal detector** (a shortcut button): an arrow by your character points to the nearest unfound wreck, and the pings come faster as you close in. It works on Nexus.
-- **Every victory** marks the nearest unfound wreck on the map.
-- **Codex of the signal** (a shortcut button, or opening a wreck): the stages and their bosses, which are defeated, and the logs you found. A boss without its log is only a name.
-
-The logs are not required: every boss can be beaten blind.
+The signal also gets into your head. At night, far from your base, you may see and hear things that are not there, more often the deeper you go. A player setting turns it down or off.
 
 ## Rewards
 
-- **A trophy from every boss**, every time. One of each makes the warp key.
-- **Whisper silenced:** laser and electric damage +20 %.
-- **Chorus silenced:** bullet, railgun, rocket and cannon damage +20 %.
-- **Storm Guardian dead:** half as much lightning in the storms of Nexus, for good.
-- **The warp key:** researches Silence, which opens the routes of the warp drive (the Oort cloud and Sol).
+- A trophy from every boss, every time.
+- Each finished stage sharpens the weapons the next one needs.
+- The Storm Guardian's death leaves the storms of Nexus weaker for good.
+- Silence opens the routes of the warp drive.
 
-## Sound and look
-
-- Every event has its own sound: the beacon calling, the countdown, the precursors, the arrival of each boss, the nests, the spores, the Storm Guardian feeding on a storm, the Devourer diving, the victory, a finished stage, Silence, the ping of the detector.
-- Music plays while a boss lives. With [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) installed, its track FIELDS plays on Nexus as well.
-- One emblem of the signal in four states marks the technologies; a summon circle burns under a lit beacon in the colour of its stage.
-- Authors and licenses of the sounds, music and icons: [CREDITS.md](https://github.com/GreenTech-Solutions/nexus-bosses/blob/master/CREDITS.md).
-
-## Settings
-
-- **Startup:** boss health, beacon cost, whether the trials gate the warp drive.
-- **Map:** countdown length; "Big Monsters only through the beacons" (off by default) stops Big Monsters' random events everywhere, so that its bosses come only from the beacons.
+Every trial has its own sounds and fight music, and the technologies carry one emblem of the signal in four states. With [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) installed, its track *FIELDS* plays on Nexus.
 
 ## Good to know
 
-- **Nexus has no ordinary nests or worms.** Its enemies come only from the beacons. Added to a running game, the mod removes the enemies already there. Enemy evolution on Nexus is fixed at 0.99.
+- **Nexus has no ordinary nests or worms**: its enemies come only from the beacons. Added to a running game, the mod clears the enemies already there.
 - **One trial at a time** on the whole server.
-- **The bosses of Big Monsters need explored land.** Big Monsters places them by walking out from your spawn into unexplored land. If it finds none, the beacon comes back with a message; explore around the base and try again.
-- **Without razi-protocol** the warp drive of Nexus also leads to the shattered planet, so Silence opens that route too. Turn the startup setting off if you do not want that.
-- **Atomic soldiers:** the mod sets Big Monsters' "allow nuker" to off by default, so the Last Commander's soldiers carry no atomic rockets. You can turn it back on.
+- **The bosses of Big Monsters need explored land** around your spawn. If there is none, the beacon comes back with a message.
+- **Settings:** boss health, beacon cost, countdown length, whether the trials gate the warp drive, and whether Big Monsters' bosses come only from the beacons.
+- **Without razi-protocol** Silence also opens the route to the shattered planet; the gate can be turned off in the startup settings.
+- **Big Monsters' "allow nuker" is off by default** with this mod, so the Last Commander's soldiers carry no atomic rockets. You can turn it back on.
 - Administrators can stop a stuck trial with `/nexus-bosses-abort`.
 
 ## Requirements
 
-Nexus Extended Promethium Endgame with Nexus Threat, Big Monsters, Toxic biters, Arachnids enemy and Electric flying enemies. The bosses are built from their creatures. razi-protocol is optional.
+Nexus Extended Promethium Endgame with Nexus Threat, Big Monsters, Toxic biters, Arachnids enemy and Electric flying enemies: the bosses are built from their creatures. razi-protocol is optional.
 
-## Credits
-
-MFerrari for Big Monsters and the enemy mods the bosses come from; Karu_Kiruna for Nexus.
+Source and bug reports: [GreenTech-Solutions/nexus-bosses](https://github.com/GreenTech-Solutions/nexus-bosses). Thanks to MFerrari for Big Monsters and the enemy mods, and to Karu_Kiruna for Nexus. Sounds, music and icons: [CREDITS.md](https://github.com/GreenTech-Solutions/nexus-bosses/blob/master/CREDITS.md).

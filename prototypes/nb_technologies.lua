@@ -4,6 +4,8 @@
 --                      scripts/nb_progress.lua researches the stage once planet-discovery-nexus is researched
 --   nexus-chorus,      scripted: researched when the three bosses of the previous stage are dead. Each one also
 --   nexus-convergence  sharpens the weapons the next stage needs
+--   nexus-signal-bearing  scripted: researched when the first log of the expedition is found (scripts/nb_bearing.lua);
+--                      unlocks the direction finder
 --   nexus-silence      crafting the warp key (one trophy of each boss); it opens the routes of the warp drive
 --                      (prototypes/nb_nexus.lua). Not made when the startup setting nexus-bosses-gate-warp-drive is off
 
@@ -44,6 +46,11 @@ for index, circle in ipairs(cfg.CIRCLES) do
   local effects = {}
   for _, id in ipairs(circle.bosses) do
     effects[#effects + 1] = { type = "unlock-recipe", recipe = cfg.beacon_name(id) }
+    if id == cfg.CHARGED_BOSS then
+      for charge = 1, cfg.CHARGES do
+        effects[#effects + 1] = { type = "unlock-recipe", recipe = cfg.charged_beacon_name(charge) }
+      end
+    end
   end
   for _, bonus in ipairs(BONUSES[index] or {}) do
     effects[#effects + 1] = bonus
@@ -81,6 +88,22 @@ for index, circle in ipairs(cfg.CIRCLES) do
     },
   })
 end
+
+data:extend({
+  {
+    type = "technology",
+    name = cfg.BEARING_TECH,
+    icons = {
+      { icon = emblem("whisper"), icon_size = 256 },
+      { icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 1, shift = { 40, 40 }, tint = { r = 0.75, g = 0.55, b = 1 } },
+    },
+    essential = false,
+    prerequisites = { cfg.CIRCLES[1].tech },
+    research_trigger = { type = "scripted", trigger_description = { "nexus-bosses.trigger-bearing" } },
+    effects = { { type = "unlock-recipe", recipe = cfg.FINDER } },
+    order = "fa-b[nexus-signal]-1b",
+  },
+})
 
 if GATED then
   data:extend({
