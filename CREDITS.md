@@ -1,7 +1,7 @@
 # Credits
 
-The code of Nexus Bosses is GPLv3 ([LICENSE](LICENSE)). The assets below are separate works under their own licenses;
-files were converted to OGG, trimmed, resized or recoloured where noted.
+The code of Nexus Bosses is GPLv3 ([LICENSE](LICENSE)). The assets below are separate works under their own licenses,
+not under the GPL; files were converted to OGG, trimmed, resized or recoloured where noted.
 
 ## Sounds
 
@@ -30,8 +30,8 @@ files were converted to OGG, trimmed, resized or recoloured where noted.
 
 | File | Source | Author | License |
 | --- | --- | --- | --- |
-| `graphics/icons/trophy-arachnid-queen.png`, `trophy-colossus.png`, `trophy-storm-guardian.png`, `trophy-twin-maws.png`, `warp-key.png` (recoloured) | Loot Icons | the mod author's licensed asset packs | used with permission of the license holder |
-| `graphics/icons/trophy-watcher.png`, `trophy-rogue-spidertron.png` | Engineering Craft Icons | the mod author's licensed asset packs | used with permission of the license holder |
+| `graphics/icons/trophy-arachnid-queen.png`, `trophy-colossus.png`, `trophy-storm-guardian.png`, `trophy-twin-maws.png`, `warp-key.png` (recoloured from the water element sphere) | Loot Icons ([Unity Asset Store](https://assetstore.unity.com/publishers/13229)) | © REXARD | Standard Unity Asset Store EULA, licensed to the mod author. **Not covered by the GPL**: not for reuse or redistribution outside this mod |
+| `graphics/icons/trophy-watcher.png`, `trophy-rogue-spidertron.png` | Engineering Craft Icons ([Unity Asset Store](https://assetstore.unity.com/publishers/13229)) | © REXARD | Standard Unity Asset Store EULA, licensed to the mod author. **Not covered by the GPL**: not for reuse or redistribution outside this mod |
 | `graphics/icons/trophy-plague-hulk.png`, `trophy-devourer.png` | [unused-renders](https://github.com/malcolmriley/unused-renders) | Malcolm Riley | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | `graphics/icons/trophy-last-commander.png` (recoloured) | [rank-3](https://game-icons.net/1x1/skoll/rank-3.html) | Skoll, [game-icons.net](https://game-icons.net) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `graphics/technology/tech-*.png` (combined, recoloured) | [4 summoning circles](https://opengameart.org/content/4-summoning-circles); [lightning-dome](https://game-icons.net/1x1/delapouite/lightning-dome.html) | Luke.RUSTLTD; Delapouite, [game-icons.net](https://game-icons.net) | CC0; [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
