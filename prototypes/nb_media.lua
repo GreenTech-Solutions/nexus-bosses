@@ -1,8 +1,8 @@
 -- Sounds, music and effect sprites. Authors and licenses: CREDITS.md.
 --   sound          nexus-bosses-<name>, played to a force by scripts/nb_util.lua (force.play_sound)
 --   ambient-sound  nexus-bosses-fight-*: script tracks, the music of a fight (force.play_music);
---                  nexus-bosses-signal: the Nexus music of TFMG-music, only with that mod (its author asks for it to be
---                  used as a dependency)
+--                  nexus-bosses-signal: the Nexus music, from TFMG-music (a required dependency: its author asks for the
+--                  music to be used as a dependency, not copied)
 --   animation      nexus-bosses-summon-circle under a lit beacon; sprite nexus-bosses-spark on a feeding Storm Guardian;
 --                  sprite nexus-bosses-vignette: the edges of the screen darken in a hallucination (scripts/nb_whisper.lua)
 
@@ -49,15 +49,13 @@ for _, track in ipairs({ "fight-urgent", "fight-pulse" }) do
   }
 end
 
-if mods["TFMG-music"] then
-  prototypes[#prototypes + 1] = {
-    type = "ambient-sound",
-    name = "nexus-bosses-signal",
-    track_type = "main-track",
-    planets = { cfg.PLANET },
-    sound = { filename = "__TFMG-music__/space/FIELDS.ogg", volume = 0.5 },
-  }
-end
+prototypes[#prototypes + 1] = {
+  type = "ambient-sound",
+  name = "nexus-bosses-signal",
+  track_type = "main-track",
+  planets = { cfg.PLANET },
+  sound = { filename = "__TFMG-music__/space/FIELDS.ogg", volume = 0.5 },
+}
 
 prototypes[#prototypes + 1] = {
   type = "animation",

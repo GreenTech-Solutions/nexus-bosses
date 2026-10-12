@@ -46,10 +46,19 @@ local function fill_expedition(page, force_name)
     paragraph(page, { "nexus-bosses.codex-no-camp" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
   end
   page.add({ type = "line" })
-  if story.is_found(force_name, "last_stand") then
+  local last_stand = story.is_found(force_name, "last_stand")
+  if last_stand then
     paragraph(page, { "nexus-bosses.log-last-stand" })
   else
     paragraph(page, { "nexus-bosses.codex-no-last-stand" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+  end
+  -- the vault can be opened before the last stand is found: its log shows once found, its hint after the last stand
+  if story.is_found(force_name, "vault") then
+    page.add({ type = "line" })
+    paragraph(page, { "nexus-bosses.log-vault" })
+  elseif last_stand then
+    page.add({ type = "line" })
+    paragraph(page, { "nexus-bosses.codex-no-vault" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
   end
 end
 

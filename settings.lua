@@ -41,6 +41,13 @@ data:extend({
     order = "b",
   },
   {
+    type = "bool-setting",
+    name = "nexus-bosses-skip-glyph-lock",
+    setting_type = "runtime-global",
+    default_value = false,
+    order = "c",
+  },
+  {
     type = "string-setting",
     name = "nexus-bosses-hallucinations",
     setting_type = "runtime-per-user",

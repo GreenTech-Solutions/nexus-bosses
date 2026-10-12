@@ -53,6 +53,23 @@ M.CAMP_RING = { 100, 150 }
 M.LAST_STAND = "nexus-expedition-last-stand"
 M.LAST_STAND_RING = { 1150, 1250 }
 M.BADGE = "nexus-bosses-commander-badge"
+
+-- The vault of the builders (2.5): a glyph lock at a vault ruin of Fulgora on Nexus, opened after Silence; a hatch leads
+-- down to a surface of its own with a few dark halls, and the last one holds the treasure
+M.VAULT_RUIN = "fulgoran-ruin-vault"
+M.VAULT_RING = { 250, 1000 }
+M.GLYPHS = 8
+M.GLYPH_PREFIX = "nexus-bosses-glyph-"
+M.CODE_LENGTH = 4
+M.OBELISK = "nexus-bosses-obelisk"
+M.CONSOLE = "nexus-bosses-glyph-console"
+M.HATCH = "nexus-bosses-vault-hatch"
+M.STAIRS = "nexus-bosses-vault-stairs"
+M.RELIQUARY = "nexus-bosses-reliquary"
+M.RELIC = "nexus-bosses-builders-relic"
+M.ECHO_TECH = "nexus-builders-echo"
+M.VAULT_SURFACE = "nexus-bosses-vault"
+M.VAULT_TRACK = "nexus-bosses-vault"
 M.SHORTCUT_DETECTOR = "nexus-bosses-detector"
 M.SHORTCUT_CODEX = "nexus-bosses-codex"
 
@@ -242,6 +259,11 @@ M.REQUIRED = {
   { "radar", "radar", "base" },
   { "container", "crash-site-spaceship", "base" },
   { "container", "crash-site-spaceship-wreck-big-1", "base" },
+  { "container", "crash-site-chest-1", "base" },
+  { "constant-combinator", "constant-combinator", "base" },
+  { "simple-entity", "fulgoran-ruin-small", "space-age" },
+  { "simple-entity", "fulgoran-ruin-medium", "space-age" },
+  { "simple-entity", "fulgoran-ruin-vault", "space-age" },
 }
 
 ---@param id string

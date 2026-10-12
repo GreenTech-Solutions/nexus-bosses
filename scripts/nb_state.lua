@@ -5,8 +5,8 @@
 --   storage.ignore_presence test switch: the countdown runs without a player on Nexus
 --   storage.storm_weakened  the Storm Guardian has fallen once
 --   storage.bm_excluded     surfaces taken out of Big Monsters' list by the map setting (scripts/nb_bm.lua)
---   storage.expedition, storage.bearing, storage.storms, storage.story: scripts/nb_expedition.lua, nb_bearing.lua,
---                           nb_storms.lua, nb_story.lua
+--   storage.expedition, storage.bearing, storage.storms, storage.story, storage.vault: scripts/nb_expedition.lua,
+--                           nb_bearing.lua, nb_storms.lua, nb_story.lua, nb_vault.lua
 
 local cfg = require("lib.nb_data")
 local summon = require("scripts.nb_summon")
@@ -14,6 +14,7 @@ local expedition = require("scripts.nb_expedition")
 local bearing = require("scripts.nb_bearing")
 local storms = require("scripts.nb_storms")
 local story = require("scripts.nb_story")
+local vault = require("scripts.nb_vault")
 
 local M = {}
 
@@ -36,6 +37,7 @@ function M.snapshot()
     bearing = bearing.snapshot(),
     storms = storms.snapshot(),
     story = story.snapshot(),
+    vault = vault.snapshot(),
     defeated = {},
   }
   for force_name, record in pairs(storage.progress) do

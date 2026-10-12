@@ -15,6 +15,7 @@ local bearing = require("scripts.nb_bearing")
 local storms = require("scripts.nb_storms")
 local story = require("scripts.nb_story")
 local whisper = require("scripts.nb_whisper")
+local vault = require("scripts.nb_vault")
 require("scripts.nb_interface")
 
 local beacon_filters = {}
@@ -85,6 +86,7 @@ script.on_event(defines.events.on_surface_created, function(event)
   if surface and surface.name == cfg.PLANET then
     expedition.spawn_open_stages()
     story.sync_all()
+    vault.sync_all()
   end
 end)
 
@@ -100,6 +102,12 @@ script.on_event(defines.events.on_gui_opened, function(event)
     bearing.open_panel(player, entity)
   elseif story.key_of(entity) then
     story.on_opened(player, entity)
+  elseif entity.name == cfg.HATCH then
+    vault.descend(player)
+  elseif entity.name == cfg.STAIRS then
+    vault.ascend(player)
+  elseif entity.name == cfg.RELIQUARY then
+    vault.on_reliquary_opened(player)
   end
 end)
 
@@ -117,17 +125,28 @@ script.on_event(defines.events.on_gui_closed, function(event)
   local entity = event.entity
   if entity and entity.valid and entity.name == cfg.PYLON then
     bearing.on_pylon_closed(game.get_player(event.player_index) --[[@as LuaPlayer]], entity)
+  elseif entity and entity.valid and entity.name == cfg.CONSOLE then
+    vault.on_console_closed(game.get_player(event.player_index) --[[@as LuaPlayer]])
   else
     codex.on_gui_closed(event)
   end
 end)
 
-script.on_event(defines.events.on_runtime_mod_setting_changed, nexus.on_settings_changed)
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
+  nexus.on_settings_changed(event)
+  vault.on_settings_changed(event)
+end)
+
+script.on_event(defines.events.on_player_respawned, function(event)
+  vault.on_respawned(game.get_player(event.player_index) --[[@as LuaPlayer]])
+end)
 
 script.on_event(defines.events.on_research_finished, function(event)
   progress.on_research_finished(event.research)
   expedition.on_research_finished(event.research)
   story.sync(event.research.force)
+  vault.sync(event.research.force)
+  vault.on_research_finished(event.research)
 end)
 
 script.on_event(defines.events.on_forces_merged, function(event)
@@ -138,6 +157,7 @@ script.on_nth_tick(60, function(event)
   summon.step()
   nexus.on_second(event.tick)
   storms.on_second(event.tick)
+  vault.on_second(event.tick)
 end)
 
 script.on_nth_tick(30, function(event)
@@ -156,10 +176,12 @@ script.on_init(function()
   storms.init()
   story.init()
   whisper.init()
+  vault.init()
   nexus.on_init()
   progress.on_configuration_changed() -- a game that has discovered Nexus already
   expedition.spawn_open_stages()
   story.sync_all()
+  vault.sync_all()
 end)
 
 script.on_configuration_changed(function()
@@ -169,8 +191,10 @@ script.on_configuration_changed(function()
   storms.init()
   story.init()
   whisper.init()
+  vault.init()
   expedition.sync_bearing()
   story.sync_all()
+  vault.sync_all()
   expedition.spawn_open_stages()
   nexus.on_configuration_changed()
   progress.on_configuration_changed()
