@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.3.0
+Date: 2026-10-12
+  Features:
+    - [bearing] direction finders take bearings on the lairs of the bosses, and a victory in a lair drops a second trophy of a better quality and loot; storms of Nexus Threat wake the attractor ruins, and their charged shards make charged beacons that keep the storm from the Storm Guardian
+    - [story] pylons of suppression in the lairs weaken the boss by the quality of the trophy that wakes them; the camp of the Long Echo with its first log opens with the Whisper, the last stand of its commander with Silence; hallucinations of the Whisper at night far from the base, with a player setting; a direction finder tells when its bearing runs alongside the others and never crosses them
+---------------------------------------------------------------------------------------------------
 Version: 2.2.0
 Date: 2026-10-12
   Features:
