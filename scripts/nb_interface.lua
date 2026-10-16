@@ -1,4 +1,9 @@
--- Remote interface "nexus-bosses", for tests and debugging.
+-- Remote interface "nexus-bosses".
+-- The public API for other mods is api_version(), get_state().defeated and open_codex(); its contract and the promise of
+-- compatibility are in README.md, "Remote API". Do not change them without a major version and a new API_VERSION; new
+-- fields and new optional arguments may come in any version. Everything else here is for tests and debugging and may
+-- change in any version.
+--   api_version()                      the version of the public API: API_VERSION
 --   get_state()                        the active summon and the victories per force
 --   set_ignore_player_presence(bool)   the countdown runs without a player on Nexus (a headless test has none);
 --                                      the bosses of Big Monsters still need one
@@ -23,7 +28,13 @@ local storms = require("scripts.nb_storms")
 local story = require("scripts.nb_story")
 local whisper = require("scripts.nb_whisper")
 
+-- The version of the public API. It grows only when the public part breaks, together with a major version of the mod.
+local API_VERSION = 1
+
 remote.add_interface("nexus-bosses", {
+  api_version = function()
+    return API_VERSION
+  end,
   get_state = state.snapshot,
   set_ignore_player_presence = function(value)
     assert(type(value) == "boolean", "nexus-bosses.set_ignore_player_presence: expected a boolean")
