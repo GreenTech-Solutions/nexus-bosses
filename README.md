@@ -48,7 +48,7 @@ The other fields of `get_state()` (`summon`, `expedition`, `bearing`, `storms`, 
 one of the nine ids, `"expedition"` for the page of the expedition, or nil for the first boss. It changes no game state,
 but it is not read-only: it recreates the Codex window of that player and makes it `player.opened`, so the window the
 player had opened before gets `on_gui_closed`. Call it on a click of the player, not from a tick. A player that does not
-exist or an unknown `boss_id` raises an error.
+exist or an unknown `boss_id` raises an error before any window changes.
 
 Boss ids, in the order of the circles: `arachnid-queen`, `watcher`, `rogue-spidertron` (Whisper); `twin-maws`,
 `colossus`, `plague-hulk` (Chorus); `storm-guardian`, `devourer`, `last-commander` (Convergence). Their names are the

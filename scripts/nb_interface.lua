@@ -50,7 +50,10 @@ remote.add_interface("nexus-bosses", {
     expedition.toggle_detector(assert(game.get_player(player_index), "nexus-bosses.toggle_detector: no such player"))
   end,
   open_codex = function(player_index, boss_id)
-    codex.open(assert(game.get_player(player_index), "nexus-bosses.open_codex: no such player"), boss_id)
+    local player = assert(game.get_player(player_index), "nexus-bosses.open_codex: no such player")
+    -- checked before the window is built: an unknown id would leave it half filled
+    assert(boss_id == nil or boss_id == "expedition" or cfg.BOSSES[boss_id], "nexus-bosses.open_codex: no such boss")
+    codex.open(player, boss_id)
   end,
   find_lair = function(force_name, boss_id)
     return bearing.find_lair(force_name, boss_id)
