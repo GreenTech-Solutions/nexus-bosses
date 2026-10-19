@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.5.0
+Date: 2026-10-19
+  Features:
+    - [api] a stable remote API for other mods: api_version(), get_state().defeated and open_codex
+  Bugfixes:
+    - [codex] an unknown boss id in open_codex raises its error before the Codex window is built, instead of leaving it half filled
+---------------------------------------------------------------------------------------------------
 Version: 2.4.0
 Date: 2026-10-12
   Features:
