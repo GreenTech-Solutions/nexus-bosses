@@ -1,4 +1,4 @@
-Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus-Updated), is still transmitting, and nine things on it answer the signal.
+Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus), is still transmitting, and nine things on it answer the signal.
 
 Nothing attacks Nexus on its own: no nests, no random raids. You build a summon beacon, choose the ground, raise the defences you think you need, and light it. Then something comes.
 
