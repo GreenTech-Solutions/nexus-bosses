@@ -1,12 +1,12 @@
 # Nexus Bosses
 
-Nine bosses on Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus-Updated),
+Nine bosses on Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus),
 for Factorio 2.1. You call them yourself: light a summon beacon on Nexus, hold it through the countdown and its precursor
 waves, kill the boss and take its trophy. The signal grows over three stages (Whisper, Chorus, Convergence); the nine trophies make
 the warp key, which researches Silence and opens the routes of the warp drive. The mod portal page ([Nexus Bosses](https://mods.factorio.com/mod/nexus-bosses)) is
 `tools/portal/description.md`. Bug reports: the issues of this repository.
 
-Requires Nexus-Updated (with Nexus-Threat-Updated and Nexus-Graphics-Updated), Big Monsters, Toxic Biters, Arachnids
+Requires Nexus 1.3.6 or newer (with Nexus-Threat and Nexus-Graphics), Big Monsters, Toxic Biters, Arachnids
 enemy, Electric flying enemies and TFMG: Music (the music of Nexus); razi-protocol is optional.
 
 ## Code

@@ -11,14 +11,7 @@ local proto = require("prototypes.nb_util")
 local COST = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
 -- Nexus-Threat makes the subgroup only while its startup setting nexus-threat-activation is on
 local SUBGROUP = data.raw["item-subgroup"]["omega-threat"] and "omega-threat" or "other"
-local GRAPHICS
-if mods["Nexus-Graphics-Updated"] then
-  GRAPHICS = "__Nexus-Graphics-Updated__/graphics/"
-elseif mods["Nexus-Graphics"] then
-  GRAPHICS = "__Nexus-Graphics__/graphics/"
-else
-  error("nexus-bosses: needs Nexus-Graphics-Updated or Nexus-Graphics")
-end
+local GRAPHICS = "__Nexus-Graphics__/graphics/"
 
 -- antenna tint by circle: blue, amber, red
 local TINTS = {
