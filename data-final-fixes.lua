@@ -1,21 +1,11 @@
--- Everything runs in data-final-fixes: the copies of enemy prototypes must see what razi-protocol (an optional
--- dependency, so it loads before) and the others have done to the originals.
-
-local cfg = require("lib.nb_data")
-
-for _, required in ipairs(cfg.REQUIRED) do
-  local group = data.raw[required[1]]
-  if not (group and group[required[2]]) then
-    error("nexus-bosses: the " .. required[1] .. " " .. required[2] .. " of " .. required[3] ..
-      " is missing. Update " .. required[3] .. " or report it at https://github.com/GreenTech-Solutions/nexus-bosses/issues")
-  end
+-- Nexus lists nexus-bosses as an optional dependency, so nexus-bosses loads before Nexus and before razi-protocol, which
+-- requires Nexus. Its prototypes must see their final enemies and technologies, so razi-protocol makes them at the end
+-- of its own data-final-fixes and says so with the mod-data "nexus-bosses-late". Without it they are made here, before
+-- the data-final-fixes of Nexus: with Krastorio 2 Spaced Out, Nexus redefines the warp drive there and the trials gate
+-- none of its routes.
+local late = data.raw["mod-data"] and data.raw["mod-data"]["nexus-bosses-late"]
+if late then
+  log("[nexus-bosses] the prototypes are made at the end of the data-final-fixes of " .. tostring(late.data.mod))
+  return
 end
-
-require("prototypes.nb_nexus")
-require("prototypes.nb_enemies")
-require("prototypes.nb_items")
-require("prototypes.nb_technologies")
-require("prototypes.nb_media")
-require("prototypes.nb_expedition")
-require("prototypes.nb_bearing")
-require("prototypes.nb_vault")
+require("prototypes.init")
