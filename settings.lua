@@ -34,10 +34,11 @@ data:extend({
     order = "a",
   },
   {
-    type = "bool-setting",
-    name = "nexus-bosses-big-monsters-beacons-only",
+    type = "string-setting",
+    name = "nexus-bosses-big-monsters-random-events",
     setting_type = "runtime-global",
-    default_value = false,
+    default_value = "auto",
+    allowed_values = { "auto", "on", "off" },
     order = "b",
   },
   {
