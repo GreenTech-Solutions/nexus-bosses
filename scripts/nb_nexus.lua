@@ -49,7 +49,7 @@ end
 ---@param event EventData.on_runtime_mod_setting_changed
 function M.on_settings_changed(event)
   -- Big Monsters handles the event first (a dependency) and resets its list of planets
-  if event.setting == "nexus-bosses-big-monsters-beacons-only" or event.setting:sub(1, 3) == "bm-" then
+  if event.setting == "nexus-bosses-big-monsters-random-events" or event.setting:sub(1, 3) == "bm-" then
     bm.apply_planets_setting()
   end
 end
