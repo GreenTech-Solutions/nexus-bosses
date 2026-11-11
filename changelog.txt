@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.5.3
+Date: 2026-11-11
+  Bugfixes:
+    - Big Monsters' random events are a map setting, auto by default: off, and on with the Hard and Nightmare difficulty of razi-protocol; its silo attacks are off by default
+---------------------------------------------------------------------------------------------------
 Version: 2.5.2
 Date: 2026-11-11
   Bugfixes:
