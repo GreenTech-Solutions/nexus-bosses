@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.5.4
+Date: 2026-11-11
+  Bugfixes:
+    - started saves load again; the migration of 2.5.3 changed a map setting of Big Monsters, which only Big Monsters may change
+---------------------------------------------------------------------------------------------------
 Version: 2.5.3
 Date: 2026-11-11
   Bugfixes:
