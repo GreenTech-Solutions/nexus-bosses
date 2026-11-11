@@ -1,5 +1,5 @@
 -- Nexus without ordinary enemies, and the routes of the warp drive behind the trials.
--- Runs in data-final-fixes after razi-protocol (optional dependency), which is the mod that puts the nests there.
+-- Runs after the data-final-fixes of razi-protocol (prototypes/init.lua), which is the mod that puts the nests there.
 
 local cfg = require("lib.nb_data")
 
