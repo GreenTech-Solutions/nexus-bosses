@@ -37,8 +37,8 @@ data:extend({
     type = "string-setting",
     name = "nexus-bosses-big-monsters-random-events",
     setting_type = "runtime-global",
-    default_value = "auto",
-    allowed_values = { "auto", "on", "off" },
+    default_value = "off",
+    allowed_values = { "off", "on" },
     order = "b",
   },
   {
