@@ -12,8 +12,8 @@
 --
 -- Its random events go to the surfaces in its list. Nexus is never in it. The map setting
 -- "nexus-bosses-big-monsters-random-events" takes the others out while the events are off, so that its bosses come
--- only from the beacons, and puts back the ones it took when they are on. Auto, the default, is off, and on with the
--- Hard and Nightmare difficulty of razi-protocol (its startup setting razi-difficulty-preset).
+-- only from the beacons, and puts back the ones it took when they are on. Off is the default on every difficulty: its
+-- early bosses are too strong for a start even on Nightmare. A save that still has the old value "auto" gets "off".
 
 local cfg = require("lib.nb_data")
 local records = require("scripts.nb_records")
@@ -46,18 +46,10 @@ local function bm_surface(name)
   return sa ~= nil and sa.value == true and (name == "fulgora" or name == "gleba" or name == "vulcanus")
 end
 
----The difficulties of razi-protocol on which "auto" turns the random events on.
-local EVENTS_DIFFICULTIES = { hard = true, nightmare = true }
-
 ---Whether Big Monsters' random events are off by the map setting.
 ---@return boolean
 local function events_off()
-  local mode = settings.global["nexus-bosses-big-monsters-random-events"].value
-  if mode == "auto" then
-    local difficulty = settings.startup["razi-difficulty-preset"]
-    return not (difficulty and EVENTS_DIFFICULTIES[difficulty.value])
-  end
-  return mode == "off"
+  return settings.global["nexus-bosses-big-monsters-random-events"].value ~= "on"
 end
 
 ---Applies the map setting: Big Monsters' random events nowhere, or back where they were.
