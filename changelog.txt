@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.5.5
+Date: 2026-11-12
+  Bugfixes:
+    - Big Monsters' random events are off by default on every difficulty; its early bosses were too strong for a start even on Nightmare
+---------------------------------------------------------------------------------------------------
 Version: 2.5.4
 Date: 2026-11-11
   Bugfixes:
