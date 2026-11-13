@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.5.6
+Date: 2026-11-13
+  Bugfixes:
+    - Big Monsters no longer attacks planets outside the list of its random events: its rocket silo attacks are off for good, and its monsters found elsewhere are removed ([#15](https://github.com/GreenTech-Solutions/nexus-bosses/issues/15))
+---------------------------------------------------------------------------------------------------
 Version: 2.5.5
 Date: 2026-11-12
   Bugfixes:
