@@ -25,6 +25,20 @@ jobs:
       - name: Check the mod
         uses: GreenTech-Solutions/factorio-mod-tools@v1
 
+  load:
+    name: load in Factorio
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # This action reference becomes available after factorio-mod-tools releases the load action on v1.
+      - name: Load the mod
+        uses: GreenTech-Solutions/factorio-mod-tools/load@v1
+        with:
+          factorio-username: ${{ vars.FACTORIO_USERNAME }}
+          factorio-token: ${{ secrets.FACTORIO_PLAYER_TOKEN }}
+
   release:
     name: release
     needs: check
