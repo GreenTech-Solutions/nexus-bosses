@@ -1,5 +1,5 @@
 -- The planet: enemy evolution pinned on the Nexus surface, the enemies of an older game removed, and Big Monsters'
--- list of surfaces.
+-- list of surfaces with its monsters kept inside it.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -43,6 +43,8 @@ end
 
 function M.on_configuration_changed()
   bm.apply_planets_setting()
+  -- monsters that came before this version, e.g. from an attack on a rocket silo
+  bm.sweep(bm.sweep_names())
   M.refresh_evolution()
 end
 
@@ -51,6 +53,7 @@ function M.on_settings_changed(event)
   -- Big Monsters handles the event first (a dependency) and resets its list of planets
   if event.setting == "nexus-bosses-big-monsters-random-events" or event.setting:sub(1, 3) == "bm-" then
     bm.apply_planets_setting()
+    bm.sweep(bm.sweep_names())
   end
 end
 
@@ -68,6 +71,7 @@ function M.on_second(tick)
   if tick % cfg.EVOLUTION_REFRESH_TICKS == 0 then
     M.refresh_evolution()
   end
+  bm.on_second()
 end
 
 return M
