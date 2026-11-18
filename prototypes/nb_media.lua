@@ -1,6 +1,6 @@
 -- Sounds, music and effect sprites. Authors and licenses: CREDITS.md.
 --   sound          nexus-bosses-<name>, played to a force by scripts/nb_util.lua (force.play_sound)
---   ambient-sound  nexus-bosses-fight-*: script tracks, the music of a fight (force.play_music);
+--   ambient-sound  nexus-bosses-fight-* and nexus-bosses-hallucination: script tracks (force/player.play_music);
 --                  nexus-bosses-signal and nexus-bosses-signal-*: the music of Nexus, from TFMG-music (a required
 --                  dependency: its author asks for the music to be used as a dependency, not copied)
 --   animation      nexus-bosses-summon-circle under a lit beacon; sprite nexus-bosses-spark on a feeding Storm Guardian;
@@ -81,6 +81,13 @@ for _, track in ipairs({
     sound = { filename = "__TFMG-music__/arrival/" .. track[1] .. ".ogg", volume = 0.5 },
   }
 end
+
+prototypes[#prototypes + 1] = {
+  type = "ambient-sound",
+  name = "nexus-bosses-hallucination",
+  track_type = "script-track",
+  sound = { filename = "__TFMG-music__/arrival/Clock-Interlude.ogg", volume = 0.5 },
+}
 
 prototypes[#prototypes + 1] = {
   type = "animation",

@@ -26,6 +26,7 @@ not under the GPL; files were converted to OGG, trimmed, resized or recoloured w
 | --- | --- | --- | --- |
 | `music/fight-urgent.ogg`, `music/fight-pulse.ogg` | [Dark Sci-Fi Audio Pack](https://opengameart.org/content/dark-sci-fi-audio-pack) | SRG774 | CC0 |
 | Nexus music and the music of the vault (from the mod TFMG-music, a required dependency; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
+| Clock-Interlude (hallucinations, from the mod TFMG-music; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
 
 ## Graphics
 

@@ -4,6 +4,7 @@
 -- of the screen darkening. The deeper the stage, the more often; after Silence, nothing. Everything is for that player
 -- only, except the shade, a real neutral unit that others nearby would see too. The per-player setting
 -- nexus-bosses-hallucinations turns it down or off.
+-- Average intervals by stage are 10 minutes on Whisper and 5 minutes on Chorus and Convergence.
 --
 --   storage.whisper.next     [player_index] = tick of the next hallucination
 --   storage.whisper.shades   [unit_number] = {entity, until}
@@ -17,7 +18,7 @@ local M = {}
 
 M.CHECK_TICKS = 300
 -- seconds between hallucinations by stage (Whisper, Chorus, Convergence)
-local INTERVALS = { 300, 120, 60 }
+local INTERVALS = { 600, 300, 300 }
 local RARE_FACTOR = 2
 local LINES = 3 -- whisper-<stage>-1..LINES in the locale
 local NIGHT = 0.5 -- darkness of the surface
@@ -148,6 +149,9 @@ end
 ---@param kind integer|nil 1 shade, 2 whisper, 3 false alarm, 4 vignette and whisper; nil: any of them
 local function hallucinate(player, surface, stage, kind)
   kind = kind or math.random(4)
+  if kind == 1 or kind == 3 then
+    player.play_music({ name = "nexus-bosses-hallucination", fade_in_duration = 120, fade_out_duration = 120 })
+  end
   if kind == 1 then
     shade(player, surface, stage)
     vignette(player)
