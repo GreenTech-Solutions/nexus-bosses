@@ -4,17 +4,13 @@
 --              Nexus the countdown runs down (map setting, 60 s by default); without one it waits. At two thirds and
 --              one third of it a precursor wave comes for the beacon from the side the boss will come from. Losing or
 --              picking up the beacon cancels the summon.
--- "spawning"   the countdown is over and the beacon is locked. The mod's own bosses appear at once. For a boss of
---              Big Monsters the event is called every two seconds while a player is on Nexus, for up to 60 seconds,
---              until a new boss entity shows up (see nb_bm.lua); none, and the beacon comes back.
+-- "spawning"   the countdown is over and the beacon is locked while the boss module creates its entities.
 -- "active"     the beacon is gone and the fight is on. The victory comes when every required entity has died.
 -- Whatever ends a summon, storage.summon becomes nil, so a new beacon can be lit.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
 local records = require("scripts.nb_records")
-local bm = require("scripts.nb_bm")
-local nexus = require("scripts.nb_nexus")
 local spawn = require("scripts.nb_spawn")
 local progress = require("scripts.nb_progress")
 local gui = require("scripts.nb_gui")
@@ -25,9 +21,6 @@ local story = require("scripts.nb_story")
 local vault = require("scripts.nb_vault")
 
 local M = {}
-
-local BM_WINDOW_SECONDS = 60
-local BM_RETRY_TICKS = 120
 
 ---@class NbPending
 ---@field at integer
@@ -49,6 +42,9 @@ local OWN = {
   ["rogue-spidertron"] = { module = require("scripts.bosses.rogue-spidertron"), watch = { cfg.SPIDERTRON } },
   ["twin-maws"] = { module = require("scripts.bosses.twin-maws"), watch = { cfg.MAW_FIRE, cfg.MAW_ACID } },
   ["colossus"] = { module = require("scripts.bosses.colossus"), watch = {} },
+  ["last-commander"] = {
+    module = require("scripts.bosses.last-commander"), watch = { cfg.COMMANDER },
+  },
   ["plague-hulk"] = { module = require("scripts.bosses.plague-hulk"), watch = { cfg.HULK } },
   ["storm-guardian"] = { module = require("scripts.bosses.storm-guardian"), watch = { cfg.GUARDIAN } },
   ["devourer"] = { module = require("scripts.bosses.devourer"), watch = {} }, -- on_segmented_unit_died
@@ -341,60 +337,6 @@ local function complete_spawn(summon, force, surface)
   update_health_bar(summon, force)
 end
 
----@param summon table
----@param force LuaForce
----@param surface LuaSurface
-local function bm_attempt(summon, force, surface)
-  local state = summon.bm
-  state.attempts = state.attempts + 1
-  state.last_tick = game.tick
-  -- below 0.9 the events make lesser monsters, which would pile up with every call
-  nexus.refresh_evolution()
-  state.error = bm.call_event(bm.set_of(summon.boss).event, surface, force)
-end
-
----@param summon table
----@param surface LuaSurface
----@return boolean the boss is there
-local function bm_collect(summon, surface)
-  local state = summon.bm
-  local found = bm.find_new(surface, state.names, state.snapshot)
-  for _, entity in ipairs(found) do
-    if not summon.by_unit[entity.unit_number] then
-      bm.adopt(summon, surface, entity)
-    end
-  end
-  return #found > 0
-end
-
----@param summon table
----@param force LuaForce
----@param surface LuaSurface
-local function launch(summon, force, surface)
-  summon.phase = "spawning"
-  summon.beacon.minable_flag = false
-  summon.beacon.destructible = false
-  update_visuals(summon)
-
-  if summon.bm then
-    local state = summon.bm
-    state.snapshot = bm.snapshot(surface, state.names)
-    bm.request_land(surface, force, bm.set_of(summon.boss).explore_chunks)
-    bm_attempt(summon, force, surface)
-    if bm_collect(summon, surface) then
-      complete_spawn(summon, force, surface)
-    end
-    return
-  end
-
-  local ok, message_key = (module_of(summon) --[[@as table]]).spawn(summon, surface)
-  if ok then
-    complete_spawn(summon, force, surface)
-  else
-    end_summon(summon, message_key, util.COLORS.bad, { refund = true })
-  end
-end
-
 -- Steps -----------------------------------------------------------------------------------------------------------
 
 ---@param summon table
@@ -420,7 +362,16 @@ local function step_countdown(summon, force, surface)
   summon.countdown = summon.countdown - 1
   update_visuals(summon)
   if summon.countdown <= 0 then
-    launch(summon, force, surface)
+    summon.phase = "spawning"
+    summon.beacon.minable_flag = false
+    summon.beacon.destructible = false
+    update_visuals(summon)
+    local ok, message_key = (module_of(summon) --[[@as table]]).spawn(summon, surface)
+    if ok then
+      complete_spawn(summon, force, surface)
+    else
+      end_summon(summon, message_key, util.COLORS.bad, { refund = true })
+    end
     return
   end
   if summon.waves[summon.countdown] then
@@ -436,29 +387,6 @@ local function step_countdown(summon, force, surface)
     alert(force, summon.beacon, summon, { "nexus-bosses.alert-countdown", boss_name(summon.boss), summon.countdown })
     if summon.countdown == 10 or summon.countdown == 3 then
       util.play(force, "countdown")
-    end
-  end
-end
-
----@param summon table
----@param force LuaForce
----@param surface LuaSurface
-local function step_spawning(summon, force, surface)
-  local state = summon.bm
-  if bm_collect(summon, surface) then
-    complete_spawn(summon, force, surface)
-    return
-  end
-  state.window = state.window - 1
-  if state.window <= 0 then
-    end_summon(summon, "msg-fail-no-boss", util.COLORS.bad, { refund = true })
-    return
-  end
-  -- Big Monsters may have found no place yet: the land may still be generating
-  if game.tick - state.last_tick >= BM_RETRY_TICKS and util.count_present(force, surface) > 0 then
-    bm_attempt(summon, force, surface)
-    if bm_collect(summon, surface) then
-      complete_spawn(summon, force, surface)
     end
   end
 end
@@ -486,12 +414,8 @@ local function step_active(summon, force, surface)
     summon.music_until = game.tick + track.seconds * 60
   end
   local module = module_of(summon)
-  if module then
-    if module.tick then
-      module.tick(summon, surface, force)
-    end
-  else
-    bm.tick(summon, surface)
+  if module and module.tick then
+    module.tick(summon, surface, force)
   end
   local main = records.main(summon)
   local where = main and records.position(main)
@@ -516,8 +440,6 @@ function M.step()
   end
   if summon.phase == "countdown" then
     step_countdown(summon, force, surface)
-  elseif summon.phase == "spawning" then
-    step_spawning(summon, force, surface)
   else
     step_active(summon, force, surface)
   end
@@ -594,8 +516,12 @@ on_entity_died = function(event)
     return
   end
   local record = records.mark_dead(summon, entity.unit_number)
-  if record and record.required then
-    summon.last_position = util.copy_position(entity.position)
+  if record then
+    record.death_position = util.copy_position(entity.position)
+    record.death_max_health = entity.max_health
+    if record.required then
+      summon.last_position = util.copy_position(entity.position)
+    end
   end
 end
 
@@ -685,28 +611,17 @@ function M.on_built(entity, player)
     summon.variant_entity = cfg.COLOSSUS_PREFIX .. summon.variant
   end
   summon.watch = { entity.name }
-  if boss.kind == "bm" then
-    summon.bm = { names = bm.boss_names(boss_id), attempts = 0, window = BM_WINDOW_SECONDS, snapshot = {}, last_tick = 0 }
-    for _, name in ipairs(summon.bm.names) do
-      summon.watch[#summon.watch + 1] = name
-    end
-  else
-    for _, name in ipairs((OWN[boss_id] --[[@as table]]).watch) do
-      summon.watch[#summon.watch + 1] = name
-    end
-    if summon.variant_entity then
-      summon.watch[#summon.watch + 1] = summon.variant_entity
-    end
+  for _, name in ipairs((OWN[boss_id] --[[@as table]]).watch) do
+    summon.watch[#summon.watch + 1] = name
+  end
+  if summon.variant_entity then
+    summon.watch[#summon.watch + 1] = summon.variant_entity
   end
   storage.summon = summon
   register_death_events(summon)
 
   create_visuals(summon, force, surface)
   spawn.request_land(surface, summon.position)
-  if summon.bm then
-    -- the countdown is the time the map generator needs for the land the event walks through
-    bm.request_land(surface, force, bm.set_of(boss_id).explore_chunks)
-  end
   util.say(force, { "nexus-bosses.call-" .. boss_id }, util.COLORS.warning)
   util.say(force, { "nexus-bosses.msg-countdown-started", boss_name(boss_id), countdown, util.compass(summon.angle) },
     util.COLORS.warning)
@@ -817,7 +732,6 @@ function M.snapshot()
     lair = summon.lair,
     pylon_share = summon.pylon_share,
     spawn_distance = summon.spawn_distance,
-    bm = summon.bm and { attempts = summon.bm.attempts, window_left = summon.bm.window, last_error = summon.bm.error },
   }
 end
 

@@ -11,17 +11,9 @@
 ---@field precursors integer units in each precursor wave
 ---@field color Color the antenna of its beacons, its bearings and its summon circle
 
----@class NbBmSet
----@field event string event of the remote interface "bigmonster"
----@field types string[] entity types of the bosses the event creates
----@field prefixes string[] name prefixes of those bosses
----@field explore_chunks integer chunk radius around the spawn of the force that the event walks through
-
 ---@class NbBossSpec
----@field kind "own"|"bm" "own": scripts/bosses/<id>.lua spawns it, "bm": the Big Monsters event does
 ---@field entity string the entity whose icon marks the beacon, the trophy and the technologies
 ---@field precursors string[] units of the precursor waves
----@field bm NbBmSet|nil
 ---@field circle integer
 ---@field slot integer
 
@@ -30,7 +22,7 @@ local M = {}
 M.PLANET = "nexus"
 M.PLANET_TECH = "planet-discovery-nexus"
 
--- Pinned on the Nexus surface: Big Monsters picks the tier of its bosses from it, and below 0.9 it makes no bosses.
+-- Enemy evolution is pinned on the Nexus surface; some spawner prototypes scale their health with it.
 M.EVOLUTION = 0.99
 M.EVOLUTION_REFRESH_TICKS = 60 * 60
 
@@ -141,6 +133,7 @@ M.QUEEN = "nexus-arachnid-queen"
 M.QUEEN_NEST = "nexus-queen-nest"
 M.MAW_FIRE = "nexus-maw-fire"
 M.MAW_ACID = "nexus-maw-acid"
+M.COMMANDER = "nexus-last-commander"
 M.HULK = "nexus-plague-hulk"
 M.GUARDIAN = "nexus-storm-guardian"
 M.DEVOURER = "nexus-devourer"
@@ -151,6 +144,7 @@ M.SPIDERTRON = "nexus-rogue-spidertron"
 -- multiplies by 10^evolution: the prototype gets HULK_HEALTH / 10^0.99.
 M.QUEEN_HEALTH = 500000
 M.NEST_HEALTH = 25000
+M.COMMANDER_HEALTH = 5040000
 M.HULK_HEALTH = 2000000
 M.GUARDIAN_HEALTH = 3000000
 M.DEVOURER_HEALTH = 5000000
@@ -172,52 +166,40 @@ M.COLOSSUS_HEALTH_SHARE = 0.35 -- Big Monsters spawns these at the evolution of 
 
 local SPECS = {
   ["arachnid-queen"] = {
-    kind = "own",
     entity = "maf-boss-arachnid-biter-10",
     precursors = { "arachnid-biter-warrior-unit", "arachnid-spitter-bigspitter-unit" },
   },
   ["watcher"] = {
-    kind = "own",
     entity = M.WATCHER,
     precursors = { "flying-electric-unit-3" },
   },
   ["rogue-spidertron"] = {
-    kind = "own",
     entity = M.SPIDERTRON,
     precursors = { "arachnid-biter-tiger-unit" },
   },
   ["twin-maws"] = {
-    kind = "own",
     entity = "maf-worm-boss-fire-shooter",
     precursors = { "behemoth-spitter" },
   },
   ["colossus"] = {
-    kind = "own",
     entity = M.COLOSSUS_PREFIX .. "fire",
     precursors = { "behemoth-biter" },
   },
   ["plague-hulk"] = {
-    kind = "own",
     entity = "tb_infected_ship_boss",
     precursors = { "big-toxic-biter" },
   },
   ["storm-guardian"] = {
-    kind = "own",
     entity = "walking-electric-unit-boss-10",
     precursors = { "walking-electric-unit-3", "flying-electric-unit-3" },
   },
   ["devourer"] = {
-    kind = "own",
     entity = "big-demolisher",
     precursors = { "behemoth-biter" },
   },
   ["last-commander"] = {
-    kind = "bm",
-    entity = "bm_fake_human_ultimate_boss_cannon_20",
+    entity = M.COMMANDER,
     precursors = { "bm_fake_human_machine_gunner_5" },
-    bm = {
-      event = "ultimate_boss", types = { "unit" }, prefixes = { "bm_fake_human_ultimate_boss_" }, explore_chunks = 24,
-    },
   },
 }
 
@@ -230,10 +212,8 @@ for circle_index, circle in ipairs(M.CIRCLES) do
     local spec = assert(SPECS[id], id)
     M.ORDER[#M.ORDER + 1] = id
     M.BOSSES[id] = {
-      kind = spec.kind,
       entity = spec.entity,
       precursors = spec.precursors,
-      bm = spec.bm,
       circle = circle_index,
       slot = slot,
     }
@@ -263,6 +243,8 @@ M.REQUIRED = {
   { "unit", "biterzilla15", "Big-Monsters" },
   { "unit", "bm_fake_human_ultimate_boss_cannon_20", "Big-Monsters" },
   { "unit", "bm_fake_human_machine_gunner_5", "Big-Monsters" },
+  { "projectile", "mf-small-atomic-rocket", "Big-Monsters" },
+  { "explosion", "big-explosion", "base" },
   { "segmented-unit", "big-demolisher", "space-age" },
   { "planet", "nexus", "Nexus" },
   { "container", "crash-site-spaceship-wreck-medium-1", "base" },

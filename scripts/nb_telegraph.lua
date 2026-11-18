@@ -22,10 +22,11 @@ end
 ---@param target MapPosition|LuaEntity
 ---@param radius number
 ---@param ticks integer how long until the attack
+---@param summon table|nil
 ---@return LuaRenderObject
-function M.circle(surface, target, radius, ticks)
+function M.circle(surface, target, radius, ticks, summon)
   play(surface, target)
-  rendering.draw_circle({
+  local outline = rendering.draw_circle({
     color = COLOR,
     radius = radius,
     width = 2,
@@ -36,7 +37,7 @@ function M.circle(surface, target, radius, ticks)
     blink_interval = 0,
     time_to_live = ticks,
   })
-  return rendering.draw_circle({
+  local disk = rendering.draw_circle({
     color = COLOR,
     radius = radius,
     width = 2,
@@ -47,6 +48,12 @@ function M.circle(surface, target, radius, ticks)
     blink_interval = 0,
     time_to_live = ticks,
   })
+  if summon then
+    summon.renders = summon.renders or {}
+    summon.renders[#summon.renders + 1] = { render = outline }
+    summon.renders[#summon.renders + 1] = { render = disk }
+  end
+  return disk
 end
 
 ---A filled circle that grows to its attack radius while its outline stays visible.

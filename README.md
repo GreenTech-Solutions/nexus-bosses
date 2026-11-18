@@ -17,7 +17,7 @@ enemy, Electric flying enemies and TFMG: Music (the music of Nexus and the vault
 | `prototypes/` | boss copies, beacons, trophies and the warp key, technologies, Nexus without ordinary enemies |
 | `scripts/nb_summon.lua` | one summon from beacon to victory: countdown, precursors, spawn, health bar, trophy |
 | `scripts/bosses/<boss>.lua` | the bosses the mod spawns itself and their mechanics |
-| `scripts/nb_bm.lua` | the bosses of Big Monsters: the event, moving the boss to the beacon, the map setting |
+| `scripts/nb_bm.lua` | Big Monsters' random-event surfaces and removing its monsters outside the allowed planets |
 | `scripts/nb_spawn.lua`, `nb_records.lua` | placing bosses and precursors, their orders; the entities of the active summon |
 | `scripts/nb_progress.lua` | defeated bosses per force, stage research, trophies, the end of the story |
 | `scripts/nb_gui.lua`, `nb_codex.lua` | the health bar; the Codex of the signal |

@@ -1,5 +1,5 @@
--- The planet: enemy evolution pinned on the Nexus surface, the enemies of an older game removed, and Big Monsters'
--- list of surfaces with its monsters kept inside it.
+-- The planet: enemy evolution pinned on the Nexus, older map enemies removed, and Big Monsters' random-event surface
+-- list kept inside the allowed planets.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -7,7 +7,7 @@ local bm = require("scripts.nb_bm")
 
 local M = {}
 
----Kills and pollution would move the evolution of Nexus; Big Monsters picks its bosses from it.
+---Kills and pollution would move the enemy evolution of Nexus away from its fixed value.
 function M.refresh_evolution()
   local surface = util.nexus()
   local enemy = game.forces.enemy

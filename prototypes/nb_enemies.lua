@@ -1,5 +1,5 @@
--- The bosses the mod spawns itself, copied from the prototypes of other mods. The startup setting
--- "nexus-bosses-boss-health" scales their health; the bosses of Big Monsters are scaled when they appear.
+-- Bosses copied from the prototypes of other mods. The startup setting "nexus-bosses-boss-health" scales their
+-- maximum health along with the other bosses.
 
 local util = require("util")
 local cfg = require("lib.nb_data")
@@ -61,6 +61,10 @@ maw_fire.max_health = maw_fire.max_health * HEALTH
 local maw_acid = copy("turret", "bm-worm-boss-acid-shooter", cfg.MAW_ACID)
 maw_acid.max_health = maw_acid.max_health * HEALTH
 
+-- Last Commander: Big Monsters supplies the unit prototype; this mod spawns and controls the copy.
+local commander = copy("unit", "bm_fake_human_ultimate_boss_cannon_20", cfg.COMMANDER)
+commander.max_health = cfg.COMMANDER_HEALTH * HEALTH
+
 -- The six Colossus variants are copies of Big Monsters' level 5 units. Keep the original prototypes untouched:
 -- Big Monsters only supplies the source prototypes; Nexus Bosses spawns and controls these copies.
 local colossus_variants = {}
@@ -95,7 +99,7 @@ watcher.max_health = cfg.WATCHER_HEALTH * HEALTH
 local spidertron = copy("spider-vehicle", "bm-spidertron_5", cfg.SPIDERTRON)
 spidertron.max_health = cfg.SPIDERTRON_HEALTH * HEALTH
 
-data:extend({ queen, nest, maw_fire, maw_acid, hulk, guardian, watcher, spidertron })
+data:extend({ queen, nest, maw_fire, maw_acid, commander, hulk, guardian, watcher, spidertron })
 data:extend(colossus_variants)
 
 -- Devourer: a big demolisher with 5 million health. Every segment prototype of a demolisher has the health of the

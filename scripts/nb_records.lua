@@ -32,7 +32,7 @@ function M.add(summon, entity, required, role, segmented)
   return record
 end
 
----The record now follows another entity (the Devourer that surfaced again).
+---The record now follows another live entity (a surfaced Devourer or a risen Twin Maw).
 ---@param summon table
 ---@param record table
 ---@param entity LuaEntity|LuaSegmentedUnit
@@ -41,6 +41,10 @@ function M.replace(summon, record, entity)
   record.entity = entity
   record.unit_number = entity.unit_number
   record.hidden = false
+  record.dead = false
+  record.gone = false
+  record.death_position = nil
+  record.death_max_health = nil
   summon.by_unit[record.unit_number] = record
 end
 
