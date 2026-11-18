@@ -72,7 +72,13 @@ local guardian = copy("unit", "walking-electric-unit-boss-10", cfg.GUARDIAN)
 guardian.max_health = cfg.GUARDIAN_HEALTH * HEALTH
 immune_to(guardian, "electric")
 
-data:extend({ queen, nest, maw_fire, maw_acid, hulk, guardian })
+-- Watcher and Rogue Spidertron keep the behavior and visuals of their source prototypes, with their own health.
+local watcher = copy("spider-vehicle", "maf_flying_saucer_8", cfg.WATCHER)
+watcher.max_health = cfg.WATCHER_HEALTH * HEALTH
+local spidertron = copy("spider-vehicle", "bm-spidertron_5", cfg.SPIDERTRON)
+spidertron.max_health = cfg.SPIDERTRON_HEALTH * HEALTH
+
+data:extend({ queen, nest, maw_fire, maw_acid, hulk, guardian, watcher, spidertron })
 
 -- Devourer: a big demolisher with 5 million health. Every segment prototype of a demolisher has the health of the
 -- head, so the segments are copied too; they carry the Devourer's name in the tooltip of the body.

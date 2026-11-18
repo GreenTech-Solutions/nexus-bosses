@@ -43,6 +43,10 @@ local BM_RETRY_TICKS = 120
 -- the bosses of the mod: spawn, tick, status, on_victory, release, optional on_pending; the names whose death events matter
 local OWN = {
   ["arachnid-queen"] = { module = require("scripts.bosses.arachnid-queen"), watch = { cfg.QUEEN } },
+  ["watcher"] = {
+    module = require("scripts.bosses.watcher"), watch = { cfg.WATCHER, "flying-electric-unit-3" },
+  },
+  ["rogue-spidertron"] = { module = require("scripts.bosses.rogue-spidertron"), watch = { cfg.SPIDERTRON } },
   ["twin-maws"] = { module = require("scripts.bosses.twin-maws"), watch = { cfg.MAW_FIRE, cfg.MAW_ACID } },
   ["plague-hulk"] = { module = require("scripts.bosses.plague-hulk"), watch = { cfg.HULK } },
   ["storm-guardian"] = { module = require("scripts.bosses.storm-guardian"), watch = { cfg.GUARDIAN } },
@@ -522,9 +526,11 @@ function M.on_pending(tick)
     local entry = renders[index]
     local render = entry.render
     if render and render.valid then
-      local duration = entry.end_tick - entry.start_tick
-      local fill = duration > 0 and math.min(1, (tick - entry.start_tick) / duration) or 1
-      render.radius = math.max(0.1, entry.radius * fill)
+      if entry.radius and entry.start_tick and entry.end_tick then
+        local duration = entry.end_tick - entry.start_tick
+        local fill = duration > 0 and math.min(1, (tick - entry.start_tick) / duration) or 1
+        render.radius = math.max(0.1, entry.radius * fill)
+      end
     else
       table.remove(renders, index)
     end

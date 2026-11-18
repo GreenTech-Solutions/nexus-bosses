@@ -144,6 +144,8 @@ M.MAW_ACID = "nexus-maw-acid"
 M.HULK = "nexus-plague-hulk"
 M.GUARDIAN = "nexus-storm-guardian"
 M.DEVOURER = "nexus-devourer"
+M.WATCHER = "nexus-watcher"
+M.SPIDERTRON = "nexus-rogue-spidertron"
 
 -- Health before the startup setting "nexus-bosses-boss-health". The hulk is a spawner, whose health the game
 -- multiplies by 10^evolution: the prototype gets HULK_HEALTH / 10^0.99.
@@ -153,6 +155,8 @@ M.HULK_HEALTH = 2000000
 M.GUARDIAN_HEALTH = 3000000
 M.DEVOURER_HEALTH = 5000000
 M.DEVOURER_HEALING_PER_TICK = 50 -- the big demolisher heals 400 a tick, 8 % of its health every second
+M.WATCHER_HEALTH = 56000
+M.SPIDERTRON_HEALTH = 26000
 
 local BM_COLOSSUS_PREFIXES = {
   -- with a soldier chance above 0 the event may pick a human boss, flamethrowers without "boss" in the name
@@ -166,16 +170,14 @@ local SPECS = {
     precursors = { "arachnid-biter-warrior-unit", "arachnid-spitter-bigspitter-unit" },
   },
   ["watcher"] = {
-    kind = "bm",
-    entity = "maf_flying_saucer_8",
+    kind = "own",
+    entity = M.WATCHER,
     precursors = { "flying-electric-unit-3" },
-    bm = { event = "flying_saucer", types = { "spider-vehicle" }, prefixes = { "maf_flying_saucer_" }, explore_chunks = 16 },
   },
   ["rogue-spidertron"] = {
-    kind = "bm",
-    entity = "bm-spidertron_5",
+    kind = "own",
+    entity = M.SPIDERTRON,
     precursors = { "arachnid-biter-tiger-unit" },
-    bm = { event = "spidertron", types = { "spider-vehicle" }, prefixes = { "bm-spidertron_" }, explore_chunks = 16 },
   },
   ["twin-maws"] = {
     kind = "own",
