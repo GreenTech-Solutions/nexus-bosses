@@ -124,9 +124,12 @@ local function fill_page(page, force_name, boss_id)
   local lair = bearing.lair_position(boss_id)
   if lair and bearing.is_found(force_name, boss_id) then
     local x, y = lair.x, lair.y
+    local wins = bearing.wins_of(force_name, boss_id)
     local quality = bearing.next_quality(force_name, boss_id)
-    paragraph(page, { "nexus-bosses.codex-lair", math.floor(x), math.floor(y), cfg.PLANET, bearing.wins_of(force_name, boss_id),
+    local frequency = bearing.lair_frequency(force_name, boss_id)
+    paragraph(page, { "nexus-bosses.codex-lair", math.floor(x), math.floor(y), cfg.PLANET, wins,
       string.format("[item=%s,quality=%s]", cfg.trophy_name(boss_id), quality) })
+    paragraph(page, { "nexus-bosses.codex-lair-hard", math.floor((frequency - 1) * 100) })
   else
     local technology = game.forces[force_name].technologies[cfg.BEARING_TECH]
     if technology and technology.researched then

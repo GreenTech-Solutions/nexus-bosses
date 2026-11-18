@@ -1,6 +1,7 @@
 -- Storms wake the ruins. While a storm of Nexus-Threat rages, every WAKE_SECONDS the mod strikes a lightning
 -- attractor ruin of Nexus (fulgoran-ruin-attractor) near a player with lightning and wakes it: it glows, calls
--- lightning down around itself and drops one charged shard, until the storm ends. A ruin wakes once a storm. Only
+-- lightning down around itself and drops one charged shard, until the storm ends. The shard reduces only the Storm
+-- Guardian's healing when it is placed in a beacon. A ruin wakes once a storm. Only
 -- ruins in charted land within reach of a player on Nexus wake, so a woken ruin is one someone can get to.
 --
 --   storage.storms.ruins   [unit_number] = ruin entity (every attractor ruin of Nexus)

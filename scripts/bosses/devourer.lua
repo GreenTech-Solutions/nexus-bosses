@@ -1,7 +1,7 @@
 -- Devourer: a demolisher of 5 million health that claims the land around the beacon (a territory of five by five
 -- chunks). Every 15 seconds it is set "enraged" against the nearest building of the player, the strongest order the API
--- has for a segmented unit. At half of its health it dives and, eight seconds later, breaks out on the far side of the
--- beacon with the health it had.
+-- has for a segmented unit. It dives at half health, or at two thirds and one third in a lair, then breaks out on the
+-- far side of the beacon with the health it had.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -14,6 +14,7 @@ local M = {}
 local TERRITORY_CHUNK_RADIUS = 2
 local ORDER_SECONDS = 15
 local DIVE_SHARE = 0.5
+local LAIR_DIVE_SHARES = { 2 / 3, 1 / 3 }
 local DIVE_SECONDS = 8
 local SURFACE_DISTANCE = 80
 local RISE_SEARCH_RADIUS = 8
@@ -83,7 +84,7 @@ function M.spawn(summon, surface)
   if not position then
     return false, "msg-fail-position"
   end
-  summon.devourer = { territory = create_territory(surface, summon.position), dived = false }
+  summon.devourer = { territory = create_territory(surface, summon.position), dives = 0 }
   local worm = create_worm(surface, position, summon)
   if not worm then
     return false, "msg-fail-position"
@@ -103,12 +104,12 @@ local function dive(summon, surface, force, record)
   record.hidden = true
   record.hidden_health = worm.health
   local state = summon.devourer
-  state.dived = true
   -- the far side of the beacon from where it went down
   local away = math.atan2(summon.position.y - head.y, summon.position.x - head.x)
   local target = util.offset(summon.position, away, SURFACE_DISTANCE)
   state.rise_at = util.copy_position(surface.find_non_colliding_position(cfg.DEVOURER, target, 40, 1) or target)
-  local delay = DIVE_SECONDS * 60
+  local dive_seconds = DIVE_SECONDS * (1 - (summon.weaken or 0))
+  local delay = math.floor(dive_seconds * 60 + 0.5)
   telegraph.filling_circle(summon, surface, state.rise_at, 12, delay)
   summon.pending = summon.pending or {}
   summon.pending[#summon.pending + 1] = {
@@ -118,7 +119,7 @@ local function dive(summon, surface, force, record)
   }
   surface.create_entity({ name = "big-demolisher-fissure-explosion", position = head })
   worm.destroy()
-  util.say(force, { "nexus-bosses.msg-devourer-dives", DIVE_SECONDS }, util.COLORS.warning)
+  util.say(force, { "nexus-bosses.msg-devourer-dives", dive_seconds }, util.COLORS.warning)
   util.play(force, "devourer-burrow")
 end
 
@@ -178,7 +179,11 @@ function M.tick(summon, surface, force)
   if not records.alive(record) then
     return
   end
-  if not state.dived and record.entity.health <= record.initial * DIVE_SHARE then
+  state.dives = state.dives or (state.dived and 1 or 0)
+  local threshold = summon.lair and LAIR_DIVE_SHARES[state.dives + 1]
+    or (state.dives == 0 and DIVE_SHARE or nil)
+  if threshold and (summon.weaken or 0) < 1 and record.entity.health <= record.initial * threshold then
+    state.dives = state.dives + 1
     dive(summon, surface, force, record)
     return
   end

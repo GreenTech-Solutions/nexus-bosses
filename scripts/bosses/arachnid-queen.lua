@@ -44,12 +44,24 @@ function M.spawn(summon, surface)
 end
 
 ---@param summon table
+---@return integer
+local function nest_count(summon)
+  local weaken = summon.weaken or 0
+  if weaken >= 1 then
+    return 0
+  end
+  local count = math.floor(NESTS_PER_CLUTCH * (1 - weaken) + 0.5)
+  return count + (summon.lair and 1 or 0)
+end
+
+---@param summon table
 ---@param surface LuaSurface
 ---@param queen LuaEntity
-local function telegraph_nests(summon, surface, queen)
+---@param count integer
+local function telegraph_nests(summon, surface, queen, count)
   local positions = {}
   local attempts = 0
-  while #positions < NESTS_PER_CLUTCH and attempts < NESTS_PER_CLUTCH * 12 do
+  while #positions < count and attempts < count * 12 do
     attempts = attempts + 1
     local center = queen.position
     if #positions > 0 then
@@ -111,7 +123,10 @@ function M.tick(summon, surface, _force)
   local threshold = NEST_THRESHOLDS[state.clutches + 1]
   if record and threshold and record.entity.health <= record.initial * threshold then
     state.clutches = state.clutches + 1
-    telegraph_nests(summon, surface, record.entity)
+    local count = nest_count(summon)
+    if count > 0 then
+      telegraph_nests(summon, surface, record.entity, count)
+    end
   end
 
   if seconds % NEST_SORTIE_SECONDS == 0 then

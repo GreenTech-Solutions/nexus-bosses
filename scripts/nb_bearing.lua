@@ -74,6 +74,15 @@ function M.wins_of(force_name, boss_id)
   return wins and wins[boss_id] or 0
 end
 
+---The lair frequency multiplier granted by the force's wins against the boss.
+---@param force_name string
+---@param boss_id string
+---@return number
+function M.lair_frequency(force_name, boss_id)
+  return math.min(cfg.LAIR_FREQUENCY_MAX,
+    cfg.LAIR_FREQUENCY + cfg.LAIR_FREQUENCY_PER_WIN * M.wins_of(force_name, boss_id))
+end
+
 ---The quality of the second trophy of the next fight in the lair.
 ---@param force_name string
 ---@param boss_id string
@@ -474,17 +483,17 @@ function M.pylon_quality(force_name, boss_id)
   return qualities and qualities[boss_id]
 end
 
----The share of health a boss called at a position loses to the pylon of its lair.
+---How much the pylon weakens the main mechanic of a boss called in its lair.
 ---@param force_name string
 ---@param boss_id string
 ---@param position MapPosition
 ---@return number 0..1
-function M.pylon_share(force_name, boss_id, position)
+function M.pylon_weaken(force_name, boss_id, position)
   local quality = M.pylon_quality(force_name, boss_id)
   if not (quality and M.in_lair(force_name, boss_id, position)) then
     return 0
   end
-  return cfg.PYLON_SHARES[quality] or 0
+  return cfg.PYLON_WEAKEN[quality] or 0
 end
 
 -- the colours of the qualities, for the glow of a repaired pylon
@@ -530,7 +539,7 @@ function M.repair_pylon(force, boss_id, quality)
   qualities[boss_id] = quality
   draw_pylon(force, boss_id)
   util.say(force, { "nexus-bosses.msg-pylon-repaired", { "nexus-bosses.boss-" .. boss_id },
-    math.floor((cfg.PYLON_SHARES[quality] or 0) * 100) }, util.COLORS.good)
+    math.floor((cfg.PYLON_WEAKEN[quality] or 0) * 100) }, util.COLORS.good)
   util.play(force, "stage-complete")
 end
 
@@ -551,7 +560,7 @@ function M.on_pylon_closed(player, pylon)
   for _, item in ipairs(inventory.get_contents()) do
     local quality = item.quality --[[@as string]]
     local level = prototypes.quality[quality].level
-    if item.name == trophy and cfg.PYLON_SHARES[quality] and level > current_level and not repaired then
+    if item.name == trophy and cfg.PYLON_WEAKEN[quality] and level > current_level and not repaired then
       inventory.remove({ name = item.name, quality = quality, count = 1 })
       repaired = quality
     end

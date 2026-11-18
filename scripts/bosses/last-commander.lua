@@ -41,7 +41,10 @@ function M.spawn(summon, surface)
     return false, "msg-fail-position"
   end
   records.add(summon, commander, true, "boss")
-  summon.commander = { next_drop = DROP_SECONDS, next_nuke = NUKE_SECONDS }
+  local drop_interval = util.interval(summon, DROP_SECONDS)
+  local weaken = summon.weaken or 0
+  local nuke_interval = weaken == 0 and util.interval(summon, NUKE_SECONDS) or nil
+  summon.commander = { next_drop = drop_interval, next_nuke = nuke_interval }
   spawn.dispatch(surface, { commander }, summon.position)
   return true, nil
 end
@@ -72,7 +75,7 @@ end
 ---@param summon table
 ---@param surface LuaSurface
 ---@param boss LuaEntity
-local function schedule_drop(summon, surface, boss)
+local function schedule_drop(summon, surface, boss, count)
   local boss_x, boss_y = util.xy(boss.position)
   local beacon_x, beacon_y = util.xy(summon.position)
   local angle = math.atan2(beacon_y - boss_y, beacon_x - boss_x)
@@ -82,7 +85,7 @@ local function schedule_drop(summon, surface, boss)
   summon.pending[#summon.pending + 1] = {
     at = game.tick + DROP_WARNING_TICKS,
     kind = "drop",
-    data = { position = util.copy_position(position) },
+    data = { position = util.copy_position(position), count = count },
   }
 end
 
@@ -104,10 +107,11 @@ end
 ---@param summon table
 ---@param surface LuaSurface
 ---@param position MapPosition
-local function spawn_drop(summon, surface, position)
+---@param count integer
+local function spawn_drop(summon, surface, position, count)
   surface.create_entity({ name = DROP_EXPLOSION, position = position, force = "enemy" })
   local units = {}
-  for _ = 1, DROP_COUNT do
+  for _ = 1, count do
     local spot = surface.find_non_colliding_position(DROP_UNIT, position, DROP_RADIUS, 1)
     local unit = spot and spawn.create_unit(surface, DROP_UNIT, spot)
     if unit then
@@ -124,7 +128,7 @@ end
 ---@param entry NbPending
 function M.on_pending(summon, surface, _force, entry)
   if entry.kind == "drop" then
-    spawn_drop(summon, surface, entry.data.position)
+    spawn_drop(summon, surface, entry.data.position, entry.data.count or DROP_COUNT)
   elseif entry.kind == "nuke" and nuker_enabled() then
     local boss = records.main(summon)
     if boss then
@@ -153,26 +157,36 @@ function M.tick(summon, surface, force)
   end
 
   local state = summon.commander
-  if summon.active_seconds >= state.next_drop then
-    state.next_drop = summon.active_seconds + DROP_SECONDS
-    schedule_drop(summon, surface, record.entity)
+  local weaken = summon.weaken or 0
+  local drop_interval = util.interval(summon, DROP_SECONDS)
+  if drop_interval and state.next_drop and summon.active_seconds >= state.next_drop then
+    local drop_count = math.floor(DROP_COUNT * (1 - weaken) + 0.5)
+    if drop_count > 0 then
+      schedule_drop(summon, surface, record.entity, drop_count)
+    end
+    state.next_drop = summon.active_seconds + drop_interval
   end
 
-  if nuker_enabled() then
-    if summon.active_seconds >= state.next_nuke then
-      state.next_nuke = summon.active_seconds + NUKE_SECONDS
+  if nuker_enabled() and weaken == 0 then
+    local nuke_interval = util.interval(summon, NUKE_SECONDS)
+    if nuke_interval then
+      state.next_nuke = state.next_nuke or summon.active_seconds + nuke_interval
+    end
+    if nuke_interval and state.next_nuke and summon.active_seconds >= state.next_nuke then
+      state.next_nuke = summon.active_seconds + nuke_interval
       schedule_nuke(summon, surface, record.entity, force)
     end
   else
-    state.next_nuke = summon.active_seconds + NUKE_SECONDS
+    state.next_nuke = nil
   end
 end
 
 ---@param summon table
----@return LocalisedString
+---@return LocalisedString|nil
 function M.status(summon)
-  local drop_remaining = math.max(0, summon.commander.next_drop - summon.active_seconds)
-  local nuke_remaining = math.max(0, summon.commander.next_nuke - summon.active_seconds)
+  local state = summon.commander
+  local drop_remaining = state.next_drop and math.max(0, state.next_drop - summon.active_seconds) or nil
+  local nuke_remaining = state.next_nuke and math.max(0, state.next_nuke - summon.active_seconds) or nil
   for _, entry in ipairs(summon.pending or {}) do
     local remaining = math.max(0, math.ceil((entry.at - game.tick) / 60))
     if entry.kind == "drop" then
@@ -181,7 +195,10 @@ function M.status(summon)
       nuke_remaining = remaining
     end
   end
-  if nuker_enabled() then
+  if not drop_remaining then
+    return nil
+  end
+  if nuker_enabled() and nuke_remaining then
     return { "nexus-bosses.status-commander-both", drop_remaining, nuke_remaining }
   end
   return { "nexus-bosses.status-commander-drop", drop_remaining }

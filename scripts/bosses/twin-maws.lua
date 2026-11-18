@@ -55,13 +55,14 @@ function M.tick(summon, surface, _force)
   summon.maws = summon.maws or {}
   local living = records.of_role(summon, "boss")
   if #living == 2 then
+    local heal_share = MUTUAL_HEAL_SHARE * (1 - (summon.weaken or 0))
     for _, record in ipairs(living) do
       local entity = record.entity
-      entity.health = math.min(entity.max_health, entity.health + entity.max_health * MUTUAL_HEAL_SHARE)
+      entity.health = math.min(entity.max_health, entity.health + entity.max_health * heal_share)
     end
     return
   end
-  if #living ~= 1 or summon.maws.fallen then
+  if #living ~= 1 or summon.maws.fallen or (summon.weaken or 0) >= 1 then
     return
   end
 
@@ -73,7 +74,7 @@ function M.tick(summon, surface, _force)
         position = position,
         max_health = record.death_max_health or record.initial,
       }
-      local delay = RISE_SECONDS * 60
+      local delay = math.floor(RISE_SECONDS * 60 / (summon.frequency or 1) + 0.5)
       telegraph.circle(surface, position, RISE_RADIUS, delay, summon)
       summon.pending[#summon.pending + 1] = {
         kind = "rise",

@@ -102,7 +102,7 @@ function M.spawn(summon, surface)
     end
   end
   surface.create_entity({ name = "big-demolisher-fissure-explosion", position = hulk.position })
-  summon.hulk = { stunned = {} }
+  summon.hulk = { stunned = {}, next_sortie = util.interval(summon, SORTIE_SECONDS) }
   return true, nil
 end
 
@@ -110,8 +110,9 @@ end
 ---@param surface LuaSurface
 ---@param summon table
 ---@param hulk LuaEntity
+---@param count integer
 ---@return LuaEntity[]
-local function spore_targets(surface, summon, hulk)
+local function spore_targets(surface, summon, hulk, count)
   local turrets = surface.find_entities_filtered({
     position = hulk.position,
     radius = SPORE_RADIUS,
@@ -122,7 +123,7 @@ local function spore_targets(surface, summon, hulk)
     return util.distance(a.position, hulk.position) < util.distance(b.position, hulk.position)
   end)
   local targets = {}
-  for index = 1, math.min(SPORE_TURRETS, #turrets) do
+  for index = 1, math.min(count, #turrets) do
     targets[#targets + 1] = turrets[index]
   end
   return targets
@@ -179,25 +180,36 @@ function M.tick(summon, surface, _force)
     end
   end
   local record = records.main(summon)
-  if record and seconds > 0 and seconds % SORTIE_SECONDS == SORTIE_SECONDS - SPORE_TELEGRAPH_SECONDS then
-    local targets = spore_targets(surface, summon, record.entity)
-    local units = {}
-    for _, turret in ipairs(targets) do
-      telegraph.filling_circle(summon, surface, turret, 2, SPORE_TELEGRAPH_SECONDS * 60)
-      if turret.unit_number then
-        units[#units + 1] = turret.unit_number
-      end
-    end
-    summon.pending = summon.pending or {}
-    summon.pending[#summon.pending + 1] = {
-      at = game.tick + SPORE_TELEGRAPH_SECONDS * 60,
-      kind = "spores",
-      data = { units = units },
-    }
+  local state = summon.hulk
+  local interval = util.interval(summon, SORTIE_SECONDS)
+  if interval and not state.next_sortie then
+    state.next_sortie = seconds + interval
   end
-  if record and seconds > 0 and seconds % SORTIE_SECONDS == 0 then
-    local hulk = record.entity
-    spawn.send_spawner_units(summon, surface, hulk)
+  if record and interval and state.next_sortie then
+    local turret_count = math.floor(SPORE_TURRETS * (1 - (summon.weaken or 0)) + 0.5)
+    if turret_count > 0 and state.spore_scheduled_for ~= state.next_sortie
+      and seconds >= state.next_sortie - SPORE_TELEGRAPH_SECONDS then
+      state.spore_scheduled_for = state.next_sortie
+      local targets = spore_targets(surface, summon, record.entity, turret_count)
+      local units = {}
+      for _, turret in ipairs(targets) do
+        telegraph.filling_circle(summon, surface, turret, 2, SPORE_TELEGRAPH_SECONDS * 60)
+        if turret.unit_number then
+          units[#units + 1] = turret.unit_number
+        end
+      end
+      summon.pending = summon.pending or {}
+      summon.pending[#summon.pending + 1] = {
+        at = game.tick + SPORE_TELEGRAPH_SECONDS * 60,
+        kind = "spores",
+        data = { units = units },
+      }
+    end
+    if seconds >= state.next_sortie then
+      spawn.send_spawner_units(summon, surface, record.entity)
+      state.next_sortie = seconds + interval
+      state.spore_scheduled_for = nil
+    end
   end
 end
 

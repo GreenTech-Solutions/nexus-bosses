@@ -76,13 +76,16 @@ M.LAIR_SCORCH = "nexus-bosses-lair-scorchmark"
 -- the second trophy of a fight in the lair: one step better with every such fight
 M.LAIR_QUALITIES = { "uncommon", "rare", "epic", "legendary" }
 M.LAIR_LOOT_SHARE = 0.5 -- of the beacon recipe
+M.LAIR_FREQUENCY = 4 / 3
+M.LAIR_FREQUENCY_PER_WIN = 0.1
+M.LAIR_FREQUENCY_MAX = 1.6
 -- Pylons: a broken pylon of suppression stands in every found lair; a trophy of its boss of a better quality
--- repairs it, and a boss called in that lair comes with less health, by the quality of the trophy
+-- repairs it and weakens that boss's main mechanic when called in the lair
 M.PYLON = "nexus-bosses-pylon"
-M.PYLON_SHARES = { uncommon = 0.1, rare = 0.2, epic = 0.3, legendary = 0.4 }
+M.PYLON_WEAKEN = { uncommon = 0.25, rare = 0.5, epic = 0.75, legendary = 1 }
 
--- Storms: a storm of Nexus-Threat wakes the lightning attractor ruins of Nexus; a charged shard from one weakens
--- the Storm Guardian, through the charged beacons
+-- Storms: a storm of Nexus-Threat wakes the lightning attractor ruins of Nexus; charged shards in a beacon reduce
+-- only the Storm Guardian's healing
 M.RUIN_ATTRACTOR = "fulgoran-ruin-attractor"
 M.SHARD = "nexus-bosses-storm-shard"
 M.CHARGES = 3

@@ -1,8 +1,8 @@
 -- Storm Guardian: a walking electric giant with 20 walkers and 20 flyers. While a storm of Nexus-Threat rages it feeds
 -- on it: it heals 0.5 % of its health every second and calls lightning down around itself. Between the storms it is
 -- only a very big target. Without Nexus-Threat's storms (its startup setting nexus-threat-activation off) it never
--- feeds. Every charged shard in its beacon (summon.charge, up to cfg.CHARGES) takes a share of the storm from it: a
--- third less healing and lightning each, none at all with three.
+-- feeds or calls lightning. Charged shards in its beacon (summon.charge, up to cfg.CHARGES) reduce healing only; the
+-- pylon weakens the chance of lightning.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -51,7 +51,7 @@ function M.spawn(summon, surface)
       units[#units + 1] = unit
     end
   end
-  summon.guardian = { feeding = false }
+  summon.guardian = { feeding = false, next_lightning = util.interval(summon, LIGHTNING_SECONDS) }
   spawn.dispatch(surface, units, summon.position)
   return true, nil
 end
@@ -71,7 +71,8 @@ function M.tick(summon, surface, force)
   local guardian = record.entity
   local state = summon.guardian
   local share = 1 - (summon.charge or 0) / cfg.CHARGES
-  local feeding = share > 0 and util.storm_active()
+  local storm = util.storm_active()
+  local feeding = share > 0 and storm
   if feeding ~= state.feeding then
     state.feeding = feeding
     util.say(force, { feeding and "nexus-bosses.msg-guardian-feeds" or "nexus-bosses.msg-guardian-starves" },
@@ -93,7 +94,14 @@ function M.tick(summon, surface, force)
     if seconds % FEED_SOUND_SECONDS == 0 then
       util.play(force, "guardian-feeds")
     end
-    if seconds % LIGHTNING_SECONDS == 0 and math.random() < share then
+  end
+  local lightning_interval = util.interval(summon, LIGHTNING_SECONDS)
+  if lightning_interval and not state.next_lightning then
+    state.next_lightning = seconds + lightning_interval
+  end
+  if storm and lightning_interval and state.next_lightning and seconds >= state.next_lightning then
+    state.next_lightning = seconds + lightning_interval
+    if math.random() < 1 - (summon.weaken or 0) then
       local position = util.offset(guardian.position, math.random() * 2 * math.pi,
         math.random() * LIGHTNING_RADIUS)
       telegraph.filling_circle(summon, surface, position, 2, LIGHTNING_TELEGRAPH_TICKS)

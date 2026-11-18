@@ -73,6 +73,19 @@ local function module_of(summon)
 end
 
 ---@param summon table
+---@param force LuaForce
+---@param surface LuaSurface
+local function precursor_wave(summon, force, surface)
+  local origin = spawn.precursor_wave(summon, surface)
+  if origin then
+    local x, y = util.xy(origin)
+    util.say(force, { "nexus-bosses.msg-precursors", util.compass(summon.angle), math.floor(x), math.floor(y),
+      surface.name }, util.COLORS.warning)
+    util.play(force, "precursors")
+  end
+end
+
+---@param summon table
 ---@return string
 local function main_entity(summon)
   return summon.variant_entity or cfg.BOSSES[summon.boss].entity
@@ -302,14 +315,8 @@ local function complete_spawn(summon, force, surface)
   destroy_visuals(summon, force)
   summon.phase = "active"
   summon.active_seconds = 0
-  -- the pylon of the lair takes its share of the health of every boss that must die
-  local share = summon.pylon_share or 0
-  if share > 0 then
-    for _, record in ipairs(summon.tracked) do
-      if record.required and records.alive(record) then
-        record.entity.health = record.entity.health * (1 - share)
-      end
-    end
+  if summon.lair then
+    precursor_wave(summon, force, surface)
   end
 
   local main = records.main(summon)
@@ -375,13 +382,7 @@ local function step_countdown(summon, force, surface)
     return
   end
   if summon.waves[summon.countdown] then
-    local origin = spawn.precursor_wave(summon, surface)
-    if origin then
-      local x, y = util.xy(origin)
-      util.say(force, { "nexus-bosses.msg-precursors", util.compass(summon.angle), math.floor(x), math.floor(y),
-        surface.name }, util.COLORS.warning)
-      util.play(force, "precursors")
-    end
+    precursor_wave(summon, force, surface)
   end
   if summon.countdown % 10 == 0 or summon.countdown <= 5 then
     alert(force, summon.beacon, summon, { "nexus-bosses.alert-countdown", boss_name(summon.boss), summon.countdown })
@@ -578,6 +579,8 @@ function M.on_built(entity, player)
   local countdown = storage.countdown_override or settings.global["nexus-bosses-countdown"].value --[[@as integer]]
   local id = storage.next_summon_id
   storage.next_summon_id = id + 1
+  local lair = bearing.in_lair(force.name, boss_id, entity.position)
+  local weaken = bearing.pylon_weaken(force.name, boss_id, entity.position)
   local summon = {
     id = id,
     boss = boss_id,
@@ -601,9 +604,11 @@ function M.on_built(entity, player)
     pending = {},
     renders = {},
     charge = charge,
-    lair = bearing.in_lair(force.name, boss_id, entity.position),
-    pylon_share = bearing.pylon_share(force.name, boss_id, entity.position),
+    lair = lair,
+    weaken = weaken,
+    frequency = 1.0,
   }
+  summon.frequency = summon.lair and bearing.lair_frequency(force.name, boss_id) or 1
   if boss_id == "colossus" then
     summon.variant = storage.next_colossus_variant
       or (cfg.COLOSSUS_VARIANTS[math.random(#cfg.COLOSSUS_VARIANTS)] --[[@as table]]).id
@@ -637,8 +642,8 @@ function M.on_built(entity, player)
   if charge > 0 then
     util.say(force, { "nexus-bosses.msg-beacon-charged", charge, cfg.CHARGES }, util.COLORS.good)
   end
-  if summon.pylon_share > 0 then
-    util.say(force, { "nexus-bosses.msg-pylon-weakens", boss_name(boss_id), math.floor(summon.pylon_share * 100) },
+  if summon.weaken > 0 then
+    util.say(force, { "nexus-bosses.msg-pylon-weakens", boss_name(boss_id), math.floor(summon.weaken * 100) },
       util.COLORS.good)
   end
   util.play(force, "call")
@@ -665,7 +670,9 @@ function M.on_configuration_changed()
     summon.music_index = summon.music_index or 0
     summon.music_until = summon.music_until or 0
     summon.charge = summon.charge or 0
-    summon.pylon_share = summon.pylon_share or 0
+    summon.weaken = summon.weaken or 0
+    summon.frequency = summon.frequency or 1
+    summon.pylon_share = nil
     summon.pending = summon.pending or {}
     summon.renders = summon.renders or {}
   end
@@ -730,7 +737,8 @@ function M.snapshot()
     spawn_note = summon.spawn_note,
     charge = summon.charge,
     lair = summon.lair,
-    pylon_share = summon.pylon_share,
+    weaken = summon.weaken or 0,
+    frequency = summon.frequency or 1,
     spawn_distance = summon.spawn_distance,
   }
 end

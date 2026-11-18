@@ -15,6 +15,18 @@ M.COLORS = {
 ---@type {name: string, seconds: integer}[]
 M.FIGHT_TRACKS = { { name = "nexus-bosses-fight-urgent", seconds = 57 }, { name = "nexus-bosses-fight-pulse", seconds = 71 } }
 
+---Seconds between two uses of a mechanic in this fight: a lair makes it more often, a pylon less; nil: none at all.
+---@param summon table
+---@param seconds number the base interval
+---@return number|nil
+function M.interval(summon, seconds)
+  local weaken = summon.weaken or 0
+  if weaken >= 1 then
+    return nil
+  end
+  return seconds / ((summon.frequency or 1) * (1 - weaken))
+end
+
 ---@param position MapPosition
 ---@return number x
 ---@return number y

@@ -17,15 +17,23 @@ end
 
 ---Resets the active summon and shortens the countdown for a headless test.
 function M.reset()
+  local state = remote.call("nexus-bosses", "get_state")
+  local previous_position = state and state.summon and state.summon.beacon_position
   remote.call("nexus-bosses", "abort_summon", true)
   remote.call("nexus-bosses", "set_ignore_player_presence", true)
   remote.call("nexus-bosses", "set_countdown", 3)
   local surface = game.get_surface("nexus")
   if surface then
     -- Precursor waves and reinforcements from the previous test are not tracked and can destroy the next beacon.
-    for _, entity in ipairs(surface.find_entities_filtered({ position = { 0, 0 }, radius = 400, force = "enemy" })) do
-      if entity.valid then
-        entity.destroy()
+    local centers = { { 0, 0 } }
+    if previous_position then
+      centers[#centers + 1] = previous_position
+    end
+    for _, center in ipairs(centers) do
+      for _, entity in ipairs(surface.find_entities_filtered({ position = center, radius = 400, force = "enemy" })) do
+        if entity.valid then
+          entity.destroy()
+        end
       end
     end
   end

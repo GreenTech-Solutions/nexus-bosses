@@ -49,7 +49,7 @@ function M.spawn(summon, surface)
     return false, "msg-fail-position"
   end
   records.add(summon, boss, true, "boss")
-  summon.colossus = { next_attack = INTERVALS[summon.variant] }
+  summon.colossus = { next_attack = util.interval(summon, INTERVALS[summon.variant]) }
   spawn.dispatch(surface, { boss }, summon.position)
   return true, nil
 end
@@ -197,14 +197,15 @@ function M.tick(summon, surface, _force)
   end
 
   local state = summon.colossus
-  if seconds >= state.next_attack then
-    state.next_attack = seconds + INTERVALS[summon.variant]
+  local interval = util.interval(summon, INTERVALS[summon.variant])
+  if interval and state.next_attack and seconds >= state.next_attack then
+    state.next_attack = seconds + interval
     schedule_attack(summon, surface, boss)
   end
 end
 
 ---@param summon table
----@return LocalisedString
+---@return LocalisedString|nil
 function M.status(summon)
   local shield = summon.shield
   if shield and game.tick < shield.until_tick then
@@ -222,6 +223,9 @@ function M.status(summon)
     end
   end
 
+  if not summon.colossus.next_attack then
+    return nil
+  end
   local remaining = math.max(0, summon.colossus.next_attack - summon.active_seconds)
   return {
     "nexus-bosses.status-colossus-attack",

@@ -59,7 +59,11 @@ function M.spawn(summon, surface)
     end
   end
   spider.supply(saucer, AMMO)
-  summon.watcher = { last_mark = 0, last_wave = 0, last_approach = 0 }
+  summon.watcher = {
+    next_mark = util.interval(summon, MARK_SECONDS),
+    last_wave = 0,
+    last_approach = 0,
+  }
   spawn.dispatch(surface, units, summon.position)
   return true, nil
 end
@@ -90,8 +94,12 @@ function M.tick(summon, surface, _force)
     spawn.dispatch(surface, drones, summon.position)
   end
 
-  if seconds - state.last_mark >= MARK_SECONDS then
-    state.last_mark = seconds
+  local mark_interval = util.interval(summon, MARK_SECONDS)
+  if mark_interval and not state.next_mark then
+    state.next_mark = (state.last_mark or 0) + mark_interval
+  end
+  if mark_interval and state.next_mark and seconds >= state.next_mark then
+    state.next_mark = seconds + mark_interval
     local target = nearest_building(surface, game.forces[summon.force], saucer.position, MARK_RADIUS)
     if target and #drones > 0 then
       telegraph.line(surface, saucer, target, TELEGRAPH_TICKS)
