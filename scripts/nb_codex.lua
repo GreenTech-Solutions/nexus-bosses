@@ -46,15 +46,27 @@ end
 ---@param page LuaGuiElement
 ---@param boss_id string
 local function add_tactics(page, boss_id)
-  local table_element = page.add({ type = "table", column_count = 2 })
   if boss_id == "colossus" then
-    -- The Colossus comes in variants with different weaknesses: one row for all of them.
-    tactics_row(table_element, { "nexus-bosses.codex-variants" }, "")
+    paragraph(page, { "nexus-bosses.codex-variants" }, "caption_label")
+    local variants = page.add({ type = "table", column_count = 3 })
+    variants.add({ type = "label", caption = { "nexus-bosses.codex-variant-name" }, style = "caption_label" })
+    variants.add({ type = "label", caption = { "nexus-bosses.codex-weak" }, style = "caption_label" })
+    variants.add({ type = "label", caption = { "nexus-bosses.codex-variant-attack" }, style = "caption_label" })
+    for _, variant in ipairs(cfg.COLOSSUS_VARIANTS) do
+      local entity = cfg.COLOSSUS_PREFIX .. variant.id
+      local weak = resistance.of(entity)
+      variants.add({ type = "label", caption = { "entity-name." .. entity } })
+      variants.add({ type = "label", caption = resistance.list_caption(weak) })
+      variants.add({ type = "label", caption = { "nexus-bosses.colossus-attack-" .. variant.id } })
+    end
   else
+    local table_element = page.add({ type = "table", column_count = 2 })
     local weak, strong = resistance.of(cfg.BOSSES[boss_id].entity)
     tactics_row(table_element, { "nexus-bosses.codex-weak" }, resistance.list_caption(weak))
     tactics_row(table_element, { "nexus-bosses.codex-strong" }, resistance.list_caption(strong))
   end
+
+  local table_element = page.add({ type = "table", column_count = 2 })
   tactics_row(table_element, { "nexus-bosses.codex-mechanic" }, { "nexus-bosses.mechanic-" .. boss_id })
 end
 

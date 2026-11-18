@@ -48,6 +48,7 @@ local OWN = {
   },
   ["rogue-spidertron"] = { module = require("scripts.bosses.rogue-spidertron"), watch = { cfg.SPIDERTRON } },
   ["twin-maws"] = { module = require("scripts.bosses.twin-maws"), watch = { cfg.MAW_FIRE, cfg.MAW_ACID } },
+  ["colossus"] = { module = require("scripts.bosses.colossus"), watch = {} },
   ["plague-hulk"] = { module = require("scripts.bosses.plague-hulk"), watch = { cfg.HULK } },
   ["storm-guardian"] = { module = require("scripts.bosses.storm-guardian"), watch = { cfg.GUARDIAN } },
   ["devourer"] = { module = require("scripts.bosses.devourer"), watch = {} }, -- on_segmented_unit_died
@@ -57,6 +58,15 @@ local OWN = {
 ---@return LocalisedString
 local function boss_name(id)
   return { "nexus-bosses.boss-" .. id }
+end
+
+---@param summon table
+---@return LocalisedString
+local function title_name(summon)
+  if summon.variant_entity then
+    return { "entity-name." .. summon.variant_entity }
+  end
+  return boss_name(summon.boss)
 end
 
 ---@param summon table
@@ -201,7 +211,7 @@ local function update_health_bar(summon, force)
   local status = module and module.status and module.status(summon) or nil
   local resist = expedition.has_log(summon.force, summon.boss) and resistance.caption(main_entity(summon)) or nil
   summon.health_bar = { status = status, resist = resist }
-  gui.update(force, { "nexus-bosses.bar-title", boss_name(summon.boss), { "nexus-bosses.stage-" .. cfg.CIRCLES[summon.circle].stage } },
+  gui.update(force, { "nexus-bosses.bar-title", title_name(summon), { "nexus-bosses.stage-" .. cfg.CIRCLES[summon.circle].stage } },
     records.health_share(summon), status, resist)
 end
 
@@ -668,6 +678,12 @@ function M.on_built(entity, player)
     lair = bearing.in_lair(force.name, boss_id, entity.position),
     pylon_share = bearing.pylon_share(force.name, boss_id, entity.position),
   }
+  if boss_id == "colossus" then
+    summon.variant = storage.next_colossus_variant
+      or (cfg.COLOSSUS_VARIANTS[math.random(#cfg.COLOSSUS_VARIANTS)] --[[@as table]]).id
+    storage.next_colossus_variant = nil
+    summon.variant_entity = cfg.COLOSSUS_PREFIX .. summon.variant
+  end
   summon.watch = { entity.name }
   if boss.kind == "bm" then
     summon.bm = { names = bm.boss_names(boss_id), attempts = 0, window = BM_WINDOW_SECONDS, snapshot = {}, last_tick = 0 }
@@ -677,6 +693,9 @@ function M.on_built(entity, player)
   else
     for _, name in ipairs((OWN[boss_id] --[[@as table]]).watch) do
       summon.watch[#summon.watch + 1] = name
+    end
+    if summon.variant_entity then
+      summon.watch[#summon.watch + 1] = summon.variant_entity
     end
   end
   storage.summon = summon
@@ -691,6 +710,10 @@ function M.on_built(entity, player)
   util.say(force, { "nexus-bosses.call-" .. boss_id }, util.COLORS.warning)
   util.say(force, { "nexus-bosses.msg-countdown-started", boss_name(boss_id), countdown, util.compass(summon.angle) },
     util.COLORS.warning)
+  if summon.variant_entity then
+    util.say(force, { "nexus-bosses.msg-colossus-variant", title_name(summon), resistance.caption(summon.variant_entity) },
+      util.COLORS.warning)
+  end
   if summon.lair then
     util.say(force, { "nexus-bosses.msg-lair-fight", boss_name(boss_id),
       string.format("[item=%s,quality=%s]", cfg.trophy_name(boss_id), bearing.next_quality(force.name, boss_id)) },
@@ -782,10 +805,13 @@ function M.snapshot()
     countdown_left = summon.countdown,
     countdown_total = summon.countdown_total,
     active_seconds = summon.active_seconds,
+    variant = summon.variant,
+    variant_entity = summon.variant_entity,
     tracked = records.snapshot(summon),
     pending = pending,
     health_share = records.health_share(summon),
     health_bar = summon.health_bar and { status = summon.health_bar.status, resist = summon.health_bar.resist },
+    shield = summon.shield and { health = summon.shield.health, until_tick = summon.shield.until_tick },
     spawn_note = summon.spawn_note,
     charge = summon.charge,
     lair = summon.lair,
@@ -793,6 +819,18 @@ function M.snapshot()
     spawn_distance = summon.spawn_distance,
     bm = summon.bm and { attempts = summon.bm.attempts, window_left = summon.bm.window, last_error = summon.bm.error },
   }
+end
+
+---For tests and debugging, fixes the variant of the next Colossus beacon.
+---@param variant_id string
+function M.set_next_colossus(variant_id)
+  for _, variant in ipairs(cfg.COLOSSUS_VARIANTS) do
+    if variant.id == variant_id then
+      storage.next_colossus_variant = variant_id
+      return
+    end
+  end
+  error("nexus-bosses.set_next_colossus: unknown variant " .. variant_id)
 end
 
 ---Pending data contains only numbers and positions; remote.call returns a copy.

@@ -61,6 +61,23 @@ maw_fire.max_health = maw_fire.max_health * HEALTH
 local maw_acid = copy("turret", "bm-worm-boss-acid-shooter", cfg.MAW_ACID)
 maw_acid.max_health = maw_acid.max_health * HEALTH
 
+-- The six Colossus variants are copies of Big Monsters' level 5 units. Keep the original prototypes untouched:
+-- Big Monsters only supplies the source prototypes; Nexus Bosses spawns and controls these copies.
+local colossus_variants = {}
+for _, variant in ipairs(cfg.COLOSSUS_VARIANTS) do
+  local original = data.raw.unit[variant.original]
+  if not original then
+    error("nexus-bosses: " .. variant.original .. " of Big Monsters is missing")
+  end
+  local original_health = original.max_health
+  if type(original_health) ~= "number" then
+    error("nexus-bosses: " .. variant.original .. " of Big Monsters has no max_health")
+  end
+  local colossus = copy("unit", variant.original, cfg.COLOSSUS_PREFIX .. variant.id)
+  colossus.max_health = original_health * cfg.COLOSSUS_HEALTH_SHARE * HEALTH
+  colossus_variants[#colossus_variants + 1] = colossus
+end
+
 -- Plague Hulk: the crashed ship of Toxic_biters. Its spawner picks boss biters by evolution; at most 7 at its side.
 local hulk = copy("unit-spawner", "tb_infected_ship_boss", cfg.HULK)
 hulk.max_health = cfg.HULK_HEALTH * HEALTH / SPAWNER_GROWTH
@@ -79,6 +96,7 @@ local spidertron = copy("spider-vehicle", "bm-spidertron_5", cfg.SPIDERTRON)
 spidertron.max_health = cfg.SPIDERTRON_HEALTH * HEALTH
 
 data:extend({ queen, nest, maw_fire, maw_acid, hulk, guardian, watcher, spidertron })
+data:extend(colossus_variants)
 
 -- Devourer: a big demolisher with 5 million health. Every segment prototype of a demolisher has the health of the
 -- head, so the segments are copied too; they carry the Devourer's name in the tooltip of the body.

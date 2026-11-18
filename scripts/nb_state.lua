@@ -2,6 +2,7 @@
 --   storage.progress        [force_name] = { defeated = { [boss_id] = true } }
 --   storage.summon          the active summon or nil (scripts/nb_summon.lua)
 --   storage.next_summon_id  counter
+--   storage.next_colossus_variant test switch consumed by the next Colossus beacon
 --   storage.ignore_presence test switch: the countdown runs without a player on Nexus
 --   storage.countdown_override test switch: the next countdown in seconds; nil uses the setting
 --   storage.storm_weakened  the Storm Guardian has fallen once

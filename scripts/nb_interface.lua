@@ -11,6 +11,7 @@
 --   abort_summon(destroy_bosses?)      ends the active summon without a victory; true also destroys its entities
 --   get_pending_data()                 pending telegraph data for tests and debugging
 --   set_tracked_health(unit_number, health) changes a tracked entity's health for tests and debugging
+--   set_next_colossus(variant_id) selects the next Colossus variant for tests and debugging
 --   find_log(force_name, boss_id)      finds the expedition log of a boss, as opening its wreck would
 --   toggle_detector(player_index)      as the shortcut of the signal detector
 --   open_codex(player_index, boss_id?) opens the codex of the signal on the page of a boss
@@ -59,6 +60,10 @@ remote.add_interface("nexus-bosses", {
     assert(type(health) == "number" and health > 0,
       "nexus-bosses.set_tracked_health: expected positive health")
     return summon.set_tracked_health(unit_number, health)
+  end,
+  set_next_colossus = function(variant_id)
+    assert(type(variant_id) == "string", "nexus-bosses.set_next_colossus: expected a variant id")
+    summon.set_next_colossus(variant_id)
   end,
   find_log = function(force_name, boss_id)
     expedition.find_log(force_name, boss_id)

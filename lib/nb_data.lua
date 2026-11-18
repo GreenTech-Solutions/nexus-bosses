@@ -158,10 +158,17 @@ M.DEVOURER_HEALING_PER_TICK = 50 -- the big demolisher heals 400 a tick, 8 % of 
 M.WATCHER_HEALTH = 56000
 M.SPIDERTRON_HEALTH = 26000
 
-local BM_COLOSSUS_PREFIXES = {
-  -- with a soldier chance above 0 the event may pick a human boss, flamethrowers without "boss" in the name
-  "biterzilla", "maf-giant-", "bm-motherbiterzilla", "bm_fake_human_boss_", "bm_fake_human_flamethrower_",
+-- Colossus copies of Big Monsters' level 5 units, selected when its beacon is lit.
+M.COLOSSUS_VARIANTS = {
+  { id = "fire", original = "biterzilla15" },
+  { id = "storm", original = "biterzilla25" },
+  { id = "armored", original = "biterzilla35" },
+  { id = "mother", original = "bm-motherbiterzilla5" },
+  { id = "fire-spitter", original = "maf-giant-fire-spitter5" },
+  { id = "acid-spitter", original = "maf-giant-acid-spitter5" },
 }
+M.COLOSSUS_PREFIX = "nexus-colossus-"
+M.COLOSSUS_HEALTH_SHARE = 0.35 -- Big Monsters spawns these at the evolution of Nexus.
 
 local SPECS = {
   ["arachnid-queen"] = {
@@ -185,10 +192,9 @@ local SPECS = {
     precursors = { "behemoth-spitter" },
   },
   ["colossus"] = {
-    kind = "bm",
-    entity = "biterzilla15",
+    kind = "own",
+    entity = M.COLOSSUS_PREFIX .. "fire",
     precursors = { "behemoth-biter" },
-    bm = { event = "biterzilla", types = { "unit" }, prefixes = BM_COLOSSUS_PREFIXES, explore_chunks = 16 },
   },
   ["plague-hulk"] = {
     kind = "own",
