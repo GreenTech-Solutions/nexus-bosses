@@ -76,7 +76,8 @@ M.LAIR_REMAINS_PREFIX = "nexus-bosses-lair-remains-"
 M.LAIR_SCORCH = "nexus-bosses-lair-scorchmark"
 -- the second trophy of a fight in the lair: one step better with every such fight
 M.LAIR_QUALITIES = { "uncommon", "rare", "epic", "legendary" }
-M.LAIR_LOOT_SHARE = 0.5 -- of the beacon recipe
+M.LAIR_LOOT_SHARE = 1 -- full beacon recipe without a pylon
+M.LAIR_LOOT_SHARE_PYLON = 0.5 -- half the beacon recipe with a pylon
 M.LAIR_FREQUENCY = 4 / 3
 M.LAIR_FREQUENCY_PER_WIN = 0.1
 M.LAIR_FREQUENCY_MAX = 1.6

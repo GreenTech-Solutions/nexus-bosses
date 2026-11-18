@@ -388,7 +388,7 @@ local function victory(summon, force, surface)
   util.play(force, "victory")
   progress.drop_trophy(force, surface, boss, summon.last_position or summon.position)
   if summon.lair then
-    bearing.lair_victory(force, surface, boss, summon.last_position or summon.position)
+    bearing.lair_victory(force, surface, boss, summon.last_position or summon.position, summon.weaken or 0)
   end
   expedition.reveal_next(force, summon.last_position or summon.position)
   if boss == "storm-guardian" then
@@ -732,8 +732,12 @@ function M.on_built(entity, player)
     util.say(force, countdown_note, util.COLORS.warning)
   end
   if summon.lair then
+    local trophy_quality = bearing.next_quality(force.name, boss_id)
+    if (summon.weaken or 0) > 0 then
+      trophy_quality = assert(bearing.pylon_quality(force.name, boss_id))
+    end
     util.say(force, { "nexus-bosses.msg-lair-fight", boss_name(boss_id),
-      string.format("[item=%s,quality=%s]", cfg.trophy_name(boss_id), bearing.next_quality(force.name, boss_id)) },
+      string.format("[item=%s,quality=%s]", cfg.trophy_name(boss_id), trophy_quality) },
       util.COLORS.good)
   end
   if charge > 0 then

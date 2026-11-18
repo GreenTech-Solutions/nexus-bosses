@@ -3,6 +3,27 @@
 local cfg = require("lib.nb_data")
 local helpers = require("tests.helpers")
 local util = require("scripts.nb_util")
+local bearing = require("scripts.nb_bearing")
+
+---@param surface LuaSurface
+---@param position MapPosition
+---@param name string
+---@param quality string|nil
+---@return integer
+local function item_count(surface, position, name, quality)
+  local count = 0
+  for _, entity in ipairs(surface.find_entities_filtered({
+    position = position,
+    radius = 8,
+    name = "item-on-ground",
+  })) do
+    local stack = entity.stack
+    if entity.valid and stack.valid_for_read and stack.name == name and (not quality or stack.quality.name == quality) then
+      count = count + stack.count
+    end
+  end
+  return count
+end
 
 describe("pylon and lair mechanics", function()
   before_each(function()
@@ -36,6 +57,63 @@ describe("pylon and lair mechanics", function()
     assert(not util.due(state, "mark", 13, nil), "a nil interval should never fire")
     assert(state.mark == nil, "a nil interval should clear its stored use")
     assert(not util.due(state, "mark", 24, nil), "a nil interval should remain disabled")
+  end)
+
+  test("a pylon trades half the lair loot for a trophy of its quality", function()
+    local surface = helpers.nexus()
+    local force = game.forces.player
+    local boss_id = "arachnid-queen"
+    local position = { x = 80, y = 80 }
+    bearing.repair_pylon(force, boss_id, "rare")
+
+    local circle = cfg.CIRCLES[cfg.BOSSES[boss_id].circle]
+    local cost = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
+    local trophy = cfg.trophy_name(boss_id)
+    local alloy_before = item_count(surface, position, cfg.ALLOY_ITEM)
+    local processors_before = item_count(surface, position, cfg.PROCESSOR_ITEM)
+    local trophy_before = item_count(surface, position, trophy, "rare")
+    local wins_before = bearing.wins_of(force.name, boss_id)
+
+    bearing.lair_victory(force, surface, boss_id, position, 0.5)
+
+    assert(item_count(surface, position, trophy, "rare") == trophy_before + 1,
+      "the pylon lair victory did not drop a rare second trophy")
+    assert(item_count(surface, position, cfg.ALLOY_ITEM) - alloy_before
+      == math.max(1, math.floor(circle.alloy * cost * cfg.LAIR_LOOT_SHARE_PYLON + 0.5)),
+      "the pylon lair victory did not drop half the beacon recipe's alloy")
+    assert(item_count(surface, position, cfg.PROCESSOR_ITEM) - processors_before
+      == math.max(1, math.floor(circle.processors * cost * cfg.LAIR_LOOT_SHARE_PYLON + 0.5)),
+      "the pylon lair victory did not drop half the beacon recipe's processors")
+    assert(bearing.wins_of(force.name, boss_id) == wins_before + 1,
+      "the pylon lair victory did not increase the win count")
+  end)
+
+  test("a lair victory without a pylon upgrades the trophy and drops a full recipe", function()
+    local surface = helpers.nexus()
+    local force = game.forces.player
+    local boss_id = "watcher"
+    local position = { x = -80, y = 80 }
+    local quality = bearing.next_quality(force.name, boss_id)
+    local circle = cfg.CIRCLES[cfg.BOSSES[boss_id].circle]
+    local cost = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
+    local trophy = cfg.trophy_name(boss_id)
+    local alloy_before = item_count(surface, position, cfg.ALLOY_ITEM)
+    local processors_before = item_count(surface, position, cfg.PROCESSOR_ITEM)
+    local trophy_before = item_count(surface, position, trophy, quality)
+    local wins_before = bearing.wins_of(force.name, boss_id)
+
+    bearing.lair_victory(force, surface, boss_id, position, 0)
+
+    assert(item_count(surface, position, trophy, quality) == trophy_before + 1,
+      "the lair victory without a pylon did not upgrade its second trophy")
+    assert(item_count(surface, position, cfg.ALLOY_ITEM) - alloy_before
+      == math.max(1, math.floor(circle.alloy * cost * cfg.LAIR_LOOT_SHARE + 0.5)),
+      "the lair victory without a pylon did not drop the full recipe's alloy")
+    assert(item_count(surface, position, cfg.PROCESSOR_ITEM) - processors_before
+      == math.max(1, math.floor(circle.processors * cost * cfg.LAIR_LOOT_SHARE + 0.5)),
+      "the lair victory without a pylon did not drop the full recipe's processors")
+    assert(bearing.wins_of(force.name, boss_id) == wins_before + 1,
+      "the lair victory without a pylon did not increase the win count")
   end)
 
   test("a legendary pylon leaves the Queen at full health and prevents her nests", function()

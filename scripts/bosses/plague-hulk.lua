@@ -1,9 +1,9 @@
 -- Plague Hulk: the crashed ship of Toxic_biters, a spawner that cannot move. Ten infected turrets of Toxic_biters
 -- guard it (4 laser, 4 gun, 2 artillery). Every two minutes its boss biters (at most seven) march on the base, each with
 -- a command of its own: a unit that joins a unit group is released from the spawner, which would build seven more.
--- With every sortie a cloud of spores reaches the three player turrets nearest to the hulk and shuts them down for 15
--- seconds. (Turning them to the enemy was tried and dropped: one turned rocket turret took out a quarter of a test base;
--- Toxic_biters already turns the turrets its biters kill.)
+-- A sortie's spore cloud follows its units: when one first approaches player turrets, it marks a 15-tile circle around
+-- that unit and shuts down turrets in it after three seconds. (Turning them to the enemy was tried and dropped: one
+-- turned rocket turret took out a quarter of a test base; Toxic_biters already turns the turrets its biters kill.)
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -15,10 +15,10 @@ local M = {}
 
 local UPKEEP_SECONDS = 5
 local SORTIE_SECONDS = 120
-local SPORE_TURRETS = 3
+local SPORE_TRIGGER = 30
 local SPORE_SECONDS = 15
-local SPORE_RADIUS = 400
-local SPORE_TELEGRAPH_SECONDS = 5
+local SPORE_RADIUS = 15
+local SPORE_TELEGRAPH_TICKS = 3 * 60
 
 -- {prototype, dx, dy} from the hulk
 local GUARDS = {
@@ -102,46 +102,26 @@ function M.spawn(summon, surface)
     end
   end
   surface.create_entity({ name = "big-demolisher-fissure-explosion", position = hulk.position })
-  summon.hulk = { stunned = {} }
+  summon.hulk = { stunned = {}, squad = nil }
   return true, nil
 end
 
----Selects the turrets that will be hit by the next spore release.
----@param surface LuaSurface
----@param summon NbSummon
----@param hulk LuaEntity
----@param count integer
----@return LuaEntity[]
-local function spore_targets(surface, summon, hulk, count)
-  local targets = {}
-  local excluded = {}
-  for _ = 1, count do
-    local turret = spawn.nearest_target(surface, summon, hulk.position, SPORE_RADIUS,
-      { types = cfg.TURRET_TYPES, exclude = excluded })
-    if not turret then
-      break
-    end
-    targets[#targets + 1] = turret
-    if turret.unit_number then
-      excluded[turret.unit_number] = true
-    else
-      break
-    end
-  end
-  return targets
-end
-
----Spores from the hulk: the marked, living turrets stop for a while.
+---Spores from the hulk: the turrets in the marked circle stop for a while.
 ---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
----@param turrets LuaEntity[]
-local function release_spores(summon, surface, force, turrets)
-  local until_tick = game.tick + SPORE_SECONDS * 60
+---@param position MapPosition
+---@param duration_ticks integer
+local function release_spores(summon, surface, force, position, duration_ticks)
+  local until_tick = game.tick + duration_ticks
   local stunned = 0
   local state = assert(summon.hulk)
-  for index = 1, math.min(SPORE_TURRETS, #turrets) do
-    local turret = turrets[index]
+  for _, turret in ipairs(surface.find_entities_filtered({
+    position = position,
+    radius = SPORE_RADIUS,
+    force = summon.force,
+    type = cfg.TURRET_TYPES,
+  })) do
     if turret.valid and not turret.disabled_by_script then
       turret.disabled_by_script = true
       state.stunned[#state.stunned + 1] = { entity = turret, until_tick = until_tick }
@@ -151,8 +131,7 @@ local function release_spores(summon, surface, force, turrets)
   end
   if stunned > 0 then
     util.play(force, "hulk-spores")
-    util.say(force, { "nexus-bosses.msg-hulk-spores", stunned, SPORE_SECONDS },
-      util.COLORS.warning)
+    util.say(force, { "nexus-bosses.msg-hulk-spores", stunned, math.ceil(duration_ticks / 60) }, util.COLORS.warning)
   end
 end
 
@@ -187,22 +166,32 @@ function M.tick(summon, surface, _force)
   local interval = util.interval(summon, SORTIE_SECONDS)
   if record and interval then
     local sortie_due = util.due(state, "next_sortie", seconds, interval)
-    local turret_count = math.floor(SPORE_TURRETS * (1 - (summon.weaken or 0)) + 0.5)
-    if turret_count > 0 and state.next_sortie
-      and state.spore_scheduled_for ~= state.next_sortie
-      and seconds >= state.next_sortie - SPORE_TELEGRAPH_SECONDS then
-      state.spore_scheduled_for = state.next_sortie
-      local targets = spore_targets(surface, summon, record.entity, turret_count)
-      local positions = {}
-      for _, turret in ipairs(targets) do
-        telegraph.filling_circle(summon, surface, turret, 2, SPORE_TELEGRAPH_SECONDS * 60)
-        positions[#positions + 1] = util.copy_position(turret.position)
-      end
-      telegraph.queue(summon, "spores", SPORE_TELEGRAPH_SECONDS * 60, { positions = positions }, targets)
-    end
     if sortie_due then
+      local units = {}
+      for _, unit in ipairs(record.entity.units) do
+        units[#units + 1] = unit
+      end
       spawn.send_spawner_units(summon, surface, record.entity)
-      state.spore_scheduled_for = nil
+      state.squad = { units = units, spored = false }
+    end
+
+    local squad = state.squad
+    if squad and not squad.spored then
+      for _, unit in ipairs(squad.units) do
+        if unit.valid and spawn.nearest_target(surface, summon, unit.position, SPORE_TRIGGER,
+          { types = cfg.TURRET_TYPES }) then
+          squad.spored = true
+          local weaken = summon.weaken or 0
+          if weaken < 1 then
+            local position = util.copy_position(unit.position)
+            local duration_ticks = math.floor(SPORE_SECONDS * (1 - weaken) * 60 + 0.5)
+            telegraph.filling_circle(summon, surface, position, SPORE_RADIUS, SPORE_TELEGRAPH_TICKS)
+            telegraph.queue(summon, "spores", SPORE_TELEGRAPH_TICKS,
+              { position = position, duration_ticks = duration_ticks })
+          end
+          break
+        end
+      end
     end
   end
 end
@@ -213,19 +202,27 @@ end
 ---@param entry NbPending
 function M.on_pending(summon, surface, force, entry)
   if entry.kind == "spores" then
-    local targets = {}
-    for _, turret in ipairs(entry.entities or {}) do
-      if turret.valid then
-        targets[#targets + 1] = turret
-      end
-    end
-    release_spores(summon, surface, force, targets)
+    release_spores(summon, surface, force, entry.data.position,
+      entry.data.duration_ticks or SPORE_SECONDS * 60)
   end
 end
 
 ---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
+  local state = assert(summon.hulk)
+  local squad = state.squad
+  if squad and not squad.spored then
+    local living = 0
+    for _, unit in ipairs(squad.units) do
+      if unit.valid then
+        living = living + 1
+      end
+    end
+    if living > 0 then
+      return { "nexus-bosses.status-hulk-squad", living }
+    end
+  end
   return { "nexus-bosses.status-hulk-guards", #records.of_role(summon, "guard") }
 end
 

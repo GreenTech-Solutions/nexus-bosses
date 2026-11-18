@@ -3,8 +3,9 @@
 -- to a boss in a panel next to its window; after every sector it scans it draws a bearing toward the lair, off by a
 -- random angle that narrows with every scan. Two precise bearings of a force on the same boss that cross at a wide
 -- enough angle find the lair: it is marked on the map and the remains of the boss appear there. A beacon lit within
--- cfg.LAIR_RADIUS of the lair of its boss gives, at the victory, a second trophy of a better quality (one step better
--- with every fight in that lair) and loot worth a share of the beacon.
+-- cfg.LAIR_RADIUS of the lair of its boss gives a second trophy and loot at victory. Without a pylon, the trophy gains
+-- one quality step with every lair win and the loot is a full beacon recipe. With a repaired pylon, the trophy matches
+-- its quality and the loot is half a beacon recipe. Both kinds of victory make the next lair fight harder.
 --
 --   storage.bearing.lairs     [boss_id] = position
 --   storage.bearing.remains   [boss_id] = true once the remains stand
@@ -432,13 +433,21 @@ function M.in_lair(force_name, boss_id, position)
   return lair ~= nil and M.is_found(force_name, boss_id) and util.distance(lair, position) <= cfg.LAIR_RADIUS
 end
 
----A victory in the lair: the second trophy, one quality step better than the last, and loot.
+---A lair victory uses the pylon's trophy quality and half the loot when it weakened the fight; otherwise it upgrades
+---the trophy by one quality step and drops a full beacon recipe.
 ---@param force LuaForce
 ---@param surface LuaSurface
 ---@param boss_id string
 ---@param position MapPosition
-function M.lair_victory(force, surface, boss_id, position)
+---@param weaken number
+function M.lair_victory(force, surface, boss_id, position, weaken)
   local quality = M.next_quality(force.name, boss_id)
+  ---@type number
+  local loot_share = cfg.LAIR_LOOT_SHARE
+  if weaken > 0 then
+    quality = assert(M.pylon_quality(force.name, boss_id))
+    loot_share = cfg.LAIR_LOOT_SHARE_PYLON
+  end
   local wins = storage.bearing.wins[force.name] or {}
   storage.bearing.wins[force.name] = wins
   wins[boss_id] = (wins[boss_id] or 0) + 1
@@ -446,7 +455,7 @@ function M.lair_victory(force, surface, boss_id, position)
   local circle = cfg.CIRCLES[cfg.BOSSES[boss_id].circle]
   local cost = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
   for _, loot in ipairs({ { cfg.ALLOY_ITEM, circle.alloy }, { cfg.PROCESSOR_ITEM, circle.processors } }) do
-    local count = math.max(1, math.floor(loot[2] * cost * cfg.LAIR_LOOT_SHARE + 0.5))
+    local count = math.max(1, math.floor(loot[2] * cost * loot_share + 0.5))
     surface.spill_item_stack({ position = position, stack = { name = loot[1], count = count }, enable_looted = true,
       allow_belts = false })
   end

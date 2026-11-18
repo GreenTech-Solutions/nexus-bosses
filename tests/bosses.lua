@@ -4,6 +4,19 @@ local helpers = require("tests.helpers")
 local util = require("scripts.nb_util")
 
 ---@param surface LuaSurface
+---@param name string
+---@param position MapPosition
+---@param radius number|nil
+---@return LuaEntity
+local function player_entity_at(surface, name, position, radius)
+  local spot = surface.find_non_colliding_position(name, position, radius or 8, 1)
+  assert(spot, "there was no clear spot for the test " .. name)
+  local entity = surface.create_entity({ name = name, position = spot, force = "player" })
+  assert(entity, "the test " .. name .. " could not be created")
+  return entity
+end
+
+---@param surface LuaSurface
 ---@param position MapPosition
 ---@return LuaEntity
 local function wall_at(surface, position)
@@ -185,22 +198,81 @@ describe("reworked bosses", function()
     end)
   end)
 
-  test("the Plague Hulk's spores disable and restore a nearby player turret", function()
+  test("the Rogue Spidertron chooses the pole with the busiest EMP area", function()
+    local surface = helpers.nexus()
+    helpers.light("rogue-spidertron", { 0, 0 })
+    local poles_ready = false
+    ---@type LuaEntity|nil
+    local near_pole
+    ---@type LuaEntity|nil
+    local busy_pole
+    helpers.on_active(1200, function(summon, ticks_since_active)
+      if not poles_ready then
+        local boss = helpers.tracked(summon, "boss")
+        assert(boss and boss.position, "the Rogue Spidertron position is missing from the summon snapshot")
+        near_pole = player_entity_at(surface, "small-electric-pole",
+          { x = boss.position.x + 6, y = boss.position.y })
+        busy_pole = player_entity_at(surface, "small-electric-pole",
+          { x = boss.position.x + 28, y = boss.position.y })
+        local busy_x, busy_y = util.xy(busy_pole.position)
+        for _, offset in ipairs({ { -6, -6 }, { 6, -6 }, { -6, 6 }, { 6, 6 }, { 0, 8 } }) do
+          player_entity_at(surface, "assembling-machine-1", {
+            x = busy_x + offset[1],
+            y = busy_y + offset[2],
+          }, 2)
+        end
+        poles_ready = true
+      else
+        local target = summon.boss_state and summon.boss_state.target_position --[[@as MapPosition|nil]]
+        if target then
+          if not (busy_pole and near_pole) then
+            error("the Rogue Spidertron pole test lost a test pole")
+          end
+          local busy_x, busy_y = util.xy(busy_pole.position)
+          local near_x, near_y = util.xy(near_pole.position)
+          local target_x, target_y = util.xy(target)
+          assert(math.abs(target_x - busy_x) <= 0.1 and math.abs(target_y - busy_y) <= 0.1,
+            "the Rogue Spidertron did not choose the pole with five nearby assemblers")
+          assert((target_x - near_x) ^ 2 + (target_y - near_y) ^ 2 > 100,
+            "the Rogue Spidertron chose the isolated nearby pole")
+          return true
+        end
+      end
+      if ticks_since_active >= 1200 then
+        error("the Rogue Spidertron did not select a pole in time")
+      end
+    end)
+  end)
+
+  test("the Plague Hulk's spores disable and restore a turret in the marked circle", function()
     local surface = helpers.nexus()
     helpers.light("plague-hulk", { 0, 0 })
+    local approach_turret
     local turret
     local disabled_at
     helpers.on_active(9000, function(summon, ticks_since_active)
-      if not turret then
+      if not approach_turret then
         local boss = helpers.tracked(summon, "boss")
         assert(boss and boss.position, "the Plague Hulk position is missing from the summon snapshot")
-        local position = surface.find_non_colliding_position("gun-turret", {
-          x = boss.position.x + 20, y = boss.position.y,
-        }, 8, 1)
-        assert(position, "there was no clear spot for the Plague Hulk test turret")
-        turret = surface.create_entity({ name = "gun-turret", position = position, force = "player" })
-        assert(turret, "the Plague Hulk test turret could not be created")
-        turret.destructible = false
+        approach_turret = player_entity_at(surface, "gun-turret",
+          { x = boss.position.x + 20, y = boss.position.y })
+        approach_turret.destructible = false
+      elseif not turret then
+        local spore = helpers.pending(summon, "spores")
+        if spore then
+          local pending_data = remote.call("nexus-bosses", "get_pending_data")
+          ---@cast pending_data {kind: string, at: integer, data: {position: MapPosition}}[]
+          for _, entry in ipairs(pending_data) do
+            if entry.kind == "spores" and entry.at == spore.at then
+              turret = player_entity_at(surface, "gun-turret", entry.data.position, 4)
+              turret.destructible = false
+              break
+            end
+          end
+          if not turret then
+            error("the Plague Hulk spore warning had no position")
+          end
+        end
       elseif turret and turret.valid and not disabled_at and turret.disabled_by_script then
         disabled_at = game.tick
       elseif disabled_at and game.tick >= disabled_at + 15 * 60 + 20 then
@@ -211,6 +283,45 @@ describe("reworked bosses", function()
       end
       if ticks_since_active >= 9000 then
         error("the Plague Hulk spore test timed out: " .. helpers.describe_summon(summon))
+      end
+    end)
+  end)
+
+  test("the Plague Hulk has no spores if its sortie dies before approaching", function()
+    local surface = helpers.nexus()
+    helpers.light("plague-hulk", { 0, 0 })
+    local approach_turret = player_entity_at(surface, "gun-turret", { x = 20, y = 0 })
+    approach_turret.destructible = false
+    local killed = false
+    local spores_seen = false
+    local killed_at
+    helpers.on_active(9000, function(summon, ticks_since_active)
+      if helpers.pending(summon, "spores") then
+        spores_seen = true
+      end
+      if not killed and summon.active_seconds >= 120 then
+        local boss = helpers.tracked(summon, "boss")
+        assert(boss and boss.position, "the Plague Hulk position is missing from the summon snapshot")
+        local hulk = helpers.find_entity(surface, boss.name, boss.position, 8)
+        assert(hulk and hulk.valid, "the Plague Hulk entity is missing")
+        local units = hulk.units
+        local sortie_size = #units
+        if sortie_size > 0 then
+          for _, unit in ipairs(units) do
+            if unit.valid then
+              unit.die()
+            end
+          end
+          killed = true
+          killed_at = game.tick
+        end
+      elseif killed and killed_at and game.tick >= killed_at + 5 * 60 then
+        assert(not spores_seen, "the Plague Hulk queued spores after its sortie died")
+        assert(not approach_turret.disabled_by_script, "the Plague Hulk disabled a turret after its sortie died")
+        return true
+      end
+      if ticks_since_active >= 9000 then
+        error("the Plague Hulk sortie did not die before it approached: " .. helpers.describe_summon(summon))
       end
     end)
   end)
@@ -271,7 +382,9 @@ describe("reworked bosses", function()
     local variant = variants[variant_index]
     local attempt_tick = game.tick
     local attack_seen = false
-    local test_turret
+    local test_turrets = {}
+    local spitter_group = {}
+    local target_checked = false
 
     local function ignite()
       helpers.reset()
@@ -280,40 +393,69 @@ describe("reworked bosses", function()
       helpers.light("colossus", { 0, 0 })
       attempt_tick = game.tick
       attack_seen = false
-      test_turret = nil
+      test_turrets = {}
+      spitter_group = {}
+      target_checked = false
     end
 
     ignite()
     helpers.on_active(#variants * 2400, function(summon, _ticks_since_active)
       local state = summon.boss_state
       if state.variant == variant then
-        if (variant == "fire-spitter" or variant == "acid-spitter") and not test_turret then
+        if (variant == "fire-spitter" or variant == "acid-spitter") and #test_turrets == 0 then
           local boss = helpers.tracked(summon, "boss")
           assert(boss and boss.position, "the Colossus position is missing from the summon snapshot")
           local surface = helpers.nexus()
           local boss_entity = helpers.find_entity(surface, state.variant_entity)
           assert(boss_entity, "the Colossus entity is missing")
-          local turret_position = surface.find_non_colliding_position("gun-turret", {
-            x = boss.position.x + 10, y = boss.position.y,
-          }, 3, 1)
-          assert(turret_position, "there was no clear spot for the Colossus test turret")
-          local turret = surface.create_entity({
-            name = "gun-turret",
-            position = turret_position,
-            force = "player",
-          })
-          assert(turret, "the Colossus test turret could not be created")
-          turret.destructible = false
+          local single = player_entity_at(surface, "gun-turret",
+            { x = boss.position.x + 7, y = boss.position.y }, 5)
+          single.destructible = false
+          test_turrets[#test_turrets + 1] = single
+          for _, offset in ipairs({ { 24, -3 }, { 28, 0 }, { 24, 3 } }) do
+            local turret = player_entity_at(surface, "gun-turret", {
+              x = boss.position.x + offset[1],
+              y = boss.position.y + offset[2],
+            }, 2)
+            turret.destructible = false
+            test_turrets[#test_turrets + 1] = turret
+            spitter_group[#spitter_group + 1] = turret
+          end
           boss_entity.disabled_by_script = true
-          test_turret = turret
         end
 
         local kind = "colossus-" .. variant
-        if helpers.pending(summon, kind) then
+        local pending = helpers.pending(summon, kind)
+        if pending then
           attack_seen = true
+          if (variant == "fire-spitter" or variant == "acid-spitter") and not target_checked then
+            local pending_data = remote.call("nexus-bosses", "get_pending_data")
+            ---@cast pending_data {kind: string, at: integer, data: {position: MapPosition}}[]
+            local target
+            for _, entry in ipairs(pending_data) do
+              if entry.kind == kind and entry.at == pending.at then
+                target = entry.data.position
+                break
+              end
+            end
+            if not target then
+              error("the Colossus spitter attack had no target position")
+            end
+            local target_in_group = false
+            for _, turret in ipairs(spitter_group) do
+              if util.distance(target, turret.position) <= 0.1 then
+                target_in_group = true
+                break
+              end
+            end
+            assert(target_in_group, "the Colossus spitter did not target the denser group of three turrets")
+            target_checked = true
+          end
         elseif attack_seen then
-          if test_turret and test_turret.valid then
-            test_turret.destroy()
+          for _, turret in ipairs(test_turrets) do
+            if turret.valid then
+              turret.destroy()
+            end
           end
           remote.call("nexus-bosses", "abort_summon", true)
           variant_index = variant_index + 1

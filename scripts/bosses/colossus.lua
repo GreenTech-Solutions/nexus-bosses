@@ -35,6 +35,37 @@ local SPITTER_PROJECTILES = {
   ["acid-spitter"] = cfg.COLOSSUS_ACID_PROJECTILE,
 }
 
+---@param surface LuaSurface
+---@param summon NbSummon
+---@param position MapPosition
+---@return LuaEntity|nil
+local function best_spitter_target(surface, summon, position)
+  local turrets = spawn.targets(surface, summon, position, SPITTER_RADIUS, { types = cfg.TURRET_TYPES })
+  table.sort(turrets, function(a, b)
+    local distance_a = util.distance(position, a.position)
+    local distance_b = util.distance(position, b.position)
+    if distance_a == distance_b then
+      return (a.unit_number or 0) < (b.unit_number or 0)
+    end
+    return distance_a < distance_b
+  end)
+
+  local best, best_count, best_distance
+  for _, turret in ipairs(turrets) do
+    local count = surface.count_entities_filtered({
+      position = turret.position,
+      radius = SPITTER_ATTACK_RADIUS,
+      force = summon.force,
+      type = cfg.TURRET_TYPES,
+    })
+    local distance = util.distance(position, turret.position)
+    if not best_count or count > best_count or (count == best_count and distance < best_distance) then
+      best, best_count, best_distance = turret, count, distance
+    end
+  end
+  return best
+end
+
 ---@param summon NbSummon
 function M.prepare(summon)
   summon.variant = storage.next_colossus_variant
@@ -113,8 +144,7 @@ local function schedule_attack(summon, surface, boss)
     data.position = util.copy_position(point)
     data.count = count
   elseif variant == "fire-spitter" or variant == "acid-spitter" then
-    local turret = spawn.nearest_target(surface, summon, boss.position, SPITTER_RADIUS,
-      { types = cfg.TURRET_TYPES })
+    local turret = best_spitter_target(surface, summon, boss.position)
     if not turret then
       return
     end

@@ -19,6 +19,35 @@ local EMP_COOLDOWN_SECONDS = 20
 local SUPPLY_SECONDS = 18
 local AMMO = { { name = "explosive-rocket", count = 400 } }
 
+---@param surface LuaSurface
+---@param summon NbSummon
+---@param position MapPosition
+---@param exclude table<integer, integer>
+---@return LuaEntity|nil
+local function best_pole(surface, summon, position, exclude)
+  local poles = spawn.targets(surface, summon, position, SEARCH_RADIUS,
+    { types = cfg.POLE_TYPES, exclude = exclude })
+  table.sort(poles, function(a, b)
+    local distance_a = util.distance(position, a.position)
+    local distance_b = util.distance(position, b.position)
+    if distance_a == distance_b then
+      return (a.unit_number or 0) < (b.unit_number or 0)
+    end
+    return distance_a < distance_b
+  end)
+
+  local best, best_count, best_distance
+  for index = 1, math.min(20, #poles) do
+    local pole = poles[index]
+    local count = surface.count_entities_filtered({ position = pole.position, radius = EMP_RADIUS, force = summon.force })
+    local distance = util.distance(position, pole.position)
+    if not best_count or count > best_count or (count == best_count and distance < best_distance) then
+      best, best_count, best_distance = pole, count, distance
+    end
+  end
+  return best
+end
+
 ---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
@@ -60,8 +89,7 @@ function M.tick(summon, surface, _force)
 
   local pole = state.target
   if not (pole and pole.valid) then
-    pole = spawn.nearest_target(surface, summon, entity.position, SEARCH_RADIUS,
-      { types = cfg.POLE_TYPES, exclude = state.exclude })
+    pole = best_pole(surface, summon, entity.position, state.exclude)
     state.target = pole
     if pole then
       telegraph.line(summon, surface, entity, pole, 18 * 60)
@@ -203,7 +231,8 @@ function M.snapshot(summon)
       count = count + 1
     end
   end
-  return { emp = count }
+  local target = summon.spidertron and summon.spidertron.target
+  return { emp = count, target_position = target and target.valid and util.copy_position(target.position) or nil }
 end
 
 return M

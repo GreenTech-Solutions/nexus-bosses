@@ -15,14 +15,14 @@ local PRECURSOR_MAX = 120
 local ATTACK_RADIUS = 45
 local BUILDING_SEARCH_RADIUS = 600
 
----The nearest player target matching the requested filters.
+---All player targets matching the requested filters.
 ---@param surface LuaSurface
 ---@param summon table
 ---@param position MapPosition
 ---@param radius number
 ---@param filter table|nil
----@return LuaEntity|nil
-function M.nearest_target(surface, summon, position, radius, filter)
+---@return LuaEntity[]
+function M.targets(surface, summon, position, radius, filter)
   filter = filter or {}
   local query = {
     position = position,
@@ -44,6 +44,18 @@ function M.nearest_target(surface, summon, position, radius, filter)
       candidates[#candidates + 1] = entity
     end
   end
+  return candidates
+end
+
+---The nearest player target matching the requested filters.
+---@param surface LuaSurface
+---@param summon table
+---@param position MapPosition
+---@param radius number
+---@param filter table|nil
+---@return LuaEntity|nil
+function M.nearest_target(surface, summon, position, radius, filter)
+  local candidates = M.targets(surface, summon, position, radius, filter)
   return #candidates > 0 and surface.get_closest(position, candidates) or nil
 end
 
