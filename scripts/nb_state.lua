@@ -1,8 +1,10 @@
 -- The storage of the mod. The modules keep no state of their own.
---   storage.progress        [force_name] = { defeated = { [boss_id] = true } }
+--   storage.progress        [force_name] = { defeated = { [boss_id] = true }, colossus_variants = { [variant_id] = true } }
 --   storage.summon          the active summon or nil (scripts/nb_summon.lua)
 --   storage.next_summon_id  counter
---   storage.next_colossus_variant test switch consumed by the next Colossus beacon
+--   storage.colossus_next   [force_name] = variant_id, held until a Colossus victory
+--   storage.next_colossus_variant test switch consumed by a Colossus selection
+--   storage.next_angle      [force_name][boss_id] = side angle, held until the boss starts spawning
 --   storage.ignore_presence test switch: the countdown runs without a player on Nexus
 --   storage.countdown_override test switch: the next countdown in seconds; nil uses the setting
 --   storage.storm_weakened  the Storm Guardian has fallen once

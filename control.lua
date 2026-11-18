@@ -80,6 +80,9 @@ end
 script.on_event(defines.events.on_segmented_unit_died, summon.on_segmented_unit_died,
   { { filter = "name", name = cfg.DEVOURER } })
 
+script.on_event(defines.events.on_entity_damaged, summon.on_damaged,
+  { { filter = "name", name = cfg.COLOSSUS_PREFIX .. "armored" } })
+
 script.on_event(defines.events.on_surface_created, function(event)
   nexus.on_surface_created(event.surface_index)
   local surface = game.get_surface(event.surface_index)
@@ -151,6 +154,7 @@ end)
 
 script.on_event(defines.events.on_forces_merged, function(event)
   progress.on_forces_merged(event.source_name, event.destination)
+  summon.on_forces_merged(event.source_name, event.destination)
 end)
 
 script.on_nth_tick(60, function(event)
@@ -175,6 +179,7 @@ end)
 
 script.on_init(function()
   state.init()
+  summon.init()
   expedition.init()
   bearing.init()
   storms.init()
@@ -190,6 +195,7 @@ end)
 
 script.on_configuration_changed(function()
   state.init()
+  summon.init()
   expedition.init()
   bearing.init()
   storms.init()

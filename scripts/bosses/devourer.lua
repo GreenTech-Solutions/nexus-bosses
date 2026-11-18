@@ -199,6 +199,12 @@ function M.status(summon)
   if summon.tracked[1] and summon.tracked[1].hidden then
     return { "nexus-bosses.status-devourer-underground" }
   end
+  local state = summon.devourer
+  local dives = state and (state.dives or (state.dived and 1 or 0)) or 0
+  local threshold = summon.lair and LAIR_DIVE_SHARES[dives + 1] or (dives == 0 and DIVE_SHARE or nil)
+  if threshold and (summon.weaken or 0) < 1 then
+    return { "nexus-bosses.status-devourer-next", math.ceil(threshold * 100) }
+  end
   return nil
 end
 

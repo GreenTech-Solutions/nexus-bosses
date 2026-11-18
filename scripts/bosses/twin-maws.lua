@@ -126,14 +126,39 @@ end
 ---@return LocalisedString|nil
 function M.status(summon)
   local fallen = summon.maws and summon.maws.fallen
+  local function health_percent(name)
+    for _, record in ipairs(summon.tracked) do
+      if record.role == "boss" and record.name == name then
+        if record.dead or record.gone or not record.entity.valid then
+          return 0
+        end
+        local max_health = record.entity.max_health or record.death_max_health or record.initial
+        local current_health = record.entity.health
+        return current_health and max_health > 0 and math.floor(current_health / max_health * 100 + 0.5) or 0
+      end
+    end
+    return 0
+  end
+
+  ---@type LocalisedString
+  local health = {
+    "nexus-bosses.status-maws-health",
+    { "entity-name." .. cfg.MAW_FIRE },
+    health_percent(cfg.MAW_FIRE),
+    { "entity-name." .. cfg.MAW_ACID },
+    health_percent(cfg.MAW_ACID),
+  }
+  ---@type LocalisedString
+  local previous = { "nexus-bosses.status-maws-healing" }
   if fallen then
     for _, entry in ipairs(summon.pending or {}) do
       if entry.kind == "rise" then
-        return { "nexus-bosses.status-maws-rise", math.max(0, math.ceil((entry.at - game.tick) / 60)) }
+        previous = { "nexus-bosses.status-maws-rise", math.max(0, math.ceil((entry.at - game.tick) / 60)) }
+        break
       end
     end
   end
-  return { "nexus-bosses.status-maws-healing" }
+  return { "", health, " · ", previous }
 end
 
 return M

@@ -7,6 +7,7 @@ local expedition = require("scripts.nb_expedition")
 local bearing = require("scripts.nb_bearing")
 local story = require("scripts.nb_story")
 local resistance = require("scripts.nb_resist")
+local colossus = require("scripts.bosses.colossus")
 
 local M = {}
 
@@ -45,17 +46,20 @@ end
 
 ---@param page LuaGuiElement
 ---@param boss_id string
-local function add_tactics(page, boss_id)
+---@param force_name string
+local function add_tactics(page, boss_id, force_name)
   if boss_id == "colossus" then
     paragraph(page, { "nexus-bosses.codex-variants" }, "caption_label")
     local variants = page.add({ type = "table", column_count = 3 })
     variants.add({ type = "label", caption = { "nexus-bosses.codex-variant-name" }, style = "caption_label" })
     variants.add({ type = "label", caption = { "nexus-bosses.codex-weak" }, style = "caption_label" })
     variants.add({ type = "label", caption = { "nexus-bosses.codex-variant-attack" }, style = "caption_label" })
+    local defeated = progress.colossus_variants(force_name)
     for _, variant in ipairs(cfg.COLOSSUS_VARIANTS) do
       local entity = cfg.COLOSSUS_PREFIX .. variant.id
       local weak = resistance.of(entity)
-      variants.add({ type = "label", caption = { "entity-name." .. entity } })
+      local marks = defeated[variant.id] and "[img=utility/check_mark_green] " or ""
+      variants.add({ type = "label", caption = { "", marks, { "entity-name." .. entity } } })
       variants.add({ type = "label", caption = resistance.list_caption(weak) })
       variants.add({ type = "label", caption = { "nexus-bosses.colossus-attack-" .. variant.id } })
     end
@@ -75,6 +79,7 @@ local function add_tactics(page, boss_id)
 
   local table_element = page.add({ type = "table", column_count = 2 })
   tactics_row(table_element, { "nexus-bosses.codex-mechanic" }, { "nexus-bosses.mechanic-" .. boss_id })
+  tactics_row(table_element, { "nexus-bosses.codex-answer" }, { "nexus-bosses.answer-" .. boss_id })
 end
 
 ---The page of the expedition: the prologue from its camp and the epilogue from the last stand of its commander.
@@ -120,11 +125,18 @@ local function fill_page(page, force_name, boss_id)
   paragraph(page, { "", { "nexus-bosses.boss-" .. boss_id }, " · ", { "nexus-bosses.stage-" .. stage } }, "heading_2_label")
   paragraph(page, { "nexus-bosses.lore-" .. boss_id })
   page.add({ type = "line" })
-  if expedition.has_log(force_name, boss_id) then
+  local has_log = expedition.has_log(force_name, boss_id)
+  if has_log then
     paragraph(page, { "nexus-bosses.log-" .. boss_id })
-    add_tactics(page, boss_id)
   else
     paragraph(page, { "nexus-bosses.codex-no-log" }).style.font_color = MUTED
+  end
+  if boss_id == "colossus" then
+    local variant = colossus.ensure_next(force_name)
+    paragraph(page, { "nexus-bosses.codex-colossus-next", { "entity-name." .. cfg.COLOSSUS_PREFIX .. variant } })
+  end
+  if has_log then
+    add_tactics(page, boss_id, force_name)
   end
   page.add({ type = "line" })
   paragraph(page, { progress.is_defeated(force_name, boss_id) and "nexus-bosses.codex-defeated" or "nexus-bosses.codex-alive" })

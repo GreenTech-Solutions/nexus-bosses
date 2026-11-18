@@ -108,6 +108,7 @@ local M = {}
 --   countdown_note(summon) -> LocalisedString|nil: append a boss-specific countdown message
 --   snapshot(summon) -> table|nil: expose plain module state as snapshot.boss_state
 --   on_pending(summon, surface, force, entry): execute an expired telegraph
+--   on_damaged(summon, event): handle damage to a watched entity
 -- Every relevant entity name belongs in watch. Every entity created or adopted by a module must be recorded with
 -- records.add(summon, entity, required, role); retain the LuaEntity reference instead of looking it up by unit number.
 local OWN = {
@@ -443,6 +444,18 @@ local function complete_spawn(summon, force, surface)
   update_health_bar(summon, force)
 end
 
+---@param summon NbSummon
+local function clear_next_angle(summon)
+  local by_boss = storage.next_angle[summon.force]
+  if not by_boss then
+    return
+  end
+  by_boss[summon.boss] = nil
+  if next(by_boss) == nil then
+    storage.next_angle[summon.force] = nil
+  end
+end
+
 -- Steps -----------------------------------------------------------------------------------------------------------
 
 ---@param summon NbSummon
@@ -469,6 +482,7 @@ local function step_countdown(summon, force, surface)
   summon.countdown = summon.countdown - 1
   update_visuals(summon)
   if summon.countdown <= 0 then
+    clear_next_angle(summon)
     summon.phase = "spawning"
     beacon.minable_flag = false
     beacon.destructible = false
@@ -635,6 +649,23 @@ function M.on_segmented_unit_died(event)
   end
 end
 
+---@param event EventData.on_entity_damaged
+function M.on_damaged(event)
+  local summon = storage.summon
+  local entity = event.entity
+  if not (summon and entity.unit_number) then
+    return
+  end
+  local record = summon.by_unit[entity.unit_number]
+  if not (record and record.entity == entity) then
+    return
+  end
+  local module = module_of(summon)
+  if module and module.on_damaged then
+    module.on_damaged(summon, event)
+  end
+end
+
 ---A beacon was mined: during the countdown that cancels the summon (the miner keeps the item).
 ---@param entity LuaEntity
 function M.on_beacon_mined(entity)
@@ -680,6 +711,17 @@ function M.on_built(entity, player)
   local countdown = math.floor((storage.countdown_override or settings.global["nexus-bosses-countdown"].value) --[[@as number]])
   local id = storage.next_summon_id
   storage.next_summon_id = id + 1
+  storage.next_angle = storage.next_angle or {}
+  local next_angles = storage.next_angle[force.name]
+  if not next_angles then
+    next_angles = {}
+    storage.next_angle[force.name] = next_angles
+  end
+  local angle = next_angles[boss_id]
+  if angle == nil then
+    angle = math.random() * 2 * math.pi
+    next_angles[boss_id] = angle
+  end
   local lair = bearing.in_lair(force.name, boss_id, entity.position)
   local weaken = bearing.pylon_weaken(force.name, boss_id, entity.position)
   local beacon_unit = assert(entity.unit_number)
@@ -696,7 +738,7 @@ function M.on_built(entity, player)
     item = entity.name,
     quality = entity.quality.name,
     position = util.copy_position(entity.position),
-    angle = math.random() * 2 * math.pi, -- the side the trial comes from
+    angle = angle, -- the side the trial comes from
     countdown = countdown,
     countdown_total = countdown,
     waves = { [math.floor(countdown * 2 / 3)] = true, [math.floor(countdown / 3)] = true },
@@ -751,6 +793,41 @@ function M.on_built(entity, player)
 end
 
 -- Load and configuration -------------------------------------------------------------------------------------------
+
+function M.init()
+  storage.next_angle = storage.next_angle or {}
+  local summon = storage.summon
+  if summon and summon.phase == "countdown" then
+    local by_boss = storage.next_angle[summon.force] or {}
+    by_boss[summon.boss] = by_boss[summon.boss] or summon.angle
+    storage.next_angle[summon.force] = by_boss
+  end
+  local colossus = OWN.colossus.module
+  if colossus.init then
+    colossus.init()
+  end
+end
+
+---@param source_name string
+---@param destination LuaForce
+function M.on_forces_merged(source_name, destination)
+  storage.next_angle = storage.next_angle or {}
+  local source = storage.next_angle[source_name]
+  if source then
+    local target = storage.next_angle[destination.name] or {}
+    for boss_id, angle in pairs(source) do
+      if target[boss_id] == nil then
+        target[boss_id] = angle
+      end
+    end
+    storage.next_angle[destination.name] = next(target) and target or nil
+  end
+  storage.next_angle[source_name] = nil
+  local colossus = OWN.colossus.module
+  if colossus.on_forces_merged then
+    colossus.on_forces_merged(source_name, destination)
+  end
+end
 
 ---Handlers registered at run time are not saved: bring back the one of the active summon.
 function M.restore_events()

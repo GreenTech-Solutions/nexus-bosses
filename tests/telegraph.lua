@@ -2,6 +2,41 @@
 
 local helpers = require("tests.helpers")
 
+---@param value any
+---@param key string
+---@return boolean
+local function contains_localised_key(value, key)
+  if type(value) ~= "table" then
+    return false
+  end
+  if value[1] == key then
+    return true
+  end
+  for _, part in pairs(value) do
+    if contains_localised_key(part, key) then
+      return true
+    end
+  end
+  return false
+end
+
+---@param element LuaGuiElement
+---@param key string
+---@param nested_key string
+---@return boolean
+local function contains_caption(element, key, nested_key)
+  if element.type == "label" and contains_localised_key(element.caption, key)
+    and contains_localised_key(element.caption, nested_key) then
+    return true
+  end
+  for _, child in pairs(element.children) do
+    if contains_caption(child, key, nested_key) then
+      return true
+    end
+  end
+  return false
+end
+
 ---@param a MapPosition
 ---@param b MapPosition
 ---@return number
@@ -17,6 +52,17 @@ describe("boss telegraphs", function()
   before_each(function()
     helpers.reset()
     helpers.nexus()
+  end)
+
+  test("the Codex shows the next Colossus variant before its beacon is built", function()
+    local player = game.players[1]
+    remote.call("nexus-bosses", "set_next_colossus", "armored")
+    remote.call("nexus-bosses", "open_codex", player.index, "colossus")
+    local expected = "entity-name.nexus-colossus-armored"
+    local frame = player.gui.screen["nexus_bosses_codex"]
+    assert(frame and contains_caption(frame, "nexus-bosses.codex-colossus-next", expected),
+      "the Colossus page did not show its stored next variant")
+    frame.destroy()
   end)
 
   test("the Queen marks nest positions before the nests appear", function()

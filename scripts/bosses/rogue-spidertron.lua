@@ -218,7 +218,14 @@ function M.status(summon)
   if remaining > 0 then
     return { "nexus-bosses.status-spidertron-emp", math.ceil(remaining / 60) }
   end
-  return { "nexus-bosses.status-spidertron-approach" }
+  for _, entry in ipairs(summon.pending or {}) do
+    if entry.kind == "emp" then
+      return { "nexus-bosses.status-spidertron-next", math.max(0, math.ceil((entry.at - game.tick) / 60)) }
+    end
+  end
+  local next_emp = state.emp_ready and 0
+    or math.max(0, math.ceil((state.next_emp or summon.active_seconds) - summon.active_seconds))
+  return { "nexus-bosses.status-spidertron-next", next_emp }
 end
 
 ---@param summon NbSummon

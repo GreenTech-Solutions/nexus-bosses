@@ -250,7 +250,22 @@ describe("reworked bosses", function()
     local approach_turret
     local turret
     local disabled_at
-    helpers.on_active(9000, function(summon, ticks_since_active)
+    local sortie_units = {}
+    local spores_record = false
+    local timeout_ticks = (2 * 120 + 30) * 60
+    helpers.on_active(timeout_ticks, function(summon, ticks_since_active)
+      if ticks_since_active >= 115 * 60 then
+        if helpers.pending(summon, "spores") then
+          spores_record = true
+        end
+        for _, sortie_second in ipairs({ 120, 240 }) do
+          if ticks_since_active >= sortie_second * 60 and sortie_units[sortie_second] == nil then
+            local boss = helpers.tracked(summon, "boss")
+            local hulk = boss and boss.position and helpers.find_entity(surface, boss.name, boss.position, 8)
+            sortie_units[sortie_second] = hulk and hulk.valid and #hulk.units or 0
+          end
+        end
+      end
       if not approach_turret then
         local boss = helpers.tracked(summon, "boss")
         assert(boss and boss.position, "the Plague Hulk position is missing from the summon snapshot")
@@ -281,8 +296,10 @@ describe("reworked bosses", function()
           "the Plague Hulk did not restore the turret after 15 seconds")
         return true
       end
-      if ticks_since_active >= 9000 then
-        error("the Plague Hulk spore test timed out: " .. helpers.describe_summon(summon))
+      if ticks_since_active >= timeout_ticks - 600 then
+        error(string.format("the Plague Hulk spore test timed out: sortie_units_120=%s sortie_units_240=%s spores_record=%s %s",
+          tostring(sortie_units[120]), tostring(sortie_units[240]), tostring(spores_record),
+          helpers.describe_summon(summon)))
       end
     end)
   end)
@@ -326,52 +343,68 @@ describe("reworked bosses", function()
     end)
   end)
 
-  test("the Colossus chooses one of six variants when its beacon is lit", function()
+  test("the Colossus chooses and stores one of six variants when its beacon is lit", function()
     local valid = { "fire", "storm", "armored", "mother", "fire-spitter", "acid-spitter" }
-    local seen = {}
-    local run = 0
-    local attempt_tick = game.tick
-    local function ignite()
-      helpers.reset()
-      helpers.light("colossus", { 0, 0 })
-      run = run + 1
-      attempt_tick = game.tick
-      local summon = helpers.active()
-      local state = summon and summon.boss_state
-      assert(state and state.variant and state.variant_entity == "nexus-colossus-" .. state.variant,
-        "the Colossus variant was not prepared when its beacon was lit")
+    helpers.reset()
+    storage.colossus_next.player = nil
+    storage.next_colossus_variant = nil
+    helpers.light("colossus", { 0, 0 })
+    local summon = helpers.active()
+    local state = summon and summon.boss_state
+    assert(state and state.variant and state.variant_entity == "nexus-colossus-" .. state.variant,
+      "the Colossus variant was not prepared when its beacon was lit")
+    local known = false
+    for _, variant in ipairs(valid) do
+      if variant == state.variant then
+        known = true
+        break
+      end
     end
+    assert(known, "the Colossus selected an unknown variant")
+    assert(storage.colossus_next.player == state.variant, "the next Colossus variant was not stored for the force")
+    remote.call("nexus-bosses", "abort_summon", true)
+  end)
 
-    ignite()
-    local handled_id
-    helpers.on_active(30 * 600, function(summon, _ticks_since_active)
-      local state = summon.boss_state
-      local known = false
-      for _, variant in ipairs(valid) do
-        if variant == state.variant then
-          known = true
-          break
-        end
+  test("the Colossus variant and approach side survive beacon cancellation and advance after victory", function()
+    remote.call("nexus-bosses", "set_next_colossus", "armored")
+    helpers.light("colossus", { 0, 0 })
+    local first = helpers.active()
+    assert(first and first.phase == "countdown" and first.boss_state, "the first Colossus summon did not start")
+    local first_variant = first.boss_state.variant
+    local first_angle = first.angle
+    remote.call("nexus-bosses", "abort_summon", false)
+
+    helpers.light("colossus", { 0, 0 })
+    local second = helpers.active()
+    assert(second and second.boss_state, "the replacement Colossus summon did not start")
+    assert(second.boss_state.variant == first_variant, "cancelling the beacon changed the next Colossus variant")
+    assert(second.angle == first_angle, "cancelling the beacon changed the Colossus approach side")
+
+    local elapsed = 0
+    local defeated = false
+    async(1800)
+    on_tick(function()
+      elapsed = elapsed + 1
+      local summon = helpers.active()
+      if summon and summon.phase == "active" and not defeated then
+        local boss = helpers.tracked(summon, "boss")
+        assert(boss and boss.position, "the Colossus boss record is missing")
+        local entity = helpers.find_entity(helpers.nexus(), boss.name, boss.position, 12)
+        assert(entity and entity.valid, "the Colossus entity is missing")
+        remote.call("nexus-bosses", "set_next_colossus", "fire")
+        assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, 1),
+          "the Colossus health could not be changed")
+        defeated = true
+        entity.die()
+      elseif defeated and not summon then
+        assert(storage.colossus_next.player == "fire", "a victory did not choose a new Colossus variant")
+        assert(storage.progress.player.colossus_variants.armored == true,
+          "the Colossus victory was not recorded by variant")
+        done()
+        return false
       end
-      assert(known, "the Colossus selected an unknown variant")
-      assert(state.variant_entity == "nexus-colossus-" .. state.variant,
-        "the Colossus snapshot has the wrong entity name")
-      if summon.id ~= handled_id then
-        handled_id = summon.id
-        seen[state.variant] = true
-        remote.call("nexus-bosses", "abort_summon", true)
-        if run == 30 then
-          local count = 0
-          for _ in pairs(seen) do
-            count = count + 1
-          end
-          assert(count > 1, "the random Colossus selection produced only one variant in 30 fights")
-          return true
-        end
-        ignite()
-      end
-      if game.tick - attempt_tick >= 600 then
-        error("the Colossus did not appear within the test window: " .. helpers.describe_summon(summon))
+      if elapsed >= 1800 then
+        error("the Colossus did not complete its victory transition")
       end
     end)
   end)
@@ -473,30 +506,62 @@ describe("reworked bosses", function()
     end)
   end)
 
-  test("the Armoured Colossus restores its health during its shield", function()
-    helpers.reset()
+  test("the Armoured Colossus shell absorbs damage and breaks under weak-type damage", function()
     remote.call("nexus-bosses", "set_next_colossus", "armored")
     helpers.light("colossus", { 0, 0 })
-    local damaged_at
-    local shield_health
-    local boss_entity
     helpers.on_active(3600, function(summon, ticks_since_active)
       local state = summon.boss_state
-      if state.shield and not damaged_at then
+      if state.shield then
         local boss = helpers.tracked(summon, "boss")
         assert(boss, "the Armoured Colossus is missing from the summon snapshot")
-        shield_health = state.shield.health
-        assert(shield_health, "the Armoured Colossus shield has no health")
-        boss_entity = helpers.find_entity(helpers.nexus(), state.variant_entity)
+        local boss_entity = helpers.find_entity(helpers.nexus(), state.variant_entity, boss.position, 12)
         assert(boss_entity and boss_entity.valid, "the Armoured Colossus entity is missing")
-        boss_entity.damage(100000, "enemy", "physical")
-        damaged_at = game.tick
-      elseif damaged_at and game.tick >= damaged_at + 60 then
-        ---@cast boss_entity LuaEntity
-        assert(boss_entity.valid, "the Armoured Colossus did not survive its shield test")
-        local current_health = boss_entity.health
-        assert(current_health and current_health + 1 >= shield_health,
-          "the Armoured Colossus did not restore its shield health")
+        assert(math.abs(state.shield.limit - 0.05 * boss_entity.max_health) <= 1,
+          "the shell limit is not 5 % of maximum health")
+        local resist = remote.call("nexus-bosses", "resist", state.variant_entity)
+        assert(resist and #resist.weak > 0, "the Armoured Colossus has no weak damage type")
+        local weak_type = resist.weak[1]
+        local nonweak_type
+        for _, damage_type in ipairs({ "physical", "impact", "fire", "acid", "poison", "explosion", "laser", "electric" }) do
+          local is_weak = false
+          for _, weak in ipairs(resist.weak) do
+            if weak == damage_type then
+              is_weak = true
+              break
+            end
+          end
+          if not is_weak then
+            nonweak_type = damage_type
+            break
+          end
+        end
+        if not nonweak_type then
+          error("the Armoured Colossus has no non-weak damage type")
+        end
+
+        local health_before = boss_entity.health
+        assert(health_before, "the Armoured Colossus has no current health")
+        boss_entity.damage(10000, "player", nonweak_type)
+        local after_nonweak = boss_entity.health
+        assert(after_nonweak and math.abs(after_nonweak - health_before) <= 1,
+          "non-weak damage reduced the Armoured Colossus health during its shell")
+
+        local resistance_entry = boss_entity.prototype.resistances and boss_entity.prototype.resistances[weak_type]
+        local share = resistance_entry and resistance_entry.percent or 0
+        local decrease = resistance_entry and resistance_entry.decrease or 0
+        local amount = (state.shield.limit + decrease) / (1 - share) + 1
+        boss_entity.damage(amount, "player", weak_type)
+        local after_weak = helpers.active()
+        assert(after_weak and not after_weak.boss_state.shield,
+          "5 % maximum-health damage of a weak type did not break the shell")
+        local health_after_weak = boss_entity.health
+        assert(health_after_weak and math.abs(health_after_weak - health_before) <= 1,
+          "weak damage that broke the shell was not absorbed")
+
+        boss_entity.damage(10000, "player", nonweak_type)
+        local health_after_shell = boss_entity.health
+        assert(health_after_shell and health_after_shell < health_after_weak - 1,
+          "damage did not reduce health after the shell broke")
         remote.call("nexus-bosses", "abort_summon", true)
         return true
       end

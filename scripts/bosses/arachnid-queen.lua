@@ -145,6 +145,11 @@ end
 ---@return LocalisedString|nil
 function M.status(summon)
   local nests = #records.of_role(summon, "nest")
+  local state = assert(summon.queen)
+  local threshold = NEST_THRESHOLDS[state.clutches + 1]
+  if threshold then
+    return { "nexus-bosses.status-queen-next-nests", nests, math.ceil(threshold * 100) }
+  end
   if nests > 0 then
     return { "nexus-bosses.status-queen-nests", nests }
   end

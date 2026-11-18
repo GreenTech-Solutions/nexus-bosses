@@ -26,6 +26,22 @@ local function contains_localised_key(value, key)
   return false
 end
 
+---@param value any
+---@return boolean
+local function contains_number(value)
+  if type(value) == "number" then
+    return true
+  end
+  if type(value) == "table" then
+    for _, part in pairs(value) do
+      if contains_number(part) then
+        return true
+      end
+    end
+  end
+  return false
+end
+
 ---@param list string[]
 ---@param value string
 ---@return boolean
@@ -43,6 +59,82 @@ describe("fight bar tactics", function()
     helpers.reset()
     helpers.nexus()
   end)
+
+  test("weak resistance is the lowest non-uniform share, and equal zero shares are not weak", function()
+    local candidate_name = "stone-wall"
+    local prototype = prototypes.entity[candidate_name]
+    local shares = {}
+    local candidate_weak = {}
+    local minimum = math.huge
+    local first
+    local all_equal = true
+    local has_negative = false
+    for _, damage_type in ipairs(DAMAGE_TYPES) do
+      local entry = prototype.resistances and prototype.resistances[damage_type]
+      local share = entry and entry.percent or 0
+      shares[damage_type] = share
+      minimum = math.min(minimum, share)
+      if first == nil then
+        first = share
+      elseif share ~= first then
+        all_equal = false
+      end
+      if share < 0 then
+        has_negative = true
+      end
+    end
+    assert(not has_negative, candidate_name .. " must not have negative resistance shares")
+    assert(not all_equal and minimum < 0.3,
+      candidate_name .. " must have non-uniform resistance shares with a minimum below 0.3")
+    for _, damage_type in ipairs(DAMAGE_TYPES) do
+      if shares[damage_type] == minimum then
+        candidate_weak[#candidate_weak + 1] = damage_type
+      end
+    end
+
+    local result = remote.call("nexus-bosses", "resist", candidate_name)
+    assert(result, "the resistance debug data is missing for " .. candidate_name)
+    assert(#result.weak == #candidate_weak, "the weakest damage types were not selected")
+    for _, damage_type in ipairs(candidate_weak) do
+      assert(contains(result.weak, damage_type), "the weakest damage type is missing: " .. damage_type)
+    end
+
+    local zero_name = "wooden-chest"
+    local zero = prototypes.entity[zero_name]
+    for _, damage_type in ipairs(DAMAGE_TYPES) do
+      local entry = zero.resistances and zero.resistances[damage_type]
+      assert(entry == nil, zero_name .. " must have no resistance entry for " .. damage_type)
+    end
+    local all_zero = remote.call("nexus-bosses", "resist", zero_name)
+    assert(all_zero and #all_zero.weak == 0, "an entity with equal zero shares should have no weak types")
+  end)
+
+  local status_bosses = {
+    "arachnid-queen", "watcher", "rogue-spidertron", "twin-maws", "colossus", "plague-hulk",
+    "storm-guardian", "devourer", "last-commander",
+  }
+  for _, id in ipairs(status_bosses) do
+    local boss_id = id
+    test("the " .. boss_id .. " bar names its next event", function()
+      helpers.light(boss_id, { 0, 0 })
+      helpers.on_active(30 * 60, function(summon, ticks_since_active)
+        local status = summon.health_bar and summon.health_bar.status
+        if status then
+          if boss_id == "storm-guardian" then
+            -- Its unchanged status is the current storm state and contains no time or health threshold.
+            assert(type(status) == "table", "the Storm Guardian status should describe its current storm state")
+          else
+            assert(contains_number(status), "the status does not contain a time or health threshold")
+          end
+          remote.call("nexus-bosses", "abort_summon", true)
+          return true
+        end
+        if ticks_since_active >= 30 * 60 then
+          error("the " .. boss_id .. " status did not appear in the first 30 seconds")
+        end
+      end)
+    end)
+  end
 
   test("the fight bar reports the Storm Guardian's electric immunity through the main entity", function()
     remote.call("nexus-bosses", "find_log", "player", "storm-guardian")

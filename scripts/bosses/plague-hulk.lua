@@ -1,9 +1,9 @@
 -- Plague Hulk: the crashed ship of Toxic_biters, a spawner that cannot move. Ten infected turrets of Toxic_biters
--- guard it (4 laser, 4 gun, 2 artillery). Every two minutes its boss biters (at most seven) march on the base, each with
--- a command of its own: a unit that joins a unit group is released from the spawner, which would build seven more.
--- A sortie's spore cloud follows its units: when one first approaches player turrets, it marks a 15-tile circle around
--- that unit and shuts down turrets in it after three seconds. (Turning them to the enemy was tried and dropped: one
--- turned rocket turret took out a quarter of a test base; Toxic_biters already turns the turrets its biters kill.)
+-- guard it (4 laser, 4 gun, 2 artillery). Every two minutes it sends a sortie of up to seven boss biters at the base,
+-- combining its own units with biters it creates when needed. A sortie's spore cloud follows its units: when one first
+-- approaches player turrets, it marks a 15-tile circle around that unit and shuts down turrets in it after three
+-- seconds. (Turning them to the enemy was tried and dropped: one turned rocket turret took out a quarter of a test
+-- base; Toxic_biters already turns the turrets its biters kill.)
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -15,6 +15,10 @@ local M = {}
 
 local UPKEEP_SECONDS = 5
 local SORTIE_SECONDS = 120
+local SORTIE_UNITS = 7
+local SORTIE_MIN_RADIUS = 6
+local SORTIE_MAX_RADIUS = 12
+local SORTIE_POSITION_ATTEMPTS = 24
 local SPORE_TRIGGER = 30
 local SPORE_SECONDS = 15
 local SPORE_RADIUS = 15
@@ -150,6 +154,28 @@ local function wake(summon, all)
   end
 end
 
+---@param surface LuaSurface
+---@param spawner LuaEntity
+---@param name string
+---@return LuaEntity|nil
+local function create_sortie_unit(surface, spawner, name)
+  for _ = 1, SORTIE_POSITION_ATTEMPTS do
+    local angle = math.random() * 2 * math.pi
+    local radius = SORTIE_MIN_RADIUS + math.random() * (SORTIE_MAX_RADIUS - SORTIE_MIN_RADIUS)
+    local wanted = util.offset(spawner.position, angle, radius)
+    local position = surface.find_non_colliding_position(name, wanted, 1, 0.5)
+    if position then
+      local distance = util.distance(spawner.position, position)
+      if distance >= SORTIE_MIN_RADIUS and distance <= SORTIE_MAX_RADIUS then
+        local unit = spawn.create_unit(surface, name, position)
+        if unit then
+          return unit
+        end
+      end
+    end
+  end
+end
+
 ---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
@@ -169,7 +195,24 @@ function M.tick(summon, surface, _force)
     if sortie_due then
       local units = {}
       for _, unit in ipairs(record.entity.units) do
-        units[#units + 1] = unit
+        if unit.valid then
+          units[#units + 1] = unit
+        end
+      end
+      local missing = math.max(0, SORTIE_UNITS - #units)
+      local available_escorts = math.max(0, cfg.ESCORT_CAP - #records.of_role(summon, "escort"))
+      local precursors = cfg.BOSSES["plague-hulk"].precursors
+      local destination_target = spawn.nearest_building(surface, record.entity.position, summon)
+      local destination = destination_target and destination_target.position or summon.position
+      for _ = 1, math.min(missing, available_escorts) do
+        local name = precursors[math.random(#precursors)]
+        local unit = create_sortie_unit(surface, record.entity, name)
+        if unit then
+          records.add(summon, unit, false, "escort")
+          units[#units + 1] = unit
+          local commandable = unit.commandable --[[@as LuaCommandable]]
+          commandable.set_command(spawn.attack_command(destination))
+        end
       end
       spawn.send_spawner_units(summon, surface, record.entity)
       state.squad = { units = units, spored = false }
@@ -223,7 +266,13 @@ function M.status(summon)
       return { "nexus-bosses.status-hulk-squad", living }
     end
   end
-  return { "nexus-bosses.status-hulk-guards", #records.of_role(summon, "guard") }
+  local interval = util.interval(summon, SORTIE_SECONDS)
+  local next_sortie = state.next_sortie or (summon.active_seconds + (interval or 0))
+  return {
+    "nexus-bosses.status-hulk-next",
+    #records.of_role(summon, "guard"),
+    math.max(0, math.ceil(next_sortie - summon.active_seconds)),
+  }
 end
 
 ---@param summon NbSummon

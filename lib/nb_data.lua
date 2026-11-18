@@ -168,7 +168,7 @@ M.WATCHER_HEALTH = 56000
 M.SPIDERTRON_HEALTH = 26000
 M.ESCORT_CAP = 18
 
--- Colossus copies of Big Monsters' level 5 units, selected when its beacon is lit.
+-- Colossus copies of Big Monsters' level 5 units, selected when the force first needs to know its next variant.
 M.COLOSSUS_VARIANTS = {
   { id = "fire", original = "biterzilla15" },
   { id = "storm", original = "biterzilla25" },

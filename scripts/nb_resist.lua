@@ -2,13 +2,11 @@
 -- deals with turrets and weapons count: mods add their own types with odd values (rabbasca-psychic -438100 %).
 
 local TYPES = { "physical", "impact", "fire", "acid", "poison", "explosion", "laser", "electric" }
-local WEAK_BELOW = 0
+local WEAK_BELOW = 0.3
 local STRONG_FROM = 0.6
 local TYPE_ORDER = {}
-local TYPE_SET = {}
 for index, damage_type in ipairs(TYPES) do
   TYPE_ORDER[damage_type] = index
-  TYPE_SET[damage_type] = true
 end
 
 local M = {}
@@ -17,7 +15,7 @@ local M = {}
 local cache = {}
 
 ---@param entity_name string
----@return string[] weak damage types with share < WEAK_BELOW, lowest first
+---@return string[] damage types with the lowest share when it is < WEAK_BELOW, in type order
 ---@return string[] strong damage types with share >= STRONG_FROM, highest first
 function M.of(entity_name)
   local cached = cache[entity_name]
@@ -25,28 +23,40 @@ function M.of(entity_name)
     return cached.weak, cached.strong
   end
 
-  ---@type {name: string, share: number}[]
-  local weak_entries = {}
+  local prototype = prototypes.entity[entity_name]
+  local shares = {}
+  local lowest_share
+  local all_equal = true
+  local first_share
   ---@type {name: string, share: number}[]
   local strong_entries = {}
-  local prototype = prototypes.entity[entity_name]
-  for damage_type, resistance in pairs(prototype and prototype.resistances or {}) do
-    if TYPE_SET[damage_type] then
-      local share = resistance.percent or 0
-      if share < WEAK_BELOW then
-        weak_entries[#weak_entries + 1] = { name = damage_type, share = share }
-      elseif share >= STRONG_FROM then
-        strong_entries[#strong_entries + 1] = { name = damage_type, share = share }
-      end
+  local resistances = prototype and prototype.resistances or {}
+  for _, damage_type in ipairs(TYPES) do
+    local resistance = resistances[damage_type]
+    local share = resistance and resistance.percent or 0
+    shares[damage_type] = share
+    if first_share == nil then
+      first_share = share
+    elseif share ~= first_share then
+      all_equal = false
+    end
+    if lowest_share == nil or share < lowest_share then
+      lowest_share = share
+    end
+    if share >= STRONG_FROM then
+      strong_entries[#strong_entries + 1] = { name = damage_type, share = share }
     end
   end
 
-  table.sort(weak_entries, function(a, b)
-    if a.share ~= b.share then
-      return a.share < b.share
+  ---@type {name: string, share: number}[]
+  local weak_entries = {}
+  if not all_equal and lowest_share and lowest_share < WEAK_BELOW then
+    for _, damage_type in ipairs(TYPES) do
+      if shares[damage_type] == lowest_share then
+        weak_entries[#weak_entries + 1] = { name = damage_type, share = lowest_share }
+      end
     end
-    return TYPE_ORDER[a.name] < TYPE_ORDER[b.name]
-  end)
+  end
   table.sort(strong_entries, function(a, b)
     if a.share ~= b.share then
       return a.share > b.share
