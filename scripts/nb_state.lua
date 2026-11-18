@@ -3,6 +3,7 @@
 --   storage.summon          the active summon or nil (scripts/nb_summon.lua)
 --   storage.next_summon_id  counter
 --   storage.ignore_presence test switch: the countdown runs without a player on Nexus
+--   storage.countdown_override test switch: the next countdown in seconds; nil uses the setting
 --   storage.storm_weakened  the Storm Guardian has fallen once
 --   storage.expedition, storage.bearing, storage.storms, storage.story, storage.vault: scripts/nb_expedition.lua,
 --                           nb_bearing.lua, nb_storms.lua, nb_story.lua, nb_vault.lua

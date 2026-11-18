@@ -552,7 +552,7 @@ function M.on_built(entity, player)
     return reject(entity, player, { "nexus-bosses.msg-reject-busy", boss_name(storage.summon.boss) })
   end
 
-  local countdown = settings.global["nexus-bosses-countdown"].value --[[@as integer]]
+  local countdown = storage.countdown_override or settings.global["nexus-bosses-countdown"].value --[[@as integer]]
   local id = storage.next_summon_id
   storage.next_summon_id = id + 1
   local summon = {

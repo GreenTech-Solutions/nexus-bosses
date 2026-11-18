@@ -7,6 +7,7 @@
 --   get_state()                        the active summon and the victories per force
 --   set_ignore_player_presence(bool)   the countdown runs without a player on Nexus (a headless test has none);
 --                                      the bosses of Big Monsters still need one
+--   set_countdown(seconds?)            the countdown of the next summons in seconds, nil restores the setting
 --   abort_summon(destroy_bosses?)      ends the active summon without a victory; true also destroys its entities
 --   find_log(force_name, boss_id)      finds the expedition log of a boss, as opening its wreck would
 --   toggle_detector(player_index)      as the shortcut of the signal detector
@@ -39,6 +40,11 @@ remote.add_interface("nexus-bosses", {
   set_ignore_player_presence = function(value)
     assert(type(value) == "boolean", "nexus-bosses.set_ignore_player_presence: expected a boolean")
     storage.ignore_presence = value
+  end,
+  set_countdown = function(seconds)
+    assert(seconds == nil or (type(seconds) == "number" and seconds >= 1 and seconds % 1 == 0),
+      "nexus-bosses.set_countdown: expected a positive integer or nil")
+    storage.countdown_override = seconds
   end,
   abort_summon = function(destroy_bosses)
     return summon.abort(destroy_bosses == true)
