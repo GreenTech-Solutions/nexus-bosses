@@ -7,6 +7,7 @@ local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
 local records = require("scripts.nb_records")
 local spawn = require("scripts.nb_spawn")
+local telegraph = require("scripts.nb_telegraph")
 
 local M = {}
 
@@ -15,6 +16,7 @@ local ORDER_SECONDS = 15
 local DIVE_SHARE = 0.5
 local DIVE_SECONDS = 8
 local SURFACE_DISTANCE = 80
+local RISE_SEARCH_RADIUS = 8
 
 ---@param surface LuaSurface
 ---@param center MapPosition
@@ -102,10 +104,18 @@ local function dive(summon, surface, force, record)
   record.hidden_health = worm.health
   local state = summon.devourer
   state.dived = true
-  state.rise_tick = game.tick + DIVE_SECONDS * 60
   -- the far side of the beacon from where it went down
   local away = math.atan2(summon.position.y - head.y, summon.position.x - head.x)
-  state.rise_at = util.offset(summon.position, away, SURFACE_DISTANCE)
+  local target = util.offset(summon.position, away, SURFACE_DISTANCE)
+  state.rise_at = util.copy_position(surface.find_non_colliding_position(cfg.DEVOURER, target, 40, 1) or target)
+  local delay = DIVE_SECONDS * 60
+  telegraph.filling_circle(summon, surface, state.rise_at, 12, delay)
+  summon.pending = summon.pending or {}
+  summon.pending[#summon.pending + 1] = {
+    at = game.tick + delay,
+    kind = "rise",
+    data = { position = util.copy_position(state.rise_at) },
+  }
   surface.create_entity({ name = "big-demolisher-fissure-explosion", position = head })
   worm.destroy()
   util.say(force, { "nexus-bosses.msg-devourer-dives", DIVE_SECONDS }, util.COLORS.warning)
@@ -116,18 +126,24 @@ end
 ---@param surface LuaSurface
 ---@param force LuaForce
 ---@param record table
-local function rise(summon, surface, force, record)
+---@param target MapPosition
+local function rise(summon, surface, force, record, target)
   local state = summon.devourer
-  util.ensure_generated(surface, state.rise_at)
-  local position = surface.find_non_colliding_position(cfg.DEVOURER, state.rise_at, 40, 1) or state.rise_at
+  util.ensure_generated(surface, target)
+  local position = surface.find_non_colliding_position(cfg.DEVOURER, target, RISE_SEARCH_RADIUS, 1) or target
   local worm = create_worm(surface, position, summon)
   if not worm then
-    return -- tried again next second
+    summon.pending[#summon.pending + 1] = {
+      at = game.tick + 60,
+      kind = "rise",
+      data = { position = util.copy_position(target) },
+    }
+    return
   end
   worm.health = record.hidden_health
   records.replace(summon, record, worm)
   surface.create_entity({ name = "big-demolisher-fissure-explosion", position = position })
-  state.rise_tick = nil
+  state.rise_at = nil
   give_orders(summon, surface, worm)
   local x, y = util.xy(position)
   util.say(force, { "nexus-bosses.msg-devourer-rises", math.floor(x), math.floor(y), surface.name }, util.COLORS.bad)
@@ -141,8 +157,21 @@ function M.tick(summon, surface, force)
   local record = summon.tracked[1]
   local state = summon.devourer
   if record.hidden then
-    if game.tick >= state.rise_tick then
-      rise(summon, surface, force, record)
+    summon.pending = summon.pending or {}
+    local has_rise = false
+    for _, entry in ipairs(summon.pending) do
+      if entry.kind == "rise" then
+        has_rise = true
+        break
+      end
+    end
+    if not has_rise then
+      -- A save made during a dive by the previous mod version has no pending rise entry.
+      summon.pending[#summon.pending + 1] = {
+        at = game.tick,
+        kind = "rise",
+        data = { position = util.copy_position(state.rise_at or summon.position) },
+      }
     end
     return
   end
@@ -155,6 +184,19 @@ function M.tick(summon, surface, force)
   end
   if summon.active_seconds % ORDER_SECONDS == 0 then
     give_orders(summon, surface, record.entity)
+  end
+end
+
+---@param summon table
+---@param surface LuaSurface
+---@param force LuaForce
+---@param entry NbPending
+function M.on_pending(summon, surface, force, entry)
+  if entry.kind == "rise" then
+    local record = summon.tracked[1]
+    if record and record.hidden and records.alive(record) then
+      rise(summon, surface, force, record, entry.data.position)
+    end
   end
 end
 

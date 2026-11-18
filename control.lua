@@ -160,6 +160,10 @@ script.on_nth_tick(60, function(event)
   vault.on_second(event.tick)
 end)
 
+script.on_nth_tick(10, function(event)
+  summon.on_pending(event.tick)
+end)
+
 script.on_nth_tick(30, function(event)
   expedition.detector_tick(event.tick)
   whisper.clear_shades(event.tick)
@@ -221,5 +225,5 @@ end)
 
 -- In-game tests (FactorioTest, tools/test/run.sh -m <this folder> in the pack). Never in a release: tests/ is export-ignored.
 if script.active_mods["factorio-test"] then
-  require("__factorio-test__/init")({ "tests.harness", "tests.fight" })
+  require("__factorio-test__/init")({ "tests.harness", "tests.fight", "tests.telegraph" })
 end

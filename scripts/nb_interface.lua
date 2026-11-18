@@ -9,6 +9,8 @@
 --                                      the bosses of Big Monsters still need one
 --   set_countdown(seconds?)            the countdown of the next summons in seconds, nil restores the setting
 --   abort_summon(destroy_bosses?)      ends the active summon without a victory; true also destroys its entities
+--   get_pending_data()                 pending telegraph data for tests and debugging
+--   set_tracked_health(unit_number, health) changes a tracked entity's health for tests and debugging
 --   find_log(force_name, boss_id)      finds the expedition log of a boss, as opening its wreck would
 --   toggle_detector(player_index)      as the shortcut of the signal detector
 --   open_codex(player_index, boss_id?) opens the codex of the signal on the page of a boss
@@ -49,6 +51,14 @@ remote.add_interface("nexus-bosses", {
   end,
   abort_summon = function(destroy_bosses)
     return summon.abort(destroy_bosses == true)
+  end,
+  get_pending_data = summon.pending_data,
+  set_tracked_health = function(unit_number, health)
+    assert(type(unit_number) == "number" and unit_number > 0 and unit_number % 1 == 0,
+      "nexus-bosses.set_tracked_health: expected a positive unit number")
+    assert(type(health) == "number" and health > 0,
+      "nexus-bosses.set_tracked_health: expected positive health")
+    return summon.set_tracked_health(unit_number, health)
   end,
   find_log = function(force_name, boss_id)
     expedition.find_log(force_name, boss_id)

@@ -40,6 +40,14 @@ for _, effect in ipairs(EFFECTS) do
   }
 end
 
+prototypes[#prototypes + 1] = {
+  type = "sound",
+  name = "nexus-bosses-telegraph",
+  filename = "__base__/sound/alarm-1.ogg",
+  volume = 0.4,
+  category = "alert",
+}
+
 for _, track in ipairs({ "fight-urgent", "fight-pulse" }) do
   prototypes[#prototypes + 1] = {
     type = "ambient-sound",

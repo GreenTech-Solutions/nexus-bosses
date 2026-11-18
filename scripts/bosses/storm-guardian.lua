@@ -8,6 +8,7 @@ local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
 local records = require("scripts.nb_records")
 local spawn = require("scripts.nb_spawn")
+local telegraph = require("scripts.nb_telegraph")
 
 local M = {}
 
@@ -19,6 +20,7 @@ local HEAL_SHARE = 0.005
 local LIGHTNING_SECONDS = 3
 local FEED_SOUND_SECONDS = 6
 local LIGHTNING_RADIUS = 12
+local LIGHTNING_TELEGRAPH_TICKS = 60
 
 ---@param summon table
 ---@param surface LuaSurface
@@ -92,8 +94,26 @@ function M.tick(summon, surface, force)
       util.play(force, "guardian-feeds")
     end
     if seconds % LIGHTNING_SECONDS == 0 and math.random() < share then
-      util.strike(surface, util.offset(guardian.position, math.random() * 2 * math.pi, math.random() * LIGHTNING_RADIUS))
+      local position = util.offset(guardian.position, math.random() * 2 * math.pi,
+        math.random() * LIGHTNING_RADIUS)
+      telegraph.filling_circle(summon, surface, position, 2, LIGHTNING_TELEGRAPH_TICKS)
+      summon.pending = summon.pending or {}
+      summon.pending[#summon.pending + 1] = {
+        at = game.tick + LIGHTNING_TELEGRAPH_TICKS,
+        kind = "strike",
+        data = { position = util.copy_position(position) },
+      }
     end
+  end
+end
+
+---@param _summon table
+---@param surface LuaSurface
+---@param _force LuaForce
+---@param entry NbPending
+function M.on_pending(_summon, surface, _force, entry)
+  if entry.kind == "strike" then
+    util.strike(surface, entry.data.position)
   end
 end
 

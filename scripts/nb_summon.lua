@@ -29,7 +29,18 @@ local M = {}
 local BM_WINDOW_SECONDS = 60
 local BM_RETRY_TICKS = 120
 
--- the bosses of the mod: spawn, tick, status, on_victory, release; the names whose death events matter
+---@class NbPending
+---@field at integer
+---@field kind string
+---@field data table
+
+---@class NbSummonRender
+---@field render LuaRenderObject
+---@field radius number
+---@field start_tick integer
+---@field end_tick integer
+
+-- the bosses of the mod: spawn, tick, status, on_victory, release, optional on_pending; the names whose death events matter
 local OWN = {
   ["arachnid-queen"] = { module = require("scripts.bosses.arachnid-queen"), watch = { cfg.QUEEN } },
   ["twin-maws"] = { module = require("scripts.bosses.twin-maws"), watch = { cfg.MAW_FIRE, cfg.MAW_ACID } },
@@ -196,6 +207,14 @@ end
 ---@param force LuaForce|nil
 local function cleanup(summon, force)
   destroy_visuals(summon, force)
+  for _, entry in ipairs(summon.renders or {}) do
+    local render = entry.render
+    if render and render.valid then
+      render.destroy()
+    end
+  end
+  summon.renders = {}
+  summon.pending = {}
   if force then
     gui.destroy(force)
   end
@@ -490,6 +509,59 @@ function M.step()
   end
 end
 
+---Runs attacks whose telegraphs have expired. Called every ten ticks.
+---@param tick integer
+function M.on_pending(tick)
+  local summon = storage.summon
+  if not summon then
+    return
+  end
+  local renders = summon.renders or {}
+  summon.renders = renders
+  for index = #renders, 1, -1 do
+    local entry = renders[index]
+    local render = entry.render
+    if render and render.valid then
+      local duration = entry.end_tick - entry.start_tick
+      local fill = duration > 0 and math.min(1, (tick - entry.start_tick) / duration) or 1
+      render.radius = math.max(0.1, entry.radius * fill)
+    else
+      table.remove(renders, index)
+    end
+  end
+  if summon.phase ~= "active" then
+    return
+  end
+  local queue = summon.pending or {}
+  local due, remaining = {}, {}
+  for _, entry in ipairs(queue) do
+    if entry.at <= tick then
+      due[#due + 1] = entry
+    else
+      remaining[#remaining + 1] = entry
+    end
+  end
+  if #due == 0 then
+    return
+  end
+  summon.pending = remaining
+
+  local force = force_of(summon)
+  local surface = game.get_surface(summon.surface_index)
+  local module = module_of(summon)
+  local alive = records.status(summon)
+  if not (alive > 0 and force and surface and surface.name == cfg.PLANET and module and module.on_pending) then
+    return
+  end
+  for _, entry in ipairs(due) do
+    local current_summon = storage.summon
+    if current_summon ~= summon then
+      return
+    end
+    module.on_pending(summon, surface, force, entry)
+  end
+end
+
 -- Events ----------------------------------------------------------------------------------------------------------
 
 ---@param event EventData.on_entity_died
@@ -584,6 +656,8 @@ function M.on_built(entity, player)
     active_seconds = 0,
     tracked = {},
     by_unit = {},
+    pending = {},
+    renders = {},
     charge = charge,
     lair = bearing.in_lair(force.name, boss_id, entity.position),
     pylon_share = bearing.pylon_share(force.name, boss_id, entity.position),
@@ -648,6 +722,8 @@ function M.on_configuration_changed()
     summon.music_until = summon.music_until or 0
     summon.charge = summon.charge or 0
     summon.pylon_share = summon.pylon_share or 0
+    summon.pending = summon.pending or {}
+    summon.renders = summon.renders or {}
   end
   M.restore_events()
 end
@@ -683,6 +759,10 @@ function M.snapshot()
   if not summon then
     return nil
   end
+  local pending = {}
+  for _, entry in ipairs(summon.pending or {}) do
+    pending[#pending + 1] = { kind = entry.kind, at = entry.at }
+  end
   return {
     id = summon.id,
     boss = summon.boss,
@@ -697,6 +777,7 @@ function M.snapshot()
     countdown_total = summon.countdown_total,
     active_seconds = summon.active_seconds,
     tracked = records.snapshot(summon),
+    pending = pending,
     health_share = records.health_share(summon),
     health_bar = summon.health_bar and { status = summon.health_bar.status, resist = summon.health_bar.resist },
     spawn_note = summon.spawn_note,
@@ -706,6 +787,31 @@ function M.snapshot()
     spawn_distance = summon.spawn_distance,
     bm = summon.bm and { attempts = summon.bm.attempts, window_left = summon.bm.window, last_error = summon.bm.error },
   }
+end
+
+---Pending data contains only numbers and positions; remote.call returns a copy.
+---@return table[]
+function M.pending_data()
+  local summon = storage.summon
+  local result = {}
+  for _, entry in ipairs(summon and summon.pending or {}) do
+    result[#result + 1] = { kind = entry.kind, at = entry.at, data = entry.data }
+  end
+  return result
+end
+
+---Changes a tracked entity's health for in-game tests and debugging.
+---@param unit_number integer
+---@param health number
+---@return boolean
+function M.set_tracked_health(unit_number, health)
+  local summon = storage.summon
+  local record = summon and summon.by_unit[unit_number]
+  if not (record and records.alive(record) and not record.hidden) then
+    return false
+  end
+  record.entity.health = health
+  return true
 end
 
 return M
