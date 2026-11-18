@@ -1,23 +1,13 @@
--- The vault of the builders (2.5): the glyph signals, the obelisks and the console of the lock at the vault ruin, the
+-- The vault of the builders: the glyph signals, the obelisks and the console of the lock at the vault ruin, the
 -- hatch down and the stairs up, the reliquary, the relic (mining it researches the Echo of the builders) and the music
 -- of the vault. scripts/nb_vault.lua runs it all.
 
 local util = require("util")
 local cfg = require("lib.nb_data")
+local proto = require("prototypes.nb_util")
 
 local GATED = settings.startup["nexus-bosses-gate-warp-drive"].value
 local ICONS = "__nexus-bosses__/graphics/icons/"
-local FLAGS = { "placeable-neutral", "not-rotatable", "placeable-off-grid", "not-blueprintable", "not-deconstructable" }
-
----The first picture of a ruin of Fulgora.
----@param name string
----@return table
-local function ruin_picture(name)
-  local ruin = data.raw["simple-entity"][name]
-  local picture = util.table.deepcopy(ruin.pictures and ruin.pictures[1] or ruin.picture) --[[@as table]]
-  picture["line_length"] = nil
-  return picture
-end
 
 ---@type table[]
 local prototypes = {
@@ -43,7 +33,7 @@ local function vault_container(name, picture, slots, collision)
     type = "container",
     name = name,
     icon = ICONS .. "glyph-8.png",
-    flags = FLAGS,
+    flags = proto.world_flags(),
     max_health = 5000,
     collision_box = collision,
     selection_box = { { collision[1][1] - 0.2, collision[1][2] - 0.2 }, { collision[2][1] + 0.2, collision[2][2] + 0.2 } },
@@ -65,22 +55,22 @@ console.next_upgrade = nil
 local reliquary = util.table.deepcopy(data.raw.container["crash-site-chest-1"]) --[[@as table]]
 reliquary.name = cfg.RELIQUARY
 reliquary.minable = nil
-reliquary.flags = FLAGS
+reliquary.flags = proto.world_flags()
 reliquary.inventory_size = 12
 
 prototypes[#prototypes + 1] = {
   type = "simple-entity-with-owner",
   name = cfg.OBELISK,
   icon = ICONS .. "glyph-1.png",
-  flags = FLAGS,
+  flags = proto.world_flags(),
   max_health = 5000,
   collision_box = { { -0.7, -0.6 }, { 0.7, 0.6 } },
   selection_box = { { -0.9, -0.8 }, { 0.9, 0.8 } },
-  picture = ruin_picture("fulgoran-ruin-small"),
+  picture = proto.ruin_picture("fulgoran-ruin-small"),
 }
 prototypes[#prototypes + 1] = console
-prototypes[#prototypes + 1] = vault_container(cfg.HATCH, ruin_picture("fulgoran-ruin-medium"), 1, { { -1.2, -0.8 }, { 1.2, 0.8 } })
-prototypes[#prototypes + 1] = vault_container(cfg.STAIRS, ruin_picture("fulgoran-ruin-medium"), 1, { { -1.2, -0.8 }, { 1.2, 0.8 } })
+prototypes[#prototypes + 1] = vault_container(cfg.HATCH, proto.ruin_picture("fulgoran-ruin-medium"), 1, { { -1.2, -0.8 }, { 1.2, 0.8 } })
+prototypes[#prototypes + 1] = vault_container(cfg.STAIRS, proto.ruin_picture("fulgoran-ruin-medium"), 1, { { -1.2, -0.8 }, { 1.2, 0.8 } })
 prototypes[#prototypes + 1] = reliquary
 prototypes[#prototypes + 1] = {
   type = "simple-entity",
@@ -97,7 +87,7 @@ prototypes[#prototypes + 1] = {
   type = "item",
   name = cfg.RELIC,
   icon = ICONS .. "builders-relic.png",
-  subgroup = data.raw["item-subgroup"]["omega-threat"] and "omega-threat" or "other",
+  subgroup = proto.subgroup(),
   order = "y-e[nexus-builders-relic]",
   stack_size = 1,
   weight = 1000000,

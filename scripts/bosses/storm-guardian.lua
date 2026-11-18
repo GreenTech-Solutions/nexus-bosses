@@ -19,7 +19,6 @@ local HEAL_SHARE = 0.005
 local LIGHTNING_SECONDS = 3
 local FEED_SOUND_SECONDS = 6
 local LIGHTNING_RADIUS = 12
-local REDISPATCH_SECONDS = 45
 
 ---@param summon table
 ---@param surface LuaSurface
@@ -60,7 +59,7 @@ end
 ---@param force LuaForce
 function M.tick(summon, surface, force)
   local seconds = summon.active_seconds
-  if seconds % REDISPATCH_SECONDS == 0 then
+  if seconds % spawn.REDISPATCH_SECONDS == 0 then
     spawn.redispatch(summon, surface, records.commandable_units(summon))
   end
   local record = records.main(summon)
@@ -93,11 +92,7 @@ function M.tick(summon, surface, force)
       util.play(force, "guardian-feeds")
     end
     if seconds % LIGHTNING_SECONDS == 0 and math.random() < share then
-      -- Nexus has no lightning generator (execute_lightning fails there): the entity, as Nexus-Threat makes it
-      surface.create_entity({
-        name = "lightning",
-        position = util.offset(guardian.position, math.random() * 2 * math.pi, math.random() * LIGHTNING_RADIUS),
-      })
+      util.strike(surface, util.offset(guardian.position, math.random() * 2 * math.pi, math.random() * LIGHTNING_RADIUS))
     end
   end
 end

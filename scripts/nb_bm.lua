@@ -28,16 +28,16 @@ local util = require("scripts.nb_util")
 local M = {}
 
 local INTERFACE = "bigmonster"
-local REDISPATCH_SECONDS = 45
 
----A call into the other mod: an error there must not stop this one.
+---A call into the other mod: an error there must not stop this one, and goes to the log.
 ---@return boolean ok
 ---@return any result_or_error
 local function call(function_name, ...)
-  local arguments = { ... }
-  return pcall(function() ---@diagnostic disable-line: redundant-return-value
-    return remote.call(INTERFACE, function_name, table.unpack(arguments))
-  end)
+  local ok, result = pcall(remote.call, INTERFACE, function_name, ...)
+  if not ok then
+    log("[nexus-bosses] " .. INTERFACE .. "." .. function_name .. ": " .. tostring(result))
+  end
+  return ok, result
 end
 
 ---The surfaces Big Monsters sends its random events to (its list starts with Nauvis and lets in these planets when
@@ -254,7 +254,7 @@ end
 ---@param summon table
 ---@param surface LuaSurface
 function M.tick(summon, surface)
-  if summon.active_seconds % REDISPATCH_SECONDS == 0 then
+  if summon.active_seconds % spawn.REDISPATCH_SECONDS == 0 then
     spawn.redispatch(summon, surface, records.commandable_units(summon))
   end
 end

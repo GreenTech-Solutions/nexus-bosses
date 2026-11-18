@@ -3,6 +3,7 @@
 
 local util = require("util")
 local cfg = require("lib.nb_data")
+local proto = require("prototypes.nb_util")
 
 local prototypes = {}
 for variant = 1, cfg.WRECK_VARIANTS do
@@ -11,7 +12,7 @@ for variant = 1, cfg.WRECK_VARIANTS do
   wreck.localised_name = { "entity-name.nexus-expedition-wreck" }
   wreck.localised_description = { "entity-description.nexus-expedition-wreck" }
   wreck.minable = nil
-  wreck.flags = { "placeable-neutral", "not-rotatable", "placeable-off-grid", "not-blueprintable", "not-deconstructable" }
+  wreck.flags = proto.world_flags()
   wreck.inventory_size = 1
   wreck.order = "z[nexus-expedition-wreck]-" .. variant
   prototypes[#prototypes + 1] = wreck
@@ -27,7 +28,7 @@ local function story_container(source, name, slots)
   container.localised_name = { "entity-name." .. name }
   container.localised_description = { "entity-description." .. name }
   container.minable = nil
-  container.flags = { "placeable-neutral", "not-rotatable", "placeable-off-grid", "not-blueprintable", "not-deconstructable" }
+  container.flags = proto.world_flags()
   container.inventory_size = slots
   container.order = "z[" .. name .. "]"
   return container
@@ -38,7 +39,7 @@ prototypes[#prototypes + 1] = {
   type = "item",
   name = cfg.BADGE,
   icon = "__nexus-bosses__/graphics/icons/commander-badge.png",
-  subgroup = data.raw["item-subgroup"]["omega-threat"] and "omega-threat" or "other",
+  subgroup = proto.subgroup(),
   order = "y-e[nexus-commander-badge]",
   stack_size = 1,
   weight = 1000000,

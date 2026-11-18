@@ -14,7 +14,6 @@ local ESCORT_RADIUS = 14
 local NEST_THRESHOLDS = { 2 / 3, 1 / 3 }
 local NESTS_PER_CLUTCH = 2
 local NEST_SORTIE_SECONDS = 20
-local REDISPATCH_SECONDS = 45
 
 ---@param summon table
 ---@param surface LuaSurface
@@ -67,7 +66,7 @@ end
 ---@param force LuaForce
 function M.tick(summon, surface, force)
   local seconds = summon.active_seconds
-  if seconds % REDISPATCH_SECONDS == 0 then
+  if seconds % spawn.REDISPATCH_SECONDS == 0 then
     spawn.redispatch(summon, surface, records.commandable_units(summon))
   end
 
@@ -81,11 +80,7 @@ function M.tick(summon, surface, force)
 
   if seconds % NEST_SORTIE_SECONDS == 0 then
     for _, nest in ipairs(records.of_role(summon, "nest")) do
-      local target = spawn.nearest_building(surface, nest.entity.position, summon)
-      local destination = target and target.position or summon.position
-      for _, unit in ipairs(nest.entity.units) do
-        unit.commandable.set_command(spawn.attack_command(destination))
-      end
+      spawn.send_spawner_units(summon, surface, nest.entity)
     end
   end
 end

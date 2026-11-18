@@ -1,6 +1,31 @@
 -- Helpers of the data stage.
 
+local util = require("util")
+
 local M = {}
+
+---The item subgroup of the mod's items: Nexus-Threat makes "omega-threat" only while its startup setting
+---nexus-threat-activation is on.
+---@return string
+function M.subgroup()
+  return data.raw["item-subgroup"]["omega-threat"] and "omega-threat" or "other"
+end
+
+---Flags of the objects the script places in the world: neutral, fixed, not for blueprints or deconstruction.
+---@return data.EntityPrototypeFlags
+function M.world_flags()
+  return { "placeable-neutral", "not-rotatable", "placeable-off-grid", "not-blueprintable", "not-deconstructable" }
+end
+
+---The first picture of a ruin of Fulgora.
+---@param name string
+---@return table
+function M.ruin_picture(name)
+  local ruin = data.raw["simple-entity"][name]
+  local picture = util.table.deepcopy(ruin.pictures and ruin.pictures[1] or ruin.picture) --[[@as table]]
+  picture["line_length"] = nil
+  return picture
+end
 
 ---The entity prototype of this name, whatever its type.
 ---@param name string

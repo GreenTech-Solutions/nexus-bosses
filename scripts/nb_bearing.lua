@@ -1,4 +1,4 @@
--- Bearings (2.3). Every boss has a lair on Nexus, on a ring around the spawn of the player force farther out than the
+-- Bearings. Every boss has a lair on Nexus, on a ring around the spawn of the player force farther out than the
 -- wrecks (cfg.LAIR_RINGS), placed the first time a direction finder looks for it. A direction finder (a radar) is set
 -- to a boss in a panel next to its window; after every sector it scans it draws a bearing toward the lair, off by a
 -- random angle that narrows with every scan. Two precise bearings of a force on the same boss that cross at a wide
@@ -11,7 +11,7 @@
 --   storage.bearing.found     [force_name] = {[boss_id] = tick}
 --   storage.bearing.wins      [force_name] = {[boss_id] = fights won in the lair}
 --   storage.bearing.finders   [unit_number] = {entity, boss, scans, lines}
---   storage.bearing.pylons    [boss_id] = the pylon of suppression of the lair (2.4); pylon_units [unit_number] = boss_id
+--   storage.bearing.pylons    [boss_id] = the pylon of suppression of the lair; pylon_units [unit_number] = boss_id
 --   storage.bearing.pylon_quality [force_name] = {[boss_id] = quality of the trophy that repaired it}
 --   storage.bearing.pylon_fx  [force_name] = {[boss_id] = {render objects of the repaired look}}
 
@@ -29,8 +29,6 @@ local PRECISE = 2 -- degrees: a bearing this narrow counts for a crossing
 local MIN_CROSSING = 15 -- degrees between two bearings that find a lair
 local LINE_LENGTH = 1200
 local SEARCH_RADIUS = 40
--- the colours of the stages, as the beacon antennas
-local COLORS = { { r = 0.55, g = 0.85, b = 1 }, { r = 1, g = 0.8, b = 0.35 }, { r = 1, g = 0.4, b = 0.35 } }
 
 function M.init()
   storage.bearing = storage.bearing or {}
@@ -264,7 +262,7 @@ function M.on_sector_scanned(radar)
   finder.scans = finder.scans + 1
   local spread = math.rad(spread_of(finder.scans))
   local angle = angle_to(radar.position, lair) + (math.random() * 2 - 1) * spread
-  local color = COLORS[cfg.BOSSES[boss_id].circle] --[[@as Color]]
+  local color = cfg.CIRCLES[cfg.BOSSES[boss_id].circle].color
   clear_lines(finder)
   local to = util.offset(radar.position, angle, LINE_LENGTH)
   for _, mode in ipairs({ "game", "chart" }) do
@@ -446,7 +444,7 @@ function M.lair_victory(force, surface, boss_id, position)
   util.say(force, { "nexus-bosses.msg-lair-loot", { "nexus-bosses.boss-" .. boss_id } }, util.COLORS.good)
 end
 
--- Pylons of suppression (2.4) ---------------------------------------------------------------------------------------
+-- Pylons of suppression ---------------------------------------------------------------------------------------------
 
 ---The broken pylon of a lair, once.
 ---@param surface LuaSurface
@@ -573,12 +571,6 @@ function M.on_pylon_closed(player, pylon)
   elseif not current then
     util.say(player, { "nexus-bosses.msg-pylon-needs", string.format("[item=%s,quality=uncommon]", trophy) }, util.COLORS.info)
   end
-end
-
----@param unit_number integer
----@return boolean the entity is a pylon of a lair
-function M.is_pylon(unit_number)
-  return storage.bearing.pylon_units[unit_number] ~= nil
 end
 
 -- Technology -------------------------------------------------------------------------------------------------------

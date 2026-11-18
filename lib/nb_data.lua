@@ -9,6 +9,7 @@
 ---@field processors integer advanced photon processors per beacon
 ---@field seconds number crafting time of a beacon
 ---@field precursors integer units in each precursor wave
+---@field color Color the antenna of its beacons, its bearings and its summon circle
 
 ---@class NbBmSet
 ---@field event string event of the remote interface "bigmonster"
@@ -42,11 +43,11 @@ M.WARP_KEY = "nexus-warp-key"
 -- Researched by crafting the warp key; takes over the routes (unlock-space-location) of the warp drive.
 M.SILENCE_TECH = "nexus-silence"
 
--- The expedition (2.2): a wreck with a log for every boss, on a ring around the spawn of the force, one ring a stage
+-- The expedition: a wreck with a log for every boss, on a ring around the spawn of the force, one ring a stage
 M.WRECK_PREFIX = "nexus-expedition-wreck-"
 M.WRECK_VARIANTS = 3
 M.EXPEDITION_RINGS = { { 100, 250 }, { 250, 450 }, { 450, 700 } }
--- The story of the expedition (2.4): its camp, where the first log lies (opens with the Whisper), and the last stand of
+-- The story of the expedition: its camp, where the first log lies (opens with the Whisper), and the last stand of
 -- its commander, the epilogue (opens with Silence)
 M.CAMP = "nexus-expedition-camp"
 M.CAMP_RING = { 100, 150 }
@@ -54,7 +55,7 @@ M.LAST_STAND = "nexus-expedition-last-stand"
 M.LAST_STAND_RING = { 1150, 1250 }
 M.BADGE = "nexus-bosses-commander-badge"
 
--- The vault of the builders (2.5): a glyph lock at a vault ruin of Fulgora on Nexus, opened after Silence; a hatch leads
+-- The vault of the builders: a glyph lock at a vault ruin of Fulgora on Nexus, opened after Silence; a hatch leads
 -- down to a surface of its own with a few dark halls, and the last one holds the treasure
 M.VAULT_RUIN = "fulgoran-ruin-vault"
 M.VAULT_RING = { 250, 1000 }
@@ -73,7 +74,7 @@ M.VAULT_TRACK = "nexus-bosses-vault"
 M.SHORTCUT_DETECTOR = "nexus-bosses-detector"
 M.SHORTCUT_CODEX = "nexus-bosses-codex"
 
--- Bearings (2.3): direction finders point at the lair of a boss; a beacon lit in it gives more at the victory
+-- Bearings: direction finders point at the lair of a boss; a beacon lit in it gives more at the victory
 M.BEARING_TECH = "nexus-signal-bearing"
 M.FINDER = "nexus-bosses-direction-finder"
 M.LAIR_RINGS = { { 250, 450 }, { 450, 700 }, { 700, 1000 } }
@@ -83,12 +84,12 @@ M.LAIR_SCORCH = "nexus-bosses-lair-scorchmark"
 -- the second trophy of a fight in the lair: one step better with every such fight
 M.LAIR_QUALITIES = { "uncommon", "rare", "epic", "legendary" }
 M.LAIR_LOOT_SHARE = 0.5 -- of the beacon recipe
--- Pylons (2.4): a broken pylon of suppression stands in every found lair; a trophy of its boss of a better quality
+-- Pylons: a broken pylon of suppression stands in every found lair; a trophy of its boss of a better quality
 -- repairs it, and a boss called in that lair comes with less health, by the quality of the trophy
 M.PYLON = "nexus-bosses-pylon"
 M.PYLON_SHARES = { uncommon = 0.1, rare = 0.2, epic = 0.3, legendary = 0.4 }
 
--- Storms (2.3): a storm of Nexus-Threat wakes the lightning attractor ruins of Nexus; a charged shard from one weakens
+-- Storms: a storm of Nexus-Threat wakes the lightning attractor ruins of Nexus; a charged shard from one weakens
 -- the Storm Guardian, through the charged beacons
 M.RUIN_ATTRACTOR = "fulgoran-ruin-attractor"
 M.SHARD = "nexus-bosses-storm-shard"
@@ -109,6 +110,7 @@ M.CIRCLES = {
     processors = 2,
     seconds = 30,
     precursors = 6,
+    color = { r = 0.55, g = 0.85, b = 1 }, -- blue
   },
   {
     stage = "chorus",
@@ -119,6 +121,7 @@ M.CIRCLES = {
     processors = 3,
     seconds = 60,
     precursors = 10,
+    color = { r = 1, g = 0.8, b = 0.35 }, -- amber
   },
   {
     stage = "convergence",
@@ -129,6 +132,7 @@ M.CIRCLES = {
     processors = 5,
     seconds = 120,
     precursors = 14,
+    color = { r = 1, g = 0.4, b = 0.35 }, -- red
   },
 }
 

@@ -43,6 +43,17 @@ function M.circle_done(force_name, circle_index)
   return true
 end
 
+---The story is over for a force: Silence is researched or, without the gate of the warp drive, the Convergence is done.
+---@param force LuaForce
+---@return boolean
+function M.story_ended(force)
+  local silence = force.technologies[cfg.SILENCE_TECH]
+  if silence then
+    return silence.researched
+  end
+  return M.circle_done(force.name, #cfg.CIRCLES)
+end
+
 ---Researches a technology with a scripted trigger.
 ---@param force LuaForce
 ---@param tech_name string

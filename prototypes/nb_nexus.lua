@@ -3,14 +3,10 @@
 
 local cfg = require("lib.nb_data")
 
--- 1. No ordinary enemies. The enemies of the planet do not come from the entries of its entity autoplace list: they
---    are placed by the autoplace controls of the planet (enemy-base, frost_enemy_base, hot_enemy_base, electric_enemies
---    with razi-protocol, all at 1/1/1) for every enemy prototype that has an autoplace, and an entity that the list
---    does not mention is placed too (AutoplaceSpecification::default_enabled is true for all of them). razi-protocol's
---    31 entries there are 25 empty ones ({}) and 6 zero overrides {frequency = 0, size = 0, richness = 0} that keep
---    the vanilla biter and spitter spawners and small to behemoth worms away. Deleting the entries would therefore
---    bring those six vanilla prototypes back (measured on fresh maps: 84-95 vanilla nests in the first 16 chunks).
---    The way to switch an enemy off is the zero override, which takes priority over the control of the planet:
+-- 1. No ordinary enemies. The enemies of the planet come from its autoplace controls (enemy-base and the like), not
+--    from its entity autoplace list: an enemy the list does not mention is placed too, and deleting a zero override from
+--    the list brings that enemy back. The way to switch an enemy off is a zero override
+--    {frequency = 0, size = 0, richness = 0}, which takes priority over the control of the planet:
 --    a. every entity prototype whose autoplace places the enemy force gets a zero override in the entity list
 --       (spawners, worms, the centipedes of Tenebris);
 --    b. every autoplace control of the planet that is in the category "enemy" is set to zero, which also covers the

@@ -48,6 +48,14 @@ function M.offset(center, angle, distance)
   return { x = x + math.cos(angle) * distance, y = y + math.sin(angle) * distance }
 end
 
+---A lightning strike. Nexus has no lightning generator (execute_lightning fails there): the entity, as Nexus-Threat
+---makes it.
+---@param surface LuaSurface
+---@param position MapPosition
+function M.strike(surface, position)
+  surface.create_entity({ name = "lightning", position = position })
+end
+
 ---@param object LuaEntity|LuaPlayer
 ---@return LuaForce
 function M.force_of(object)

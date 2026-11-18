@@ -119,8 +119,7 @@ local function create_visuals(summon, force, surface)
     text = string.format("[item=%s] %d", summon.item, summon.countdown),
     icon = { type = "item", name = summon.item },
   })
-  -- the antenna colours of the beacons (prototypes/nb_items.lua): blue, amber, red
-  local tint = ({ { r = 0.55, g = 0.85, b = 1 }, { r = 1, g = 0.8, b = 0.35 }, { r = 1, g = 0.4, b = 0.35 } })[summon.circle]
+  local tint = cfg.CIRCLES[summon.circle].color
   summon.circle_fx = rendering.draw_animation({
     animation = "nexus-bosses-summon-circle",
     target = summon.beacon,
@@ -502,7 +501,6 @@ on_entity_died = function(event)
     summon.last_position = util.copy_position(entity.position)
   end
 end
-M.on_entity_died = on_entity_died
 
 ---@param event EventData.on_segmented_unit_died
 function M.on_segmented_unit_died(event)

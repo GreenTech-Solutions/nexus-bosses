@@ -1,4 +1,4 @@
--- The vault of the builders (2.5). Once a force reaches Silence (or, without the gate of the warp drive, beats the
+-- The vault of the builders. Once a force reaches Silence (or, without the gate of the warp drive, beats the
 -- Convergence), a vault ruin of Fulgora on Nexus is marked for it: the commander of the Long Echo got there and could
 -- not open it. Four obelisks around the ruin carry the four glyphs of the code and light up one after another, always
 -- in its order; a console (a constant combinator) takes the code: every glyph of the code with its place in the order
@@ -187,22 +187,12 @@ local function open_lock(announce)
   end
 end
 
----@param force LuaForce
----@return boolean
-local function story_ended(force)
-  local silence = force.technologies[cfg.SILENCE_TECH]
-  if silence then
-    return silence.researched
-  end
-  return progress.circle_done(force.name, #cfg.CIRCLES)
-end
-
 ---The vault is marked for a force that reached the end of the story.
 ---@param force LuaForce
 function M.sync(force)
   local surface = util.nexus()
   local v = storage.vault
-  if not surface or force.name == "enemy" or force.name == "neutral" or v.marked[force.name] or not story_ended(force) then
+  if not surface or force.name == "enemy" or force.name == "neutral" or v.marked[force.name] or not progress.story_ended(force) then
     return
   end
   build_lock(surface)
