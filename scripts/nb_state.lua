@@ -4,7 +4,6 @@
 --   storage.next_summon_id  counter
 --   storage.ignore_presence test switch: the countdown runs without a player on Nexus
 --   storage.storm_weakened  the Storm Guardian has fallen once
---   storage.bm_excluded     surfaces taken out of Big Monsters' list by the map setting (scripts/nb_bm.lua)
 --   storage.expedition, storage.bearing, storage.storms, storage.story, storage.vault: scripts/nb_expedition.lua,
 --                           nb_bearing.lua, nb_storms.lua, nb_story.lua, nb_vault.lua
 
@@ -23,7 +22,6 @@ function M.init()
   storage.next_summon_id = storage.next_summon_id or 1
   storage.ignore_presence = storage.ignore_presence or false
   storage.storm_weakened = storage.storm_weakened or false
-  storage.bm_excluded = storage.bm_excluded or {}
 end
 
 ---Plain data for the remote interface: no LuaObjects.

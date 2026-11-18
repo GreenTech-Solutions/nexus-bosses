@@ -8,6 +8,8 @@ local M = {}
 
 M.SPAWN_MIN = 150
 M.SPAWN_MAX = 250
+-- seconds between new orders for the units of a trial (M.redispatch)
+M.REDISPATCH_SECONDS = 45
 local PRECURSOR_MIN = 90
 local PRECURSOR_MAX = 120
 local ATTACK_RADIUS = 45
@@ -95,6 +97,18 @@ function M.dispatch(surface, units, target)
       group.set_command(M.attack_command(target))
       group.start_moving()
     end
+  end
+end
+
+---The units a spawner has bred go for the building nearest to it, or for the beacon when there is none.
+---@param summon table
+---@param surface LuaSurface
+---@param spawner LuaEntity
+function M.send_spawner_units(summon, surface, spawner)
+  local target = M.nearest_building(surface, spawner.position, summon)
+  local destination = target and target.position or summon.position
+  for _, unit in ipairs(spawner.units) do
+    (unit.commandable --[[@as LuaCommandable]]).set_command(M.attack_command(destination))
   end
 end
 

@@ -7,7 +7,7 @@ the warp key, which researches Silence and opens the routes of the warp drive. T
 `tools/portal/description.md`. Bug reports: the issues of this repository.
 
 Requires Nexus 1.3.6 or newer (with Nexus-Threat and Nexus-Graphics), Big Monsters, Toxic Biters, Arachnids
-enemy, Electric flying enemies and TFMG: Music (the music of Nexus); razi-protocol is optional.
+enemy, Electric flying enemies and TFMG: Music (the music of Nexus and the vault); razi-protocol is optional.
 
 ## Code
 
@@ -18,6 +18,16 @@ enemy, Electric flying enemies and TFMG: Music (the music of Nexus); razi-protoc
 | `scripts/nb_summon.lua` | one summon from beacon to victory: countdown, precursors, spawn, health bar, trophy |
 | `scripts/bosses/<boss>.lua` | the bosses the mod spawns itself and their mechanics |
 | `scripts/nb_bm.lua` | the bosses of Big Monsters: the event, moving the boss to the beacon, the map setting |
+| `scripts/nb_spawn.lua`, `nb_records.lua` | placing bosses and precursors, their orders; the entities of the active summon |
+| `scripts/nb_progress.lua` | defeated bosses per force, stage research, trophies, the end of the story |
+| `scripts/nb_gui.lua`, `nb_codex.lua` | the health bar; the Codex of the signal |
+| `scripts/nb_expedition.lua`, `nb_story.lua` | wrecks with logs and the signal detector; the camp and the last stand |
+| `scripts/nb_bearing.lua` | direction finders, lairs, pylons of suppression |
+| `scripts/nb_storms.lua` | storms of Nexus-Threat wake the ruins that drop charged shards |
+| `scripts/nb_vault.lua` | the vault of the builders and its glyph lock |
+| `scripts/nb_whisper.lua` | hallucinations |
+| `scripts/nb_nexus.lua` | the enemies of Nexus and Big Monsters' list of surfaces |
+| `scripts/nb_state.lua`, `nb_interface.lua`, `nb_util.lua` | `storage`, the remote interface, shared helpers |
 
 Console command `/nexus-bosses-abort` (administrators) stops a stuck trial.
 

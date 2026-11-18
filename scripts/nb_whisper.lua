@@ -1,4 +1,4 @@
--- Hallucinations of the Whisper (2.4). At night on Nexus, far from anything the force has built, the signal plays with
+-- Hallucinations of the Whisper. At night on Nexus, far from anything the force has built, the signal plays with
 -- the player: a shade of a precursor at the edge of the screen walks away and is gone, a whisper in the chat with a
 -- faint sound, a false alarm (now and then it whispers where an unfound wreck of the expedition really lies), the edges
 -- of the screen darkening. The deeper the stage, the more often; after Silence, nothing. Everything is for that player
@@ -11,6 +11,7 @@
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
 local progress = require("scripts.nb_progress")
+local expedition = require("scripts.nb_expedition")
 
 local M = {}
 
@@ -18,8 +19,9 @@ M.CHECK_TICKS = 300
 -- seconds between hallucinations by stage (Whisper, Chorus, Convergence)
 local INTERVALS = { 300, 120, 60 }
 local RARE_FACTOR = 2
-local LINES = 6 -- whisper-<stage>-1..LINES in the locale
+local LINES = 3 -- whisper-<stage>-1..LINES in the locale
 local NIGHT = 0.5 -- darkness of the surface
+local WHISPER_COLOR = { r = 0.6, g = 0.55, b = 0.7 }
 local LONELY_RADIUS = 64
 local SHADE_TICKS = 180
 -- the shade stands near the edge of what the player sees at the default zoom (the screen is wider than tall)
@@ -36,8 +38,7 @@ end
 ---@param force LuaForce
 ---@return integer|nil
 local function stage_of(force)
-  local silence = force.technologies[cfg.SILENCE_TECH]
-  if (silence and silence.researched) or (not silence and progress.circle_done(force.name, #cfg.CIRCLES)) then
+  if progress.story_ended(force) then
     return nil
   end
   for index = #cfg.CIRCLES, 1, -1 do
@@ -115,7 +116,7 @@ end
 ---@param stage integer
 local function whisper(player, stage)
   local line = { "nexus-bosses.whisper-" .. cfg.CIRCLES[stage].stage .. "-" .. math.random(LINES) }
-  player.print({ "", "[font=default-italic]", line, "[/font]" }, { color = { r = 0.6, g = 0.55, b = 0.7 }, sound = defines.print_sound.never })
+  player.print({ "", "[font=default-italic]", line, "[/font]" }, { color = WHISPER_COLOR, sound = defines.print_sound.never })
   player.play_sound({
     path = "nexus-bosses-precursors",
     position = util.offset(player.position, math.random() * 2 * math.pi, 20),
@@ -133,15 +134,10 @@ local function false_alarm(player, surface, stage)
     player.add_custom_alert(unit, { type = "entity", name = unit.name }, { "nexus-bosses.alert-hallucination" }, true)
   end
   if math.random() < 0.3 then
-    local force_name = player.force.name --[[@as string]]
-    for id, wreck in pairs(storage.expedition.wrecks) do
-      local logs = storage.expedition.logs[force_name]
-      if wreck.entity.valid and not (logs and logs[id]) then
-        local x, y = util.xy(wreck.position)
-        player.print({ "nexus-bosses.whisper-wreck", math.floor(x), math.floor(y), surface.name },
-          { color = { r = 0.6, g = 0.55, b = 0.7 } })
-        return
-      end
+    local position = expedition.unfound_wreck(player.force.name --[[@as string]])
+    if position then
+      local x, y = util.xy(position)
+      player.print({ "nexus-bosses.whisper-wreck", math.floor(x), math.floor(y), surface.name }, { color = WHISPER_COLOR })
     end
   end
 end
@@ -149,14 +145,15 @@ end
 ---@param player LuaPlayer
 ---@param surface LuaSurface
 ---@param stage integer
-local function hallucinate(player, surface, stage)
-  local roll = math.random(4)
-  if roll == 1 then
+---@param kind integer|nil 1 shade, 2 whisper, 3 false alarm, 4 vignette and whisper; nil: any of them
+local function hallucinate(player, surface, stage, kind)
+  kind = kind or math.random(4)
+  if kind == 1 then
     shade(player, surface, stage)
     vignette(player)
-  elseif roll == 2 then
+  elseif kind == 2 then
     whisper(player, stage)
-  elseif roll == 3 then
+  elseif kind == 3 then
     false_alarm(player, surface, stage)
   else
     vignette(player)
@@ -218,19 +215,7 @@ function M.force(player, kind)
   if not (surface and player.character) then
     return
   end
-  if kind == 1 then
-    shade(player, surface, stage)
-    vignette(player)
-  elseif kind == 2 then
-    whisper(player, stage)
-  elseif kind == 3 then
-    false_alarm(player, surface, stage)
-  elseif kind == 4 then
-    vignette(player)
-    whisper(player, stage)
-  else
-    hallucinate(player, surface, stage)
-  end
+  hallucinate(player, surface, stage, kind)
 end
 
 return M

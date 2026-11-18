@@ -1,4 +1,4 @@
--- The story of the expedition (2.4). Its camp lies near the spawn and opens with the Whisper: a broken ship, broken
+-- The story of the expedition. Its camp lies near the spawn and opens with the Whisper: a broken ship, broken
 -- walls, dead turrets and crash site chests, and in the ship the first log of the Long Echo (the prologue), which counts
 -- as a log of the expedition. The last stand of its commander opens with Silence (or, without the gate of the warp
 -- drive, when the Convergence is beaten), far beyond the lairs: an escape pod with his last log (the epilogue) and his
@@ -147,16 +147,6 @@ local function mark(force, surface, key)
     util.COLORS.info)
 end
 
----@param force LuaForce
----@return boolean
-local function story_ended(force)
-  local silence = force.technologies[cfg.SILENCE_TECH]
-  if silence then
-    return silence.researched
-  end
-  return progress.circle_done(force.name, #cfg.CIRCLES)
-end
-
 ---The places a force has reached are marked for it.
 ---@param force LuaForce
 function M.sync(force)
@@ -168,7 +158,7 @@ function M.sync(force)
   if whisper and whisper.researched then
     mark(force, surface, "camp")
   end
-  if story_ended(force) then
+  if progress.story_ended(force) then
     mark(force, surface, "last_stand")
   end
 end

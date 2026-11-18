@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Sets the mod portal page of the mod in info.json: title, summary, description (tools/portal/description.md),
-# category, tags, license, homepage and source URL. semantic-release-factorio uploads releases but never sets these.
+# Sets the mod portal page of the mod in info.json: title, summary (its description), description
+# (tools/portal/description.md), category, tags, license, homepage and source URL. semantic-release-factorio uploads
+# releases but never sets these.
 # Needs an API key with "ModPortal: Edit Mods" in FACTORIO_TOKEN, and the mod must already be on the portal
 # (the first release creates it). https://wiki.factorio.com/Mod_details_API
 #   gh workflow run portal.yml               run with the repository secret (.github/workflows/portal.yml)
@@ -16,7 +17,7 @@ mod=$(info name)
 fields=(
   -F "mod=$mod"
   -F "title=$(info title)"
-  -F "summary=Nexus is still transmitting. Nine bosses answer the signal: light a summon beacon, hold it, kill what comes, take its trophy. Nine trophies make the warp key."
+  -F "summary=$(info description)"
   -F "description=<$here/description.md"
   -F "category=content"
   -F "tags=combat"

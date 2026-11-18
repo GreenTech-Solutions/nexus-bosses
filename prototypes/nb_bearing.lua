@@ -1,4 +1,4 @@
--- Bearings (2.3): the direction finder (a radar of the signal, scripts/nb_bearing.lua draws its bearings), the
+-- Bearings: the direction finder (a radar of the signal, scripts/nb_bearing.lua draws its bearings), the
 -- technology that unlocks it (scripted: the first log of the expedition found) and the remains that mark a found lair
 -- (copies of the corpses of the bosses that stay for good).
 
@@ -38,7 +38,7 @@ data:extend({
     type = "item",
     name = cfg.FINDER,
     icons = finder.icons,
-    subgroup = data.raw["item-subgroup"]["omega-threat"] and "omega-threat" or "other",
+    subgroup = proto.subgroup(),
     order = "y-a[nexus-direction-finder]",
     place_result = cfg.FINDER,
     stack_size = 10,
@@ -86,26 +86,22 @@ if data.raw.corpse["big-scorchmark"] then
   data:extend({ scorch })
 end
 
--- The pylon of suppression of a lair (2.4): a container of one slot, drawn as a ruin of Fulgora. A trophy put in it
+-- The pylon of suppression of a lair: a container of one slot, drawn as a ruin of Fulgora. A trophy put in it
 -- repairs it (scripts/nb_bearing.lua); the repaired look is drawn by the script.
 local ruin = data.raw["simple-entity"]["fulgoran-ruin-stonehenge"]
-local picture = ruin and util.table.deepcopy(ruin.pictures and ruin.pictures[1] or ruin.picture) --[[@as table|nil]]
-if picture then
-  picture["line_length"] = nil
-end
 data:extend({
   {
     type = "container",
     name = cfg.PYLON,
     icon = "__nexus-bosses__/graphics/technology/tech-silence.png",
     icon_size = 256,
-    flags = { "placeable-neutral", "not-rotatable", "not-blueprintable", "not-deconstructable", "placeable-off-grid" },
+    flags = proto.world_flags(),
     max_health = 5000,
-    collision_box = ruin and ruin.collision_box or { { -1.5, -1.3 }, { 1.5, 1.3 } },
+    collision_box = ruin.collision_box,
     selection_box = { { -1.6, -1.4 }, { 1.6, 1.4 } },
     inventory_size = 1,
     inventory_type = "normal",
-    picture = picture or { filename = "__core__/graphics/empty.png", size = 1 },
+    picture = proto.ruin_picture("fulgoran-ruin-stonehenge"),
     open_sound = { filename = "__base__/sound/machine-open.ogg", volume = 0.5 },
     close_sound = { filename = "__base__/sound/machine-close.ogg", volume = 0.5 },
   },

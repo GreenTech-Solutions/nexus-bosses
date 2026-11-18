@@ -9,6 +9,8 @@ local story = require("scripts.nb_story")
 
 local M = {}
 
+local MUTED = { r = 0.6, g = 0.6, b = 0.6 } -- what is not found yet
+
 local NAME = "nexus_bosses_codex"
 local CLOSE = "nexus_bosses_codex_close"
 local BOSS = "nexus_bosses_codex_boss_"
@@ -43,14 +45,14 @@ local function fill_expedition(page, force_name)
   if story.is_found(force_name, "camp") then
     paragraph(page, { "nexus-bosses.log-camp" })
   else
-    paragraph(page, { "nexus-bosses.codex-no-camp" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+    paragraph(page, { "nexus-bosses.codex-no-camp" }).style.font_color = MUTED
   end
   page.add({ type = "line" })
   local last_stand = story.is_found(force_name, "last_stand")
   if last_stand then
     paragraph(page, { "nexus-bosses.log-last-stand" })
   else
-    paragraph(page, { "nexus-bosses.codex-no-last-stand" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+    paragraph(page, { "nexus-bosses.codex-no-last-stand" }).style.font_color = MUTED
   end
   -- the vault can be opened before the last stand is found: its log shows once found, its hint after the last stand
   if story.is_found(force_name, "vault") then
@@ -58,7 +60,7 @@ local function fill_expedition(page, force_name)
     paragraph(page, { "nexus-bosses.log-vault" })
   elseif last_stand then
     page.add({ type = "line" })
-    paragraph(page, { "nexus-bosses.codex-no-vault" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+    paragraph(page, { "nexus-bosses.codex-no-vault" }).style.font_color = MUTED
   end
 end
 
@@ -78,7 +80,7 @@ local function fill_page(page, force_name, boss_id)
   if expedition.has_log(force_name, boss_id) then
     paragraph(page, { "nexus-bosses.log-" .. boss_id })
   else
-    paragraph(page, { "nexus-bosses.codex-no-log" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+    paragraph(page, { "nexus-bosses.codex-no-log" }).style.font_color = MUTED
   end
   page.add({ type = "line" })
   paragraph(page, { progress.is_defeated(force_name, boss_id) and "nexus-bosses.codex-defeated" or "nexus-bosses.codex-alive" })
@@ -91,7 +93,7 @@ local function fill_page(page, force_name, boss_id)
   else
     local technology = game.forces[force_name].technologies[cfg.BEARING_TECH]
     if technology and technology.researched then
-      paragraph(page, { "nexus-bosses.codex-no-lair" }).style.font_color = { r = 0.6, g = 0.6, b = 0.6 }
+      paragraph(page, { "nexus-bosses.codex-no-lair" }).style.font_color = MUTED
     end
   end
 end

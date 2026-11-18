@@ -51,6 +51,18 @@ function M.has_log(force_name, boss_id)
   return logs ~= nil and logs[boss_id] ~= nil
 end
 
+---A wreck on the map whose log the force has not found yet.
+---@param force_name string
+---@return MapPosition|nil
+function M.unfound_wreck(force_name)
+  for boss_id, wreck in pairs(storage.expedition.wrecks) do
+    if wreck.entity.valid and not M.has_log(force_name, boss_id) then
+      return wreck.position
+    end
+  end
+  return nil
+end
+
 ---@param force_name string
 ---@param stage integer
 ---@return boolean

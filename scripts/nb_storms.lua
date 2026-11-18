@@ -1,4 +1,4 @@
--- Storms wake the ruins (2.3). While a storm of Nexus-Threat rages, every WAKE_SECONDS the mod strikes a lightning
+-- Storms wake the ruins. While a storm of Nexus-Threat rages, every WAKE_SECONDS the mod strikes a lightning
 -- attractor ruin of Nexus (fulgoran-ruin-attractor) near a player with lightning and wakes it: it glows, calls
 -- lightning down around itself and drops one charged shard, until the storm ends. A ruin wakes once a storm. Only
 -- ruins in charted land within reach of a player on Nexus wake, so a woken ruin is one someone can get to.
@@ -50,13 +50,6 @@ function M.on_chunk_generated(event)
   end
 end
 
----@param surface LuaSurface
----@param position MapPosition
-local function strike(surface, position)
-  -- Nexus has no lightning generator (execute_lightning fails there): the entity, as Nexus-Threat makes it
-  surface.create_entity({ name = "lightning", position = position })
-end
-
 ---Players with a character on Nexus.
 ---@param surface LuaSurface
 ---@return LuaPlayer[]
@@ -100,7 +93,7 @@ end
 ---@param ruin LuaEntity
 local function wake(surface, ruin)
   storage.storms.woken[ruin.unit_number] = true
-  strike(surface, ruin.position)
+  util.strike(surface, ruin.position)
   local awake = {
     entity = ruin,
     light = rendering.draw_light({ sprite = "utility/light_medium", target = ruin, surface = surface, scale = 6,
@@ -188,7 +181,7 @@ function M.on_second(tick)
       })
       if tick >= awake.next_strike then
         awake.next_strike = tick + STRIKE_SECONDS * 60
-        strike(surface, util.offset(ruin.position, math.random() * 2 * math.pi, math.random() * STRIKE_RADIUS))
+        util.strike(surface, util.offset(ruin.position, math.random() * 2 * math.pi, math.random() * STRIKE_RADIUS))
       end
     end
   end

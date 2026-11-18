@@ -45,5 +45,15 @@ not under the GPL; files were converted to OGG, trimmed, resized or recoloured w
 | `graphics/effects/summon-circle.png` (resized) | [teleport circle sprite sheet](https://opengameart.org/content/teleport-circle-sprite-sheet) | gfroad | CC0 |
 | `graphics/effects/spark.png` (resized) | [Particle Pack](https://kenney.nl/assets/particle-pack) | Kenney | CC0 |
 
-The wrecks of the expedition reuse the spaceship wrecks of the base game, the camp and the last stand its ship and big wreck, the direction finder the radar, the pylons of suppression, the obelisks, the hatch and the stairs ruins of Fulgora, the glyph lock the constant combinator, the reliquary a crash site chest, and the remains of a lair the corpses of the bosses. The beacon reuses the omega beacon of Nexus-Graphics; the bosses are creatures of Big Monsters, Arachnids enemy, Toxic
-biters, Electric flying enemies and Space Age, referenced from those mods and not redistributed.
+Graphics referenced from the game and other mods, not redistributed:
+
+| What | Reuses |
+| --- | --- |
+| Expedition wrecks, camp, last stand | spaceship wrecks, ship and big wreck of the base game |
+| Direction finder | radar |
+| Pylons of suppression, obelisks, hatch, stairs | ruins of Fulgora |
+| Glyph lock | constant combinator |
+| Reliquary | crash site chest |
+| Remains of a lair | corpses of the bosses |
+| Summon beacon | omega beacon of Nexus-Graphics |
+| Bosses | creatures of Big Monsters, Arachnids enemy, Toxic biters, Electric flying enemies and Space Age |

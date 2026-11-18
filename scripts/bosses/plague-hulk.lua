@@ -164,11 +164,7 @@ function M.tick(summon, surface, force)
   local record = records.main(summon)
   if record and seconds > 0 and seconds % SORTIE_SECONDS == 0 then
     local hulk = record.entity
-    local target = spawn.nearest_building(surface, hulk.position, summon)
-    local destination = target and target.position or summon.position
-    for _, unit in ipairs(hulk.units) do
-      unit.commandable.set_command(spawn.attack_command(destination))
-    end
+    spawn.send_spawner_units(summon, surface, hulk)
     release_spores(summon, surface, force, hulk)
   end
 end

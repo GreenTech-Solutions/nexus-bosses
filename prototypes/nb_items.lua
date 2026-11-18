@@ -9,16 +9,9 @@ local cfg = require("lib.nb_data")
 local proto = require("prototypes.nb_util")
 
 local COST = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
--- Nexus-Threat makes the subgroup only while its startup setting nexus-threat-activation is on
-local SUBGROUP = data.raw["item-subgroup"]["omega-threat"] and "omega-threat" or "other"
+local SUBGROUP = proto.subgroup()
 local GRAPHICS = "__Nexus-Graphics__/graphics/"
 
--- antenna tint by circle: blue, amber, red
-local TINTS = {
-  { r = 0.55, g = 0.85, b = 1.0 },
-  { r = 1.0, g = 0.8, b = 0.35 },
-  { r = 1.0, g = 0.4, b = 0.35 },
-}
 local SCALE = 0.7 -- the omega beacon is 3x3
 
 ---@param amount integer
@@ -61,7 +54,7 @@ local function beacon_layers(circle)
       animation_speed = 0.5,
       scale = 0.5 * SCALE,
       shift = by_pixel(1, -57),
-      tint = TINTS[circle],
+      tint = cfg.CIRCLES[circle].color,
     },
     {
       filename = GRAPHICS .. "entity/omega-beacon-top-shadow.png",
