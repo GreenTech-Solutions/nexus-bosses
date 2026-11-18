@@ -16,6 +16,7 @@ local storms = require("scripts.nb_storms")
 local story = require("scripts.nb_story")
 local whisper = require("scripts.nb_whisper")
 local vault = require("scripts.nb_vault")
+local guards = require("scripts.nb_guards")
 require("scripts.nb_interface")
 
 local beacon_filters = {}
@@ -161,6 +162,7 @@ script.on_nth_tick(60, function(event)
   summon.step()
   nexus.on_second(event.tick)
   storms.on_second(event.tick)
+  guards.on_second()
   vault.on_second(event.tick)
 end)
 
@@ -182,6 +184,7 @@ script.on_init(function()
   summon.init()
   expedition.init()
   bearing.init()
+  guards.init()
   storms.init()
   story.init()
   whisper.init()
@@ -198,6 +201,7 @@ script.on_configuration_changed(function()
   summon.init()
   expedition.init()
   bearing.init()
+  guards.init()
   storms.init()
   story.init()
   whisper.init()
@@ -232,7 +236,7 @@ end)
 -- In-game tests (FactorioTest, tools/test/run.sh -m <this folder> in the pack). Never in a release: tests/ is export-ignored.
 if script.active_mods["factorio-test"] then
   require("__factorio-test__/init")({
-    "tests.harness", "tests.fight", "tests.telegraph", "tests.bosses",
+    "tests.harness", "tests.fight", "tests.telegraph", "tests.bosses", "tests.search",
     "tests.lair", -- Last: found lairs and repaired pylons remain in storage between tests.
   })
 end

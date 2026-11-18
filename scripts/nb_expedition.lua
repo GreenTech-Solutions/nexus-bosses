@@ -13,6 +13,7 @@
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
 local bearing = require("scripts.nb_bearing")
+local progress = require("scripts.nb_progress")
 
 local M = {}
 
@@ -188,14 +189,22 @@ function M.reveal_next(force, from)
   end
   local marked = storage.expedition.marked[force.name] or {}
   storage.expedition.marked[force.name] = marked
-  local best, best_id, best_distance
-  for id, wreck in pairs(storage.expedition.wrecks) do
-    if wreck.entity.valid and not marked[id] and not M.has_log(force.name, id) then
-      local distance = util.distance(from, wreck.position)
-      if not best_distance or distance < best_distance then
-        best, best_id, best_distance = wreck, id, distance
+  local function closest(undefeated_only)
+    local best, best_id, best_distance
+    for id, wreck in pairs(storage.expedition.wrecks) do
+      if wreck.entity.valid and not marked[id] and not M.has_log(force.name, id)
+        and (not undefeated_only or not progress.is_defeated(force.name, id)) then
+        local distance = util.distance(from, wreck.position)
+        if not best_distance or distance < best_distance then
+          best, best_id, best_distance = wreck, id, distance
+        end
       end
     end
+    return best, best_id
+  end
+  local best, best_id = closest(true)
+  if not best then
+    best, best_id = closest(false)
   end
   if not best then
     return
@@ -258,6 +267,20 @@ function M.detector_tick(tick)
       end
       if best then
         local angle = math.atan2(best.position.y - hy, best.position.x - hx)
+        local distance = best_distance --[[@as number]]
+        local width = math.max(0.1, math.min(1.0, distance / 600))
+        rendering.draw_arc({
+          color = { r = 0.55, g = 0.85, b = 1, a = 0.25 },
+          start_angle = angle - width / 2,
+          angle = width,
+          min_radius = 0,
+          max_radius = distance * 1.25 + 20,
+          target = character,
+          surface = surface,
+          players = { player },
+          render_mode = "chart",
+          time_to_live = DETECTOR_TICKS + 1,
+        })
         rendering.draw_sprite({
           sprite = "utility/indication_arrow",
           orientation = (angle / (2 * math.pi) + 0.25) % 1,

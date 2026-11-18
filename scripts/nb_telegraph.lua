@@ -18,7 +18,7 @@ local function play(surface, target)
 end
 
 ---A circle outline and filled disk on the ground that last until the attack.
----@param summon table
+---@param summon table|nil
 ---@param surface LuaSurface
 ---@param target MapPosition|LuaEntity
 ---@param radius number
@@ -48,29 +48,34 @@ function M.circle(summon, surface, target, radius, ticks)
     blink_interval = 0,
     time_to_live = ticks,
   })
-  summon.renders = summon.renders or {}
-  summon.renders[#summon.renders + 1] = { render = outline }
-  summon.renders[#summon.renders + 1] = { render = disk }
+  if summon then
+    summon.renders = summon.renders or {}
+    summon.renders[#summon.renders + 1] = { render = outline }
+    summon.renders[#summon.renders + 1] = { render = disk }
+  end
   return disk
 end
 
----A filled circle that grows to its attack radius while its outline stays visible.
----@param summon table
+---A filled circle that grows to its attack radius while its outline stays visible when attached to a summon. Without a
+---summon the full-radius disk is left untracked and expires through its own TTL.
+---@param summon table|nil
 ---@param surface LuaSurface
 ---@param target MapPosition|LuaEntity
 ---@param radius number
 ---@param ticks integer how long until the attack
 function M.filling_circle(summon, surface, target, radius, ticks)
   local disk = M.circle(summon, surface, target, radius, ticks)
-  disk.radius = 0.1
-  local entry = summon.renders[#summon.renders]
-  entry.radius = radius
-  entry.start_tick = game.tick
-  entry.end_tick = game.tick + ticks
+  if summon then
+    disk.radius = 0.1
+    local entry = summon.renders[#summon.renders]
+    entry.radius = radius
+    entry.start_tick = game.tick
+    entry.end_tick = game.tick + ticks
+  end
 end
 
 ---A line from an entity or position to a target.
----@param summon table
+---@param summon table|nil
 ---@param surface LuaSurface
 ---@param from MapPosition|LuaEntity
 ---@param to MapPosition|LuaEntity
@@ -87,13 +92,15 @@ function M.line(summon, surface, from, to, ticks)
     blink_interval = 0,
     time_to_live = ticks,
   })
-  summon.renders = summon.renders or {}
-  summon.renders[#summon.renders + 1] = { render = line }
+  if summon then
+    summon.renders = summon.renders or {}
+    summon.renders[#summon.renders + 1] = { render = line }
+  end
   return line
 end
 
 ---A ring around an entity.
----@param summon table
+---@param summon table|nil
 ---@param surface LuaSurface
 ---@param entity LuaEntity
 ---@param radius number
@@ -112,8 +119,10 @@ function M.ring(summon, surface, entity, radius, ticks)
     blink_interval = 0,
     time_to_live = ticks,
   })
-  summon.renders = summon.renders or {}
-  summon.renders[#summon.renders + 1] = { render = ring }
+  if summon then
+    summon.renders = summon.renders or {}
+    summon.renders[#summon.renders + 1] = { render = ring }
+  end
   return ring
 end
 

@@ -96,6 +96,13 @@ function M.strike(surface, position)
   surface.create_entity({ name = "lightning", position = position })
 end
 
+---@param surface LuaSurface
+---@param position MapPosition
+function M.burrow(surface, position)
+  surface.create_entity({ name = "bm-large-tunnel", position = position, force = "neutral" })
+  surface.create_entity({ name = "big-demolisher-fissure-explosion", position = position })
+end
+
 ---@param object LuaEntity|LuaPlayer
 ---@return LuaForce
 function M.force_of(object)

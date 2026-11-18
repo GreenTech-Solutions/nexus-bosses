@@ -1,6 +1,7 @@
 -- Shared helpers for the in-game FactorioTest tests.
 
 local M = {}
+local guards = require("scripts.nb_guards")
 
 ---Returns the Nexus surface, creating its chunks near the origin when needed.
 ---@return LuaSurface
@@ -17,6 +18,7 @@ end
 
 ---Resets the active summon and shortens the countdown for a headless test.
 function M.reset()
+  guards.reset()
   local state = remote.call("nexus-bosses", "get_state")
   local previous_position = state and state.summon and state.summon.beacon_position
   remote.call("nexus-bosses", "abort_summon", true)

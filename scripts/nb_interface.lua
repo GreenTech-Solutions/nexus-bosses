@@ -4,7 +4,7 @@
 -- fields and new optional arguments may come in any version. Everything else here is for tests and debugging and may
 -- change in any version.
 --   api_version()                      the version of the public API: API_VERSION
---   get_state()                        the active summon and the victories per force
+--   get_state()                        plain mod state, including the active summon, victories and guard warnings
 --   set_ignore_player_presence(bool)   the countdown runs without a player on Nexus (a headless test has none)
 --   set_countdown(seconds?)            the countdown of the next summons in seconds, nil restores the setting
 --   abort_summon(destroy_bosses?)      ends the active summon without a victory; true also destroys its entities

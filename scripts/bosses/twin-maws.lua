@@ -15,13 +15,6 @@ local MUTUAL_HEAL_SHARE = 0.003
 local RISE_SECONDS = 20
 local RISE_RADIUS = 4
 
----@param surface LuaSurface
----@param position MapPosition
-local function burrow_effect(surface, position)
-  surface.create_entity({ name = "bm-large-tunnel", position = position, force = "neutral" })
-  surface.create_entity({ name = "big-demolisher-fissure-explosion", position = position })
-end
-
 ---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
@@ -36,7 +29,7 @@ function M.spawn(summon, surface)
     local maw = position and surface.create_entity({ name = name, position = position, force = "enemy" })
     if maw then
       records.add(summon, maw, true, "boss")
-      burrow_effect(surface, maw.position)
+      util.burrow(surface, maw.position)
       placed = placed + 1
     end
   end
@@ -118,7 +111,7 @@ function M.on_pending(summon, surface, _force, entry)
   end
   maw.health = fallen.max_health / 2
   records.replace(summon, old_record, maw)
-  burrow_effect(surface, maw.position)
+  util.burrow(surface, maw.position)
   summon.maws.fallen = nil
 end
 

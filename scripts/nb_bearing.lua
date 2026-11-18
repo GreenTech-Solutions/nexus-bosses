@@ -340,11 +340,12 @@ local function status_of(finder, force_name)
     return { "nexus-bosses.finder-waiting" }
   end
   local spread = spread_of(finder.scans)
+  local precision = spread <= PRECISE and 100 or math.floor(100 * (1 - spread / SPREAD_START))
+  local signal = { "nexus-bosses.finder-signal", precision }
   if finder.parallel then
-    return { "nexus-bosses.finder-parallel", string.format("%.1f", spread) }
+    return { "", signal, " ", { "nexus-bosses.finder-parallel", string.format("%.1f", spread) } }
   end
-  return { spread <= PRECISE and "nexus-bosses.finder-precise" or "nexus-bosses.finder-scanning",
-    string.format("%.1f", spread), finder.scans }
+  return signal
 end
 
 ---@param player LuaPlayer
