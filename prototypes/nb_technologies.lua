@@ -6,7 +6,7 @@
 --   nexus-convergence  sharpens the weapons the next stage needs
 --   nexus-signal-bearing  scripted: researched when the first log of the expedition is found (scripts/nb_bearing.lua);
 --                      unlocks the direction finder
---   nexus-silence      crafting the warp key (one trophy of each boss); it opens the routes of the warp drive
+--   nexus-silence      placing the warp key in the vault reliquary; it opens the routes of the warp drive
 --                      (prototypes/nb_nexus.lua). Not made when the startup setting nexus-bosses-gate-warp-drive is off
 
 local cfg = require("lib.nb_data")
@@ -114,7 +114,7 @@ if GATED then
       icon_size = 256,
       essential = true,
       prerequisites = { cfg.CIRCLES[#cfg.CIRCLES].tech },
-      research_trigger = { type = "craft-item", item = cfg.WARP_KEY },
+      research_trigger = { type = "scripted", trigger_description = { "nexus-bosses.trigger-silence" } },
       effects = nexus.routes,
       order = "fa-b[nexus-signal]-z",
     },

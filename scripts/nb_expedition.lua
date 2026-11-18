@@ -153,14 +153,16 @@ end
 ---@param player LuaPlayer
 ---@param entity LuaEntity
 ---@param codex table the codex module
+---@return boolean true if this opening found the last of the nine logs
 function M.on_wreck_opened(player, entity, codex)
   local boss_id = storage.expedition.by_unit[entity.unit_number]
   if not boss_id then
-    return
+    return false
   end
   local force = player.force --[[@as LuaForce]]
   local logs = logs_of(force.name)
   local first = logs[boss_id] == nil
+  local found_all = false
   if first then
     logs[boss_id] = game.tick
     util.say(force, { "nexus-bosses.msg-log-found", { "nexus-bosses.boss-" .. boss_id } }, util.COLORS.good)
@@ -170,13 +172,15 @@ function M.on_wreck_opened(player, entity, codex)
       util.say(force, { "nexus-bosses.msg-stage-logs", { "nexus-bosses.stage-" .. cfg.CIRCLES[stage].stage } },
         util.COLORS.good)
     end
-    if all_logs(force.name) then
+    found_all = all_logs(force.name)
+    if found_all then
       util.say(force, { "nexus-bosses.msg-all-logs" }, util.COLORS.good)
     end
     bearing.on_log_found(force)
   end
   player.opened = nil
   codex.open(player, boss_id)
+  return found_all
 end
 
 ---After a victory the nearest unfound wreck of the force is marked on the map.

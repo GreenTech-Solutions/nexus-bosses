@@ -390,6 +390,7 @@ local function victory(summon, force, surface)
   progress.drop_trophy(force, surface, boss, summon.last_position or summon.position)
   if summon.lair then
     bearing.lair_victory(force, surface, boss, summon.last_position or summon.position, summon.weaken or 0)
+    vault.earn(force, "lair")
   end
   expedition.reveal_next(force, summon.last_position or summon.position)
   if boss == "storm-guardian" then

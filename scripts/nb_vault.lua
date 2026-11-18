@@ -1,19 +1,17 @@
--- The vault of the builders. Once a force reaches Silence (or, without the gate of the warp drive, beats the
--- Convergence), a vault ruin of Fulgora on Nexus is marked for it: the commander of the Long Echo got there and could
--- not open it. Four obelisks around the ruin carry the four glyphs of the code and light up one after another, always
--- in its order; a console (a constant combinator) takes the code: every glyph of the code with its place in the order
--- (1-4) and no other glyph. The right code opens a hatch down to the vault: a surface of its own with five dark halls,
--- the stairs up in the first one and the treasure in the last: a reliquary (nine legendary trophies, and the last log
--- of the story when opened) and the relic of the builders, whose mining researches the Echo of the builders. Every
--- three wrong codes the force gets one glyph of the code as a hint; a map setting opens the lock at once.
+-- The vault is marked for a force after it defeats all three bosses of the Convergence. Its four-part code is entered
+-- at a console; earned glyphs and every third wrong code reveal the next code place for that force.
+-- The reliquary consumes a warp key to research Silence when that technology exists. Without that gate, the relic is
+-- placed in the vault as soon as it is built. The relic researches the Echo of the builders when mined.
 --
 --   storage.vault.ruin          the vault ruin (LuaEntity), position
 --   storage.vault.code          {glyph index, ...} in the order of the code
 --   storage.vault.obelisks      {LuaEntity, ...} in the order of the code (they stand in another order)
---   storage.vault.console, hatch, stairs, reliquary
+--   storage.vault.console, hatch, stairs, reliquary, relic
 --   storage.vault.open          the lock is open (for everybody: the vault is one)
 --   storage.vault.marked        [force_name] = true
 --   storage.vault.attempts      [force_name] = wrong codes
+--   storage.vault.earned        [force_name] = {[source] = true}
+--   storage.vault.revealed      [force_name] = {[place] = true}
 --   storage.vault.built         the surface of the vault is built
 
 local cfg = require("lib.nb_data")
@@ -47,6 +45,8 @@ function M.init()
   v.obelisks = v.obelisks or {}
   v.marked = v.marked or {}
   v.attempts = v.attempts or {}
+  v.earned = v.earned or {}
+  v.revealed = v.revealed or {}
 end
 
 ---@return LuaSurface|nil
@@ -64,6 +64,79 @@ end
 ---@return string rich text of a glyph
 local function glyph_text(index)
   return "[virtual-signal=" .. glyph(index) .. "]"
+end
+
+---Whether the warp-drive gate adds Silence to the technology tree.
+---@return boolean
+local function gated()
+  return prototypes.technology[cfg.SILENCE_TECH] ~= nil
+end
+
+---Place the relic once on the vault surface.
+---@param surface LuaSurface
+---@return LuaEntity|nil
+local function raise_relic(surface)
+  local v = storage.vault
+  if v.relic and v.relic.valid then
+    return v.relic
+  end
+  local relic = surface.create_entity({ name = cfg.RELIC, position = { x = 104, y = 0 }, force = "neutral" })
+  if relic then
+    relic.destructible = false
+    v.relic = relic
+    rendering.draw_animation({ animation = "nexus-bosses-summon-circle", target = relic, surface = surface,
+      tint = { r = 1, g = 0.75, b = 0.35 }, render_layer = "lower-object" })
+  end
+  return relic
+end
+
+---Reveals the next code places earned by a force and its wrong-code hints.
+---@param force LuaForce
+local function reveal(force)
+  local v = storage.vault
+  if not v.code then
+    return
+  end
+  local earned = v.earned[force.name] or {}
+  local earned_count = 0
+  for _ in pairs(earned) do
+    earned_count = earned_count + 1
+  end
+  local hints = math.floor((v.attempts[force.name] or 0) / HINT_EVERY)
+  local target = math.min(cfg.CODE_LENGTH, earned_count + hints)
+  local revealed = v.revealed[force.name] or {}
+  v.revealed[force.name] = revealed
+  local revealed_count = 0
+  for _ in pairs(revealed) do
+    revealed_count = revealed_count + 1
+  end
+  for place = 1, cfg.CODE_LENGTH do
+    if revealed_count >= target then
+      break
+    end
+    if not revealed[place] then
+      revealed[place] = true
+      revealed_count = revealed_count + 1
+      util.say(force, { "nexus-bosses.msg-vault-hint", place, glyph_text(v.code[place]) }, util.COLORS.info)
+      util.play(force, "detector")
+    end
+  end
+end
+
+---A force earned one glyph source. Repeated finds of the same source count once.
+---@param force LuaForce
+---@param source "camp"|"logs"|"lair"|"badge"
+---@return boolean true if this source was newly earned
+function M.earn(force, source)
+  local v = storage.vault
+  local earned = v.earned[force.name] or {}
+  v.earned[force.name] = earned
+  if earned[source] then
+    return false
+  end
+  earned[source] = true
+  reveal(force)
+  return true
 end
 
 -- The lock --------------------------------------------------------------------------------------------------------
@@ -187,12 +260,13 @@ local function open_lock(announce)
   end
 end
 
----The vault is marked for a force that reached the end of the story.
+---The vault is marked for a force that defeated all three bosses of the Convergence.
 ---@param force LuaForce
 function M.sync(force)
   local surface = util.nexus()
   local v = storage.vault
-  if not surface or force.name == "enemy" or force.name == "neutral" or v.marked[force.name] or not progress.story_ended(force) then
+  if not surface or force.name == "enemy" or force.name == "neutral" or v.marked[force.name]
+    or not progress.circle_done(force.name, #cfg.CIRCLES) then
     return
   end
   build_lock(surface)
@@ -204,6 +278,7 @@ function M.sync(force)
   force.chart(surface, { { x - 40, y - 40 }, { x + 40, y + 40 } })
   force.add_chart_tag(surface, { position = v.position, icon = { type = "virtual", name = glyph(v.code[1]) } })
   util.say(force, { "nexus-bosses.msg-vault-revealed", math.floor(x), math.floor(y), surface.name }, util.COLORS.info)
+  reveal(force)
   if settings.global["nexus-bosses-skip-glyph-lock"].value then
     open_lock(true)
   end
@@ -285,11 +360,7 @@ function M.on_console_closed(player)
   local attempts = (v.attempts[force.name] or 0) + 1
   v.attempts[force.name] = attempts
   util.say(force, { "nexus-bosses.msg-vault-wrong" }, util.COLORS.warning)
-  local hint = math.floor(attempts / HINT_EVERY)
-  if attempts % HINT_EVERY == 0 and hint <= cfg.CODE_LENGTH then
-    util.say(force, { "nexus-bosses.msg-vault-hint", hint, glyph_text(v.code[hint]) }, util.COLORS.info)
-    util.play(force, "detector")
-  end
+  reveal(force)
 end
 
 ---The obelisks light up one after another, in the order of the code. Once a second.
@@ -430,16 +501,11 @@ local function build_vault()
   -- the treasure
   v.reliquary = put(surface, cfg.RELIQUARY, { x = 98, y = 0 })
   if v.reliquary then
-    for _, id in ipairs(cfg.ORDER) do
-      v.reliquary.insert({ name = cfg.trophy_name(id), quality = "legendary", count = 1 })
-    end
     rendering.draw_light({ sprite = "utility/light_medium", target = v.reliquary, surface = surface, scale = 6,
       intensity = 1, color = { r = 1, g = 0.8, b = 0.45 } })
   end
-  local relic = put(surface, cfg.RELIC, { x = 104, y = 0 })
-  if relic then
-    rendering.draw_animation({ animation = "nexus-bosses-summon-circle", target = relic, surface = surface,
-      tint = { r = 1, g = 0.75, b = 0.35 }, render_layer = "lower-object" })
+  if not gated() then
+    raise_relic(surface)
   end
   return surface
 end
@@ -500,6 +566,58 @@ function M.on_reliquary_opened(player)
   util.play(force, "trophy")
 end
 
+---A player closed the reliquary: a warp key researches Silence.
+---@param player LuaPlayer
+function M.on_reliquary_closed(player)
+  local v = storage.vault
+  local reliquary = v.reliquary
+  if not (reliquary and reliquary.valid) then
+    return
+  end
+  local force = player.force --[[@as LuaForce]]
+  local technology = force.technologies[cfg.SILENCE_TECH]
+  if not technology or technology.researched then
+    return
+  end
+  local inventory = reliquary.get_inventory(defines.inventory.chest)
+  if not inventory then
+    return
+  end
+  local key
+  for _, entry in ipairs(inventory.get_contents()) do
+    if entry.name == cfg.WARP_KEY then
+      key = entry
+      break
+    end
+  end
+  if not key or inventory.remove({ name = cfg.WARP_KEY, quality = key.quality, count = 1 }) == 0 then
+    return
+  end
+  progress.research(force, cfg.SILENCE_TECH)
+  util.say(force, { "nexus-bosses.msg-vault-key-accepted" }, util.COLORS.good)
+  util.play(force, "silence")
+  raise_relic(reliquary.surface)
+end
+
+---A player opened the console: a commander's badge earns one glyph.
+---@param player LuaPlayer
+function M.on_console_opened(player)
+  local inventory = player.get_main_inventory()
+  if not inventory or inventory.get_item_count(cfg.BADGE) == 0 then
+    return
+  end
+  local force = player.force --[[@as LuaForce]]
+  local earned = storage.vault.earned[force.name]
+  if earned and earned.badge then
+    return
+  end
+  if inventory.remove({ name = cfg.BADGE, count = 1 }) == 0 then
+    return
+  end
+  M.earn(force, "badge")
+  util.say(force, { "nexus-bosses.msg-vault-badge" }, util.COLORS.good)
+end
+
 ---@param technology LuaTechnology
 function M.on_research_finished(technology)
   if technology.name == cfg.ECHO_TECH then
@@ -529,10 +647,13 @@ function M.snapshot()
     open = v.open == true,
     marked = v.marked,
     attempts = v.attempts,
+    earned = v.earned,
+    revealed = v.revealed,
     built = v.built == true,
     obelisks = obelisks,
     console = v.console and v.console.valid and { x = v.console.position.x, y = v.console.position.y } or nil,
     hatch = v.hatch and v.hatch.valid and { x = v.hatch.position.x, y = v.hatch.position.y } or nil,
+    relic = v.relic and v.relic.valid or false,
   }
 end
 

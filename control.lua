@@ -100,12 +100,19 @@ script.on_event(defines.events.on_gui_opened, function(event)
     return
   end
   local player = game.get_player(event.player_index) --[[@as LuaPlayer]]
+  local force = player.force --[[@as LuaForce]]
   if entity.name:sub(1, #cfg.WRECK_PREFIX) == cfg.WRECK_PREFIX then
-    expedition.on_wreck_opened(player, entity, codex)
+    if expedition.on_wreck_opened(player, entity, codex) then
+      vault.earn(force, "logs")
+    end
   elseif entity.name == cfg.FINDER then
     bearing.open_panel(player, entity)
+  elseif entity.name == cfg.CONSOLE then
+    vault.on_console_opened(player)
   elseif story.key_of(entity) then
-    story.on_opened(player, entity)
+    if story.on_opened(player, entity) == "camp" then
+      vault.earn(force, "camp")
+    end
   elseif entity.name == cfg.HATCH then
     vault.descend(player)
   elseif entity.name == cfg.STAIRS then
@@ -131,6 +138,8 @@ script.on_event(defines.events.on_gui_closed, function(event)
     bearing.on_pylon_closed(game.get_player(event.player_index) --[[@as LuaPlayer]], entity)
   elseif entity and entity.valid and entity.name == cfg.CONSOLE then
     vault.on_console_closed(game.get_player(event.player_index) --[[@as LuaPlayer]])
+  elseif entity and entity.valid and entity.name == cfg.RELIQUARY then
+    vault.on_reliquary_closed(game.get_player(event.player_index) --[[@as LuaPlayer]])
   else
     codex.on_gui_closed(event)
   end
@@ -237,6 +246,6 @@ end)
 if script.active_mods["factorio-test"] then
   require("__factorio-test__/init")({
     "tests.harness", "tests.fight", "tests.telegraph", "tests.bosses", "tests.search",
-    "tests.lair", -- Last: found lairs and repaired pylons remain in storage between tests.
+    "tests.lair", "tests.vault", -- Lair state persists between tests; the vault test is last because it builds a surface.
   })
 end

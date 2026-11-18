@@ -18,6 +18,8 @@
 --   set_finder(unit_number, boss_id?)  points a direction finder at a boss
 --   wake_ruin(position)                wakes the attractor ruin nearest to a position, storm or not
 --   find_story(force_name, key)        finds the log of the camp ("camp") or of the last stand ("last_stand")
+--   defeat(force_name, boss_id)         records a test victory and syncs unlocks and the vault
+--   close_reliquary(player_index)       calls the reliquary close handler for a test player
 --   repair_pylon(force_name, boss_id, quality)  repairs the pylon of a lair, as a trophy of that quality would
 --   resist(entity_name)                reads an entity's combat resistances for tests and debugging
 --   hallucinate(player_index, kind?)   a hallucination now: 1 shade, 2 whisper, 3 false alarm, 4 vignette and whisper
@@ -30,7 +32,9 @@ local expedition = require("scripts.nb_expedition")
 local codex = require("scripts.nb_codex")
 local bearing = require("scripts.nb_bearing")
 local storms = require("scripts.nb_storms")
+local progress = require("scripts.nb_progress")
 local story = require("scripts.nb_story")
+local vault = require("scripts.nb_vault")
 local whisper = require("scripts.nb_whisper")
 
 -- The version of the public API. It grows only when the public part breaks, together with a major version of the mod.
@@ -98,6 +102,24 @@ remote.add_interface("nexus-bosses", {
   end,
   find_story = function(force_name, key)
     story.find(force_name, key)
+    if key == "camp" then
+      vault.earn(game.forces[force_name], "camp")
+    end
+  end,
+  defeat = function(force_name, boss_id)
+    assert(type(force_name) == "string", "nexus-bosses.defeat: expected a force name")
+    assert(type(boss_id) == "string" and cfg.BOSSES[boss_id], "nexus-bosses.defeat: expected a boss id")
+    local force = game.forces[force_name]
+    if not force then
+      error("nexus-bosses.defeat: no such force")
+    end
+    progress.mark_defeated(force, boss_id)
+    progress.sync_unlocks(force, false)
+    vault.sync(force)
+  end,
+  close_reliquary = function(player_index)
+    local player = assert(game.get_player(player_index), "nexus-bosses.close_reliquary: no such player")
+    vault.on_reliquary_closed(player)
   end,
   repair_pylon = function(force_name, boss_id, quality)
     local force = game.forces[force_name]
