@@ -19,7 +19,7 @@ local EMP_COOLDOWN_SECONDS = 20
 local SUPPLY_SECONDS = 18
 local AMMO = { { name = "explosive-rocket", count = 400 } }
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -31,12 +31,11 @@ function M.spawn(summon, surface)
   end
   records.add(summon, entity, true, "boss")
   spider.supply(entity, AMMO)
-  summon.spidertron = { target = nil, exclude = {}, last_supply = 0, emp_ready = true }
-  summon.emp = {}
+  summon.spidertron = { target = nil, exclude = {}, last_supply = 0, emp_ready = true, emp = {} }
   return true, nil
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 function M.tick(summon, surface, _force)
@@ -45,7 +44,7 @@ function M.tick(summon, surface, _force)
     return
   end
   local entity = boss.entity
-  local state = summon.spidertron
+  local state = assert(summon.spidertron)
   local seconds = summon.active_seconds
   if seconds - state.last_supply >= SUPPLY_SECONDS then
     state.last_supply = seconds
@@ -93,10 +92,14 @@ function M.tick(summon, surface, _force)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param all boolean restore entries whose duration has not elapsed too
 local function restore_emp(summon, all)
-  local disabled_entities = summon.emp or {}
+  local state = summon.spidertron
+  if not state then
+    return
+  end
+  local disabled_entities = state.emp or {}
   for unit_number, disabled in pairs(disabled_entities) do
     if all or not disabled.until_tick or game.tick >= disabled.until_tick then
       local entity = disabled.entity
@@ -106,32 +109,30 @@ local function restore_emp(summon, all)
       disabled_entities[unit_number] = nil
     end
   end
-  summon.emp = disabled_entities
+  state.emp = disabled_entities
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 ---@param entry NbPending
 function M.on_pending(summon, surface, _force, entry)
   if entry.kind == "emp" then
-    summon.emp = summon.emp or {}
-    local state = summon.spidertron
+    local state = assert(summon.spidertron)
+    state.emp = state.emp or {}
     local duration_ticks = entry.data.duration_ticks or EMP_DURATION_SECONDS * 60
     local until_tick = game.tick + duration_ticks
     local position = entry.data.position
-    if state then
-      state.target = nil
-      state.exclude = state.exclude or {}
-      for _, pole in ipairs(surface.find_entities_filtered({
-        position = position,
-        radius = EMP_RADIUS,
-        force = summon.force,
-        type = cfg.POLE_TYPES,
-      })) do
-        if pole.unit_number then
-          state.exclude[pole.unit_number] = until_tick
-        end
+    state.target = nil
+    state.exclude = state.exclude or {}
+    for _, pole in ipairs(surface.find_entities_filtered({
+      position = position,
+      radius = EMP_RADIUS,
+      force = summon.force,
+      type = cfg.POLE_TYPES,
+    })) do
+      if pole.unit_number then
+        state.exclude[pole.unit_number] = until_tick
       end
     end
     for _, entity in ipairs(surface.find_entities_filtered({
@@ -140,12 +141,12 @@ function M.on_pending(summon, surface, _force, entry)
       force = summon.force,
     })) do
       if entity.prototype.is_building and entity.is_updatable and entity.unit_number then
-        local existing = summon.emp[entity.unit_number]
+        local existing = state.emp[entity.unit_number]
         if existing then
           existing.until_tick = math.max(existing.until_tick, until_tick)
         elseif entity.disabled_by_script == false then
           entity.disabled_by_script = true
-          summon.emp[entity.unit_number] = { entity = entity, until_tick = until_tick }
+          state.emp[entity.unit_number] = { entity = entity, until_tick = until_tick }
         end
       end
     end
@@ -160,26 +161,27 @@ function M.on_pending(summon, surface, _force, entry)
 end
 
 ---Restores any buildings this boss disabled.
----@param summon table
-function M.restore(summon)
+---@param summon NbSummon
+local function restore(summon)
   restore_emp(summon, true)
 end
 
----@param summon table
+---@param summon NbSummon
 function M.release(summon)
-  M.restore(summon)
+  restore(summon)
 end
 
----@param summon table
+---@param summon NbSummon
 function M.on_victory(summon)
-  M.restore(summon)
+  restore(summon)
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString
 function M.status(summon)
   local remaining = 0
-  for _, disabled in pairs(summon.emp or {}) do
+  local state = assert(summon.spidertron)
+  for _, disabled in pairs(state.emp or {}) do
     local duration = math.floor(disabled.until_tick - game.tick)
     if duration > remaining then
       remaining = duration
@@ -189,6 +191,19 @@ function M.status(summon)
     return { "nexus-bosses.status-spidertron-emp", math.ceil(remaining / 60) }
   end
   return { "nexus-bosses.status-spidertron-approach" }
+end
+
+---@param summon NbSummon
+---@return table
+function M.snapshot(summon)
+  local count = 0
+  for _, disabled in pairs(summon.spidertron and summon.spidertron.emp or {}) do
+    local entity = disabled.entity
+    if entity and entity.valid and entity.disabled_by_script then
+      count = count + 1
+    end
+  end
+  return { emp = count }
 end
 
 return M

@@ -34,7 +34,82 @@ local M = {}
 ---@field start_tick integer
 ---@field end_tick integer
 
--- the bosses of the mod: spawn, tick, status, on_victory, release, optional on_pending; the names whose death events matter
+---@class NbTracked
+---@field entity LuaEntity|LuaSegmentedUnit
+---@field name string
+---@field unit_number uint64
+---@field required boolean
+---@field role string
+---@field segmented boolean
+---@field initial number
+---@field hidden boolean
+---@field hidden_health number|nil
+---@field dead boolean
+---@field gone boolean
+---@field death_position MapPosition|nil
+---@field death_max_health number|nil
+
+---@class NbSummon
+---@field id integer
+---@field boss string
+---@field circle integer
+---@field force string
+---@field surface_index integer
+---@field phase "countdown"|"spawning"|"active"
+---@field beacon LuaEntity|nil
+---@field beacon_unit uint64
+---@field item string
+---@field quality string
+---@field position MapPosition
+---@field angle number
+---@field countdown integer
+---@field countdown_total integer
+---@field waves table<integer, boolean>
+---@field paused boolean
+---@field active_seconds integer
+---@field tracked NbTracked[]
+---@field by_unit table<uint64, NbTracked>
+---@field watch string[]
+---@field pending NbPending[]
+---@field renders NbSummonRender[]
+---@field charge integer
+---@field lair boolean
+---@field weaken number
+---@field frequency number
+---@field pylon_share number|nil legacy 2.x field cleared when configuration changes
+---@field label LuaRenderObject|nil
+---@field circle_fx LuaRenderObject|nil
+---@field tag LuaCustomChartTag|nil
+---@field variant string|nil
+---@field variant_entity string|nil
+---@field spawn_note string|nil
+---@field spawn_distance number|nil
+---@field last_position MapPosition|nil
+---@field music_index integer|nil
+---@field music_until integer|nil
+---@field health_bar {status: LocalisedString|nil, resist: LocalisedString|nil}|nil
+---@field queen table|nil
+---@field watcher table|nil
+---@field spidertron table|nil
+---@field maws table|nil
+---@field colossus table|nil
+---@field hulk table|nil
+---@field guardian table|nil
+---@field devourer table|nil
+---@field commander table|nil
+
+-- Boss module contract:
+--   spawn(summon, surface) -> success, failure_message_key: create the required boss records
+--   tick(summon, surface, force): advance the boss mechanics once per second
+--   status(summon) -> LocalisedString|nil: describe the mechanic for the fight bar
+--   on_victory(summon), release(summon): clean up module-owned state at the matching end
+-- Optional hooks:
+--   prepare(summon): finish summon setup before death events are registered and messages are sent
+--   countdown_note(summon) -> LocalisedString|nil: append a boss-specific countdown message
+--   snapshot(summon) -> table|nil: expose plain module state as snapshot.boss_state
+--   on_pending(summon, surface, force, entry): execute an expired telegraph
+-- Every relevant entity name belongs in watch. Every entity created or adopted by a module must be recorded with
+-- records.add(summon, entity, required, role); retain the LuaEntity reference instead of looking it up by unit number.
 local OWN = {
   ["arachnid-queen"] = { module = require("scripts.bosses.arachnid-queen"), watch = { cfg.QUEEN } },
   ["watcher"] = {
@@ -57,7 +132,7 @@ local function boss_name(id)
   return { "nexus-bosses.boss-" .. id }
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString
 local function title_name(summon)
   if summon.variant_entity then
@@ -66,14 +141,14 @@ local function title_name(summon)
   return boss_name(summon.boss)
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return table? # the module of an own boss
 local function module_of(summon)
   local own = OWN[summon.boss]
   return own and own.module
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce
 ---@param surface LuaSurface
 local function precursor_wave(summon, force, surface)
@@ -86,13 +161,31 @@ local function precursor_wave(summon, force, surface)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return string
 local function main_entity(summon)
   return summon.variant_entity or cfg.BOSSES[summon.boss].entity
 end
 
----@param summon table
+---@param summon NbSummon
+---@return LocalisedString
+local function resistance_caption(summon)
+  local entities = cfg.BOSSES[summon.boss].entities
+  if not entities then
+    return resistance.caption(main_entity(summon))
+  end
+  ---@type LocalisedString
+  local caption = { "" }
+  for index, name in ipairs(entities) do
+    if index > 1 then
+      caption[#caption + 1] = " "
+    end
+    caption[#caption + 1] = { "", { "entity-name." .. name }, ": ", resistance.caption(name) }
+  end
+  return caption --[[@as LocalisedString]]
+end
+
+---@param summon NbSummon
 ---@return LuaForce|nil
 local function force_of(summon)
   return game.forces[summon.force]
@@ -116,7 +209,7 @@ end
 
 local on_entity_died
 
----@param summon table
+---@param summon NbSummon
 local function register_death_events(summon)
   local filters = {}
   for _, name in ipairs(summon.watch) do
@@ -131,7 +224,7 @@ end
 
 -- Visuals and alarms -------------------------------------------------------------------------------------------------
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString
 local function label_text(summon)
   if summon.phase == "spawning" then
@@ -142,18 +235,21 @@ local function label_text(summon)
   return { "nexus-bosses.label-countdown", summon.countdown }
 end
 
----@param summon table
+---@param summon NbSummon
 local function update_visuals(summon)
-  summon.label.text = label_text(summon)
+  if summon.label and summon.label.valid then
+    summon.label.text = label_text(summon)
+  end
   if summon.tag and summon.tag.valid and summon.countdown % 5 == 0 then
     summon.tag.text = string.format("[item=%s] %d", summon.item, summon.countdown)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce
 ---@param surface LuaSurface
 local function create_visuals(summon, force, surface)
+  local beacon = assert(summon.beacon)
   local x, y = util.xy(summon.position)
   force.chart(surface, { { x - 24, y - 24 }, { x + 24, y + 24 } })
   summon.tag = force.add_chart_tag(surface, {
@@ -164,7 +260,7 @@ local function create_visuals(summon, force, surface)
   local tint = cfg.CIRCLES[summon.circle].color
   summon.circle_fx = rendering.draw_animation({
     animation = "nexus-bosses-summon-circle",
-    target = summon.beacon,
+    target = beacon,
     surface = surface,
     tint = tint,
     render_layer = "lower-object",
@@ -172,7 +268,7 @@ local function create_visuals(summon, force, surface)
   summon.label = rendering.draw_text({
     text = label_text(summon),
     surface = surface,
-    target = { entity = summon.beacon, offset = { 0, -2.4 } },
+    target = { entity = beacon, offset = { 0, -2.4 } },
     forces = { force },
     color = util.COLORS.warning,
     scale = 1.3,
@@ -181,7 +277,7 @@ local function create_visuals(summon, force, surface)
   })
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce|nil
 local function destroy_visuals(summon, force)
   if summon.label then
@@ -206,7 +302,7 @@ end
 ---A custom alert on the entity for every player of the force.
 ---@param force LuaForce
 ---@param entity LuaEntity
----@param summon table
+---@param summon NbSummon
 ---@param message LocalisedString
 local function alert(force, entity, summon, message)
   for _, player in ipairs(force.connected_players) do
@@ -214,12 +310,12 @@ local function alert(force, entity, summon, message)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce
 local function update_health_bar(summon, force)
   local module = module_of(summon)
   local status = module and module.status and module.status(summon) or nil
-  local resist = expedition.has_log(summon.force, summon.boss) and resistance.caption(main_entity(summon)) or nil
+  local resist = expedition.has_log(summon.force, summon.boss) and resistance_caption(summon) or nil
   summon.health_bar = { status = status, resist = resist }
   gui.update(force, { "nexus-bosses.bar-title", title_name(summon), { "nexus-bosses.stage-" .. cfg.CIRCLES[summon.circle].stage } },
     records.health_share(summon), status, resist)
@@ -227,7 +323,7 @@ end
 
 -- Ending ------------------------------------------------------------------------------------------------------------
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce|nil
 local function cleanup(summon, force)
   destroy_visuals(summon, force)
@@ -247,7 +343,7 @@ local function cleanup(summon, force)
 end
 
 ---Ends the summon without a victory.
----@param summon table
+---@param summon NbSummon
 ---@param message_key string key in the group nexus-bosses, whose first parameter is the name of the boss
 ---@param color Color
 ---@param options {refund: boolean|nil, keep_beacon: boolean|nil, params: LocalisedString[]|nil}
@@ -276,7 +372,7 @@ local function end_summon(summon, message_key, color, options)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce
 ---@param surface LuaSurface
 local function victory(summon, force, surface)
@@ -305,7 +401,7 @@ end
 
 -- The boss appears ----------------------------------------------------------------------------------------------------
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce
 ---@param surface LuaSurface
 local function complete_spawn(summon, force, surface)
@@ -334,11 +430,13 @@ local function complete_spawn(summon, force, surface)
   summon.music_index = 0
   summon.music_until = 0
   if summon.spawn_note == "closer" then
-    util.say(force, { "nexus-bosses.msg-spawn-closer", math.floor(summon.spawn_distance) }, util.COLORS.warning)
+    local spawn_distance = summon.spawn_distance or 0
+    util.say(force, { "nexus-bosses.msg-spawn-closer", math.floor(spawn_distance) }, util.COLORS.warning)
   end
   for _, record in ipairs(summon.tracked) do
     if record.required and not record.segmented then
-      alert(force, record.entity, summon, { "nexus-bosses.alert-boss", boss_name(summon.boss) })
+      alert(force, record.entity --[[@as LuaEntity]], summon,
+        { "nexus-bosses.alert-boss", boss_name(summon.boss) })
       break
     end
   end
@@ -347,11 +445,12 @@ end
 
 -- Steps -----------------------------------------------------------------------------------------------------------
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce
 ---@param surface LuaSurface
 local function step_countdown(summon, force, surface)
-  if not summon.beacon.valid then
+  local beacon = summon.beacon
+  if not (beacon and beacon.valid) then
     end_summon(summon, "msg-cancel-lost", util.COLORS.bad, {})
     return
   end
@@ -371,8 +470,8 @@ local function step_countdown(summon, force, surface)
   update_visuals(summon)
   if summon.countdown <= 0 then
     summon.phase = "spawning"
-    summon.beacon.minable_flag = false
-    summon.beacon.destructible = false
+    beacon.minable_flag = false
+    beacon.destructible = false
     update_visuals(summon)
     local ok, message_key = (module_of(summon) --[[@as table]]).spawn(summon, surface)
     if ok then
@@ -386,14 +485,14 @@ local function step_countdown(summon, force, surface)
     precursor_wave(summon, force, surface)
   end
   if summon.countdown % 10 == 0 or summon.countdown <= 5 then
-    alert(force, summon.beacon, summon, { "nexus-bosses.alert-countdown", boss_name(summon.boss), summon.countdown })
+    alert(force, beacon, summon, { "nexus-bosses.alert-countdown", boss_name(summon.boss), summon.countdown })
     if summon.countdown == 10 or summon.countdown == 3 then
       util.play(force, "countdown")
     end
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param force LuaForce
 ---@param surface LuaSurface
 local function step_active(summon, force, surface)
@@ -410,7 +509,8 @@ local function step_active(summon, force, surface)
   summon.active_seconds = summon.active_seconds + 1
   if game.tick >= summon.music_until then
     -- the tracks take turns while the boss lives
-    summon.music_index = summon.music_index % #util.FIGHT_TRACKS + 1
+    local music_index = summon.music_index or 0
+    summon.music_index = (music_index % #util.FIGHT_TRACKS + 1) --[[@as integer]]
     local track = util.FIGHT_TRACKS[summon.music_index] --[[@as {name: string, seconds: integer}]]
     force.play_music({ name = track.name, fade_in_duration = 120, fade_out_duration = 120 })
     summon.music_until = game.tick + track.seconds * 60
@@ -577,11 +677,13 @@ function M.on_built(entity, player)
     return reject(entity, player, { "nexus-bosses.msg-reject-busy", boss_name(storage.summon.boss) })
   end
 
-  local countdown = storage.countdown_override or settings.global["nexus-bosses-countdown"].value --[[@as integer]]
+  local countdown = math.floor((storage.countdown_override or settings.global["nexus-bosses-countdown"].value) --[[@as number]])
   local id = storage.next_summon_id
   storage.next_summon_id = id + 1
   local lair = bearing.in_lair(force.name, boss_id, entity.position)
   local weaken = bearing.pylon_weaken(force.name, boss_id, entity.position)
+  local beacon_unit = assert(entity.unit_number)
+  ---@type NbSummon
   local summon = {
     id = id,
     boss = boss_id,
@@ -590,7 +692,7 @@ function M.on_built(entity, player)
     surface_index = surface.index,
     phase = "countdown",
     beacon = entity,
-    beacon_unit = entity.unit_number,
+    beacon_unit = beacon_unit,
     item = entity.name,
     quality = entity.quality.name,
     position = util.copy_position(entity.position),
@@ -602,6 +704,7 @@ function M.on_built(entity, player)
     active_seconds = 0,
     tracked = {},
     by_unit = {},
+    watch = { entity.name },
     pending = {},
     renders = {},
     charge = charge,
@@ -609,18 +712,12 @@ function M.on_built(entity, player)
     weaken = weaken,
     frequency = lair and bearing.lair_frequency(force.name, boss_id) or 1,
   }
-  if boss_id == "colossus" then
-    summon.variant = storage.next_colossus_variant
-      or (cfg.COLOSSUS_VARIANTS[math.random(#cfg.COLOSSUS_VARIANTS)] --[[@as table]]).id
-    storage.next_colossus_variant = nil
-    summon.variant_entity = cfg.COLOSSUS_PREFIX .. summon.variant
-  end
-  summon.watch = { entity.name }
   for _, name in ipairs((OWN[boss_id] --[[@as table]]).watch) do
     summon.watch[#summon.watch + 1] = name
   end
-  if summon.variant_entity then
-    summon.watch[#summon.watch + 1] = summon.variant_entity
+  local module = module_of(summon)
+  if module and module.prepare then
+    module.prepare(summon)
   end
   storage.summon = summon
   register_death_events(summon)
@@ -630,9 +727,9 @@ function M.on_built(entity, player)
   util.say(force, { "nexus-bosses.call-" .. boss_id }, util.COLORS.warning)
   util.say(force, { "nexus-bosses.msg-countdown-started", boss_name(boss_id), countdown, util.compass(summon.angle) },
     util.COLORS.warning)
-  if summon.variant_entity then
-    util.say(force, { "nexus-bosses.msg-colossus-variant", title_name(summon), resistance.caption(summon.variant_entity) },
-      util.COLORS.warning)
+  local countdown_note = module and module.countdown_note and module.countdown_note(summon) or nil
+  if countdown_note then
+    util.say(force, countdown_note, util.COLORS.warning)
   end
   if summon.lair then
     util.say(force, { "nexus-bosses.msg-lair-fight", boss_name(boss_id),
@@ -694,10 +791,6 @@ function M.abort(destroy_bosses)
         record.entity.destroy()
       end
     end
-    local territory = summon.devourer and summon.devourer.territory
-    if territory and territory.valid then
-      territory.destroy()
-    end
   end
   end_summon(summon, "msg-aborted", util.COLORS.warning, { refund = refund })
   return true
@@ -710,6 +803,8 @@ function M.snapshot()
   if not summon then
     return nil
   end
+  local module = module_of(summon)
+  local boss_state = module and module.snapshot and module.snapshot(summon) or nil
   local pending = {}
   for _, entry in ipairs(summon.pending or {}) do
     pending[#pending + 1] = { kind = entry.kind, at = entry.at }
@@ -727,13 +822,11 @@ function M.snapshot()
     countdown_left = summon.countdown,
     countdown_total = summon.countdown_total,
     active_seconds = summon.active_seconds,
-    variant = summon.variant,
-    variant_entity = summon.variant_entity,
+    boss_state = boss_state,
     tracked = records.snapshot(summon),
     pending = pending,
     health_share = records.health_share(summon),
     health_bar = summon.health_bar and { status = summon.health_bar.status, resist = summon.health_bar.resist },
-    shield = summon.shield and { health = summon.shield.health, until_tick = summon.shield.until_tick },
     spawn_note = summon.spawn_note,
     charge = summon.charge,
     lair = summon.lair,

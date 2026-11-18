@@ -20,7 +20,7 @@ local APPROACH_RADIUS = 1500
 local ROCKETS = 4
 local AMMO = { { name = cfg.WATCHER_AMMO, count = 1 } }
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -49,7 +49,7 @@ function M.spawn(summon, surface)
   return true, nil
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 function M.tick(summon, surface, _force)
@@ -58,7 +58,7 @@ function M.tick(summon, surface, _force)
     return
   end
   local saucer = boss.entity
-  local state = summon.watcher
+  local state = assert(summon.watcher)
   local seconds = summon.active_seconds
   local drone_records = records.of_role(summon, "escort")
   local drone_count = #drone_records
@@ -106,7 +106,7 @@ function M.tick(summon, surface, _force)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 ---@param entry NbPending
@@ -133,7 +133,7 @@ function M.on_pending(summon, surface, _force, entry)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString
 function M.status(summon)
   local drones = #records.of_role(summon, "escort")

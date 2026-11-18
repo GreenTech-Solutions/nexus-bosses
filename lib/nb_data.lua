@@ -13,6 +13,7 @@
 
 ---@class NbBossSpec
 ---@field entity string the entity whose icon marks the beacon, the trophy and the technologies
+---@field entities string[]|nil entities that make up a multi-entity boss
 ---@field precursors string[] units of the precursor waves
 ---@field circle integer
 ---@field slot integer
@@ -164,6 +165,7 @@ M.DEVOURER_HEALTH = 5000000
 M.DEVOURER_HEALING_PER_TICK = 50 -- the big demolisher heals 400 a tick, 8 % of its health every second
 M.WATCHER_HEALTH = 56000
 M.SPIDERTRON_HEALTH = 26000
+M.ESCORT_CAP = 18
 
 -- Colossus copies of Big Monsters' level 5 units, selected when its beacon is lit.
 M.COLOSSUS_VARIANTS = {
@@ -179,7 +181,7 @@ M.COLOSSUS_HEALTH_SHARE = 0.35 -- Big Monsters spawns these at the evolution of 
 
 local SPECS = {
   ["arachnid-queen"] = {
-    entity = "maf-boss-arachnid-biter-10",
+    entity = M.QUEEN,
     precursors = { "arachnid-biter-warrior-unit", "arachnid-spitter-bigspitter-unit" },
   },
   ["watcher"] = {
@@ -191,7 +193,8 @@ local SPECS = {
     precursors = { "arachnid-biter-tiger-unit" },
   },
   ["twin-maws"] = {
-    entity = "maf-worm-boss-fire-shooter",
+    entity = M.MAW_FIRE,
+    entities = { M.MAW_FIRE, M.MAW_ACID },
     precursors = { "behemoth-spitter" },
   },
   ["colossus"] = {
@@ -199,15 +202,15 @@ local SPECS = {
     precursors = { "behemoth-biter" },
   },
   ["plague-hulk"] = {
-    entity = "tb_infected_ship_boss",
+    entity = M.HULK,
     precursors = { "big-toxic-biter" },
   },
   ["storm-guardian"] = {
-    entity = "walking-electric-unit-boss-10",
+    entity = M.GUARDIAN,
     precursors = { "walking-electric-unit-3", M.WATCHER_DRONE },
   },
   ["devourer"] = {
-    entity = "big-demolisher",
+    entity = M.DEVOURER,
     precursors = { "behemoth-biter" },
   },
   ["last-commander"] = {
@@ -226,6 +229,7 @@ for circle_index, circle in ipairs(M.CIRCLES) do
     M.ORDER[#M.ORDER + 1] = id
     M.BOSSES[id] = {
       entity = spec.entity,
+      entities = spec.entities,
       precursors = spec.precursors,
       circle = circle_index,
       slot = slot,

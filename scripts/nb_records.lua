@@ -69,9 +69,14 @@ end
 ---Flags the records whose object vanished without a death event.
 ---@param summon table
 function M.refresh(summon)
-  for _, record in ipairs(summon.tracked) do
+  for index = #summon.tracked, 1, -1 do
+    local record = summon.tracked[index]
     if not (record.dead or record.gone or record.hidden or record.entity.valid) then
       record.gone = true
+    end
+    if not record.required and (record.dead or record.gone) then
+      summon.by_unit[record.unit_number] = nil
+      table.remove(summon.tracked, index)
     end
   end
 end

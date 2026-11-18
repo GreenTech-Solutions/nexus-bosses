@@ -18,7 +18,7 @@ local NEST_SORTIE_SECONDS = 20
 local NEST_TELEGRAPH_TICKS = 4 * 60
 local NEST_MIN_SPACING = 4
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -43,7 +43,7 @@ function M.spawn(summon, surface)
   return true, nil
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return integer
 local function nest_count(summon)
   local weaken = summon.weaken or 0
@@ -54,7 +54,7 @@ local function nest_count(summon)
   return count + (summon.lair and 1 or 0)
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param queen LuaEntity
 ---@param count integer
@@ -84,7 +84,7 @@ local function telegraph_nests(summon, surface, queen, count)
   telegraph.queue(summon, "nests", NEST_TELEGRAPH_TICKS, { positions = positions })
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 ---@param positions MapPosition[]
@@ -104,7 +104,7 @@ local function lay_nests(summon, surface, force, positions)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 function M.tick(summon, surface, _force)
@@ -114,7 +114,7 @@ function M.tick(summon, surface, _force)
   end
 
   local record = records.main(summon)
-  local state = summon.queen
+  local state = assert(summon.queen)
   local threshold = NEST_THRESHOLDS[state.clutches + 1]
   if record and threshold and record.entity.health <= record.initial * threshold then
     state.clutches = state.clutches + 1
@@ -131,7 +131,7 @@ function M.tick(summon, surface, _force)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 ---@param entry NbPending
@@ -141,7 +141,7 @@ function M.on_pending(summon, surface, force, entry)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
   local nests = #records.of_role(summon, "nest")
@@ -152,7 +152,7 @@ function M.status(summon)
 end
 
 ---The queen is dead: her nests die with her.
----@param summon table
+---@param summon NbSummon
 function M.on_victory(summon)
   for _, nest in ipairs(records.of_role(summon, "nest")) do
     nest.entity.die()

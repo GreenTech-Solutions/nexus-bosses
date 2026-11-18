@@ -225,5 +225,8 @@ end)
 
 -- In-game tests (FactorioTest, tools/test/run.sh -m <this folder> in the pack). Never in a release: tests/ is export-ignored.
 if script.active_mods["factorio-test"] then
-  require("__factorio-test__/init")({ "tests.harness", "tests.fight", "tests.telegraph", "tests.bosses", "tests.lair" })
+  require("__factorio-test__/init")({
+    "tests.harness", "tests.fight", "tests.telegraph", "tests.bosses",
+    "tests.lair", -- Last: found lairs and repaired pylons remain in storage between tests.
+  })
 end

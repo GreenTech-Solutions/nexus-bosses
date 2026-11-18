@@ -22,7 +22,7 @@ local function burrow_effect(surface, position)
   surface.create_entity({ name = "big-demolisher-fissure-explosion", position = position })
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -43,12 +43,13 @@ function M.spawn(summon, surface)
   if placed == 0 then
     return false, "msg-fail-position"
   end
-  summon.spawn_distance = util.distance(summon.tracked[1].entity.position, summon.position)
+  local main_position = records.position(summon.tracked[1])
+  summon.spawn_distance = main_position and util.distance(main_position, summon.position) or nil
   summon.maws = {}
   return true, nil
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 function M.tick(summon, surface, _force)
@@ -82,7 +83,7 @@ function M.tick(summon, surface, _force)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 ---@param entry NbPending
@@ -121,7 +122,7 @@ function M.on_pending(summon, surface, _force, entry)
   summon.maws.fallen = nil
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
   local fallen = summon.maws and summon.maws.fallen

@@ -79,7 +79,7 @@ local function arm(turret, initial)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -108,7 +108,7 @@ end
 
 ---Selects the turrets that will be hit by the next spore release.
 ---@param surface LuaSurface
----@param summon table
+---@param summon NbSummon
 ---@param hulk LuaEntity
 ---@param count integer
 ---@return LuaEntity[]
@@ -132,18 +132,19 @@ local function spore_targets(surface, summon, hulk, count)
 end
 
 ---Spores from the hulk: the marked, living turrets stop for a while.
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 ---@param turrets LuaEntity[]
 local function release_spores(summon, surface, force, turrets)
   local until_tick = game.tick + SPORE_SECONDS * 60
   local stunned = 0
+  local state = assert(summon.hulk)
   for index = 1, math.min(SPORE_TURRETS, #turrets) do
     local turret = turrets[index]
     if turret.valid and not turret.disabled_by_script then
       turret.disabled_by_script = true
-      summon.hulk.stunned[#summon.hulk.stunned + 1] = { entity = turret, until_tick = until_tick }
+      state.stunned[#state.stunned + 1] = { entity = turret, until_tick = until_tick }
       surface.create_entity({ name = "poison-cloud-visual-dummy", position = turret.position })
       stunned = stunned + 1
     end
@@ -155,7 +156,7 @@ local function release_spores(summon, surface, force, turrets)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param all boolean wake every stunned turret, not only the ones whose time is up
 local function wake(summon, all)
   local stunned = summon.hulk and summon.hulk.stunned or {}
@@ -170,7 +171,7 @@ local function wake(summon, all)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 function M.tick(summon, surface, _force)
@@ -182,7 +183,7 @@ function M.tick(summon, surface, _force)
     end
   end
   local record = records.main(summon)
-  local state = summon.hulk
+  local state = assert(summon.hulk)
   local interval = util.interval(summon, SORTIE_SECONDS)
   if record and interval then
     local sortie_due = util.due(state, "next_sortie", seconds, interval)
@@ -206,7 +207,7 @@ function M.tick(summon, surface, _force)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 ---@param entry NbPending
@@ -222,13 +223,13 @@ function M.on_pending(summon, surface, force, entry)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
   return { "nexus-bosses.status-hulk-guards", #records.of_role(summon, "guard") }
 end
 
----@param summon table
+---@param summon NbSummon
 function M.on_victory(summon)
   wake(summon, true)
   for _, guard in ipairs(records.of_role(summon, "guard")) do
@@ -236,7 +237,7 @@ function M.on_victory(summon)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 function M.release(summon)
   wake(summon, true)
 end

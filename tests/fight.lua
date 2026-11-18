@@ -8,6 +8,24 @@ for _, name in ipairs(DAMAGE_TYPES) do
   DAMAGE_TYPE_SET[name] = true
 end
 
+---@param value any
+---@param key string
+---@return boolean
+local function contains_localised_key(value, key)
+  if type(value) ~= "table" then
+    return false
+  end
+  if value[1] == key then
+    return true
+  end
+  for _, part in pairs(value) do
+    if contains_localised_key(part, key) then
+      return true
+    end
+  end
+  return false
+end
+
 ---@param list string[]
 ---@param value string
 ---@return boolean
@@ -26,10 +44,21 @@ describe("fight bar tactics", function()
     helpers.nexus()
   end)
 
-  test("reports the Storm Guardian's electric immunity", function()
-    local result = remote.call("nexus-bosses", "resist", "nexus-storm-guardian") --[[@as {weak: string[], strong: string[]}|nil]]
-    assert(result, "the resistance debug data is missing")
-    assert(contains(result.strong, "electric"), "electric should be a strong damage type for the Storm Guardian")
+  test("the fight bar reports the Storm Guardian's electric immunity through the main entity", function()
+    remote.call("nexus-bosses", "find_log", "player", "storm-guardian")
+    helpers.light("storm-guardian", { 0, 0 })
+    helpers.on_active(600, function(summon, ticks_since_active)
+      local resist = summon.health_bar and summon.health_bar.resist
+      if resist then
+        assert(contains_localised_key(resist[3], "damage-type-name.electric"),
+          "the Storm Guardian fight bar should show electric resistance")
+        remote.call("nexus-bosses", "abort_summon", true)
+        return true
+      end
+      if ticks_since_active >= 600 then
+        error("the Storm Guardian resistance caption did not appear in the fight bar")
+      end
+    end)
   end)
 
   test("ignores damage types outside the player weapon list", function()
@@ -81,6 +110,25 @@ describe("fight bar tactics", function()
       end
       if elapsed >= 600 then
         error("the resistance caption did not appear in the bar snapshot after the log was found")
+      end
+    end)
+  end)
+
+  test("the Twin Maws bar shows resistance for both copies through the main entity path", function()
+    remote.call("nexus-bosses", "find_log", "player", "twin-maws")
+    helpers.light("twin-maws", { 0, 0 })
+    helpers.on_active(600, function(summon, ticks_since_active)
+      if summon.health_bar and summon.health_bar.resist then
+        local resist = summon.health_bar.resist
+        assert(contains_localised_key(resist, "entity-name.nexus-maw-fire"),
+          "the Twin Maws bar is missing the fire maw resistance")
+        assert(contains_localised_key(resist, "entity-name.nexus-maw-acid"),
+          "the Twin Maws bar is missing the acid maw resistance")
+        remote.call("nexus-bosses", "abort_summon", true)
+        return true
+      end
+      if ticks_since_active >= 600 then
+        error("the Twin Maws resistance caption did not include both copies")
       end
     end)
   end)

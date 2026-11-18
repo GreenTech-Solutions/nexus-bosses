@@ -40,7 +40,7 @@ end
 
 ---@param surface LuaSurface
 ---@param position MapPosition
----@param summon table
+---@param summon NbSummon
 ---@return LuaSegmentedUnit|nil
 local function create_worm(surface, position, summon)
   local worm = surface.create_segmented_unit({
@@ -48,7 +48,7 @@ local function create_worm(surface, position, summon)
     position = position,
     direction = util.direction_toward(position, summon.position),
     force = "enemy",
-    territory = summon.devourer.territory,
+    territory = assert(summon.devourer).territory,
   })
   if worm then
     -- nobody may be near it for a while: the engine must not put it to sleep
@@ -57,7 +57,7 @@ local function create_worm(surface, position, summon)
   return worm
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param worm LuaSegmentedUnit
 local function give_orders(summon, surface, worm)
@@ -75,7 +75,7 @@ local function give_orders(summon, surface, worm)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -94,7 +94,7 @@ function M.spawn(summon, surface)
   return true, nil
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 ---@param record table
@@ -103,9 +103,10 @@ local function dive(summon, surface, force, record)
   local head = util.copy_position(worm.get_body_nodes()[1])
   record.hidden = true
   record.hidden_health = worm.health
-  local state = summon.devourer
+  local state = assert(summon.devourer)
   -- the far side of the beacon from where it went down
-  local away = math.atan2(summon.position.y - head.y, summon.position.x - head.x)
+  local beacon_x, beacon_y = util.xy(summon.position)
+  local away = math.atan2(beacon_y - head.y, beacon_x - head.x)
   local target = util.offset(summon.position, away, SURFACE_DISTANCE)
   state.rise_at = util.copy_position(surface.find_non_colliding_position(cfg.DEVOURER, target, 40, 1) or target)
   local dive_seconds = DIVE_SECONDS * (1 - (summon.weaken or 0))
@@ -118,13 +119,13 @@ local function dive(summon, surface, force, record)
   util.play(force, "devourer-burrow")
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 ---@param record table
 ---@param target MapPosition
 local function rise(summon, surface, force, record, target)
-  local state = summon.devourer
+  local state = assert(summon.devourer)
   util.ensure_generated(surface, target)
   local position = surface.find_non_colliding_position(cfg.DEVOURER, target, RISE_SEARCH_RADIUS, 1) or target
   local worm = create_worm(surface, position, summon)
@@ -142,12 +143,12 @@ local function rise(summon, surface, force, record, target)
   util.play(force, "devourer-burrow")
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 function M.tick(summon, surface, force)
   local record = summon.tracked[1]
-  local state = summon.devourer
+  local state = assert(summon.devourer)
   if record.hidden then
     summon.pending = summon.pending or {}
     local has_rise = false
@@ -175,11 +176,11 @@ function M.tick(summon, surface, force)
     return
   end
   if summon.active_seconds % ORDER_SECONDS == 0 then
-    give_orders(summon, surface, record.entity)
+    give_orders(summon, surface, record.entity --[[@as LuaSegmentedUnit]])
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 ---@param entry NbPending
@@ -192,7 +193,7 @@ function M.on_pending(summon, surface, force, entry)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
   if summon.tracked[1] and summon.tracked[1].hidden then
@@ -201,16 +202,16 @@ function M.status(summon)
   return nil
 end
 
----@param summon table
+---@param summon NbSummon
 function M.on_victory(summon)
-  local territory = summon.devourer.territory
+  local territory = assert(summon.devourer).territory
   if territory and territory.valid then
     territory.destroy()
   end
 end
 
 ---The trial ends without a victory: a living Devourer may sleep again; a territory that guards nothing goes.
----@param summon table
+---@param summon NbSummon
 function M.release(summon)
   local record = summon.tracked[1]
   if record and not record.hidden and records.alive(record) then

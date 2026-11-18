@@ -61,9 +61,16 @@ local function add_tactics(page, boss_id)
     end
   else
     local table_element = page.add({ type = "table", column_count = 2 })
-    local weak, strong = resistance.of(cfg.BOSSES[boss_id].entity)
-    tactics_row(table_element, { "nexus-bosses.codex-weak" }, resistance.list_caption(weak))
-    tactics_row(table_element, { "nexus-bosses.codex-strong" }, resistance.list_caption(strong))
+    local spec = cfg.BOSSES[boss_id]
+    if spec.entities then
+      for _, entity in ipairs(spec.entities) do
+        tactics_row(table_element, { "entity-name." .. entity }, resistance.caption(entity))
+      end
+    else
+      local weak, strong = resistance.of(spec.entity)
+      tactics_row(table_element, { "nexus-bosses.codex-weak" }, resistance.list_caption(weak))
+      tactics_row(table_element, { "nexus-bosses.codex-strong" }, resistance.list_caption(strong))
+    end
   end
 
   local table_element = page.add({ type = "table", column_count = 2 })

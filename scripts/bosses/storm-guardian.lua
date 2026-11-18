@@ -22,7 +22,7 @@ local FEED_SOUND_SECONDS = 6
 local LIGHTNING_RADIUS = 12
 local LIGHTNING_TELEGRAPH_TICKS = 60
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -56,7 +56,7 @@ function M.spawn(summon, surface)
   return true, nil
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
 function M.tick(summon, surface, force)
@@ -69,7 +69,7 @@ function M.tick(summon, surface, force)
     return
   end
   local guardian = record.entity
-  local state = summon.guardian
+  local state = assert(summon.guardian)
   local share = 1 - (summon.charge or 0) / cfg.CHARGES
   local storm = util.storm_active()
   local feeding = share > 0 and storm
@@ -116,10 +116,11 @@ function M.on_pending(_summon, surface, _force, entry)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
-  if summon.guardian.feeding then
+  local state = summon.guardian
+  if state and state.feeding then
     return { "nexus-bosses.status-guardian-feeds" }
   elseif (summon.charge or 0) >= cfg.CHARGES then
     return { "nexus-bosses.status-guardian-charged" }

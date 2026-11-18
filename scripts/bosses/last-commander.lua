@@ -25,7 +25,7 @@ local NUKE_PROJECTILE = cfg.COMMANDER_NUKE
 local DROP_EXPLOSION = cfg.COMMANDER_DROP_EXPLOSION
 local DROP_UNIT = cfg.COMMANDER_DROP_UNIT
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -51,7 +51,7 @@ local function nuker_enabled()
   return setting ~= nil and setting.value == true
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param boss LuaEntity
 local function schedule_drop(summon, surface, boss, count)
@@ -64,7 +64,7 @@ local function schedule_drop(summon, surface, boss, count)
   telegraph.queue(summon, "drop", DROP_WARNING_TICKS, { position = util.copy_position(position), count = count })
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param boss LuaEntity
 local function schedule_nuke(summon, surface, boss)
@@ -74,11 +74,15 @@ local function schedule_nuke(summon, surface, boss)
   telegraph.queue(summon, "nuke", NUKE_WARNING_TICKS, { position = position })
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param position MapPosition
 ---@param count integer
 local function spawn_drop(summon, surface, position, count)
+  count = math.min(count, math.max(0, cfg.ESCORT_CAP - #records.of_role(summon, "escort")))
+  if count == 0 then
+    return
+  end
   surface.create_entity({ name = DROP_EXPLOSION, position = position, force = "enemy" })
   local units = {}
   for _ = 1, count do
@@ -92,7 +96,7 @@ local function spawn_drop(summon, surface, position, count)
   spawn.dispatch(surface, units, summon.position)
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 ---@param entry NbPending
@@ -113,7 +117,7 @@ function M.on_pending(summon, surface, _force, entry)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 function M.tick(summon, surface, _force)
@@ -126,12 +130,13 @@ function M.tick(summon, surface, _force)
     spawn.redispatch(summon, surface, records.commandable_units(summon))
   end
 
-  local state = summon.commander
+  local state = assert(summon.commander)
   local seconds = summon.active_seconds
   local drop_due = util.due(state, "next_drop", seconds, util.interval(summon, DROP_SECONDS))
   if drop_due then
     local weaken = summon.weaken or 0
-    local drop_count = math.floor(DROP_COUNT * (1 - weaken) + 0.5)
+    local available = math.max(0, cfg.ESCORT_CAP - #records.of_role(summon, "escort"))
+    local drop_count = math.min(math.floor(DROP_COUNT * (1 - weaken) + 0.5), available)
     if drop_count > 0 then
       schedule_drop(summon, surface, record.entity, drop_count)
     end
@@ -144,10 +149,10 @@ function M.tick(summon, surface, _force)
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
-  local state = summon.commander
+  local state = assert(summon.commander)
   local drop_remaining = state.next_drop and math.ceil(math.max(0, state.next_drop - summon.active_seconds)) or nil
   local nuke_remaining = state.next_nuke and math.ceil(math.max(0, state.next_nuke - summon.active_seconds)) or nil
   for _, entry in ipairs(summon.pending or {}) do

@@ -4,42 +4,6 @@ local cfg = require("lib.nb_data")
 local helpers = require("tests.helpers")
 local util = require("scripts.nb_util")
 
----@param summon table
----@param role string
----@param name string|nil
----@return table|nil
-local function tracked(summon, role, name)
-  for _, record in ipairs(summon.tracked or {}) do
-    if record.role == role and (not name or record.name == name) then
-      return record
-    end
-  end
-end
-
----@param summon table
----@param role string
----@return boolean
-local function has_record(summon, role)
-  for _, record in ipairs(summon.tracked or {}) do
-    if record.role == role and not record.dead and not record.gone then
-      return true
-    end
-  end
-  return false
-end
-
----@param summon table
----@param kind string
----@return boolean
-local function has_pending(summon, kind)
-  for _, entry in ipairs(summon.pending or {}) do
-    if entry.kind == kind then
-      return true
-    end
-  end
-  return false
-end
-
 describe("pylon and lair mechanics", function()
   before_each(function()
     helpers.reset()
@@ -82,32 +46,23 @@ describe("pylon and lair mechanics", function()
     helpers.light("arachnid-queen", lair)
 
     local damaged_at
-    local elapsed = 0
-    local last_summon
-    async(1200)
-    on_tick(function()
-      elapsed = elapsed + 1
-      local summon = helpers.active()
-      last_summon = summon
-      if summon and summon.phase == "active" and not damaged_at then
+    helpers.on_active(1200, function(summon, ticks_since_active)
+      if not damaged_at then
         assert(summon.lair and summon.weaken == 1, "the Queen summon did not receive its legendary pylon")
-        local queen = tracked(summon, "boss", cfg.QUEEN)
+        local queen = helpers.tracked(summon, "boss", cfg.QUEEN)
         assert(queen and queen.health and queen.initial, "the Queen is missing from the summon snapshot")
         assert(math.abs(queen.health - queen.initial) <= 1, "the Queen's health changed when she appeared")
         assert(remote.call("nexus-bosses", "set_tracked_health", queen.unit_number, queen.initial * 0.6),
           "the Queen health could not be lowered below two thirds")
         damaged_at = game.tick
       elseif damaged_at and game.tick >= damaged_at + 5 * 60 then
-        local current = helpers.active()
-        assert(current and current.phase == "active", "the Queen fight ended before the mechanic check")
-        assert(not has_record(current, "nest") and not has_pending(current, "nests"),
+        assert(helpers.role_count(summon, "nest") == 0 and not helpers.pending(summon, "nests"),
           "the legendary pylon did not disable the Queen's nests")
         helpers.reset()
-        done()
-        return false
+        return true
       end
-      if elapsed >= 1200 then
-        error("the Queen lair test timed out: " .. helpers.describe_summon(last_summon))
+      if ticks_since_active >= 1200 then
+        error("the Queen lair test timed out: " .. helpers.describe_summon(summon))
       end
     end)
   end)
@@ -118,10 +73,11 @@ describe("pylon and lair mechanics", function()
     remote.call("nexus-bosses", "repair_pylon", "player", "storm-guardian", "rare")
     helpers.light("storm-guardian", lair)
 
-    helpers.wait_phase("active", 1200, function(summon)
+    helpers.on_active(1200, function(summon)
       assert(summon.lair and math.abs(summon.weaken - 0.5) < 0.0001,
         "the rare pylon did not weaken the Storm Guardian by 50 %")
       helpers.reset()
+      return true
     end)
   end)
 
@@ -131,31 +87,22 @@ describe("pylon and lair mechanics", function()
     remote.call("nexus-bosses", "repair_pylon", "player", "last-commander", "rare")
     helpers.light("last-commander", lair)
 
-    local elapsed = 0
-    local last_summon
-    async(6000)
-    on_tick(function()
-      elapsed = elapsed + 1
-      local summon = helpers.active()
-      last_summon = summon
-      if summon and summon.phase == "active" then
-        assert(summon.lair and math.abs(summon.weaken - 0.5) < 0.0001,
-          "the rare pylon did not weaken the Commander by 50 %")
-        if has_pending(summon, "drop") then
-          local pending_data = remote.call("nexus-bosses", "get_pending_data")
-          ---@cast pending_data {kind: string, at: integer, data: table}[]
-          for _, entry in ipairs(pending_data) do
-            if entry.kind == "drop" then
-              assert(entry.data.count == 3, "the rare pylon did not reduce the Commander drop to three soldiers")
-              done()
-              return false
-            end
+    helpers.on_active(6000, function(summon, ticks_since_active)
+      assert(summon.lair and math.abs(summon.weaken - 0.5) < 0.0001,
+        "the rare pylon did not weaken the Commander by 50 %")
+      if helpers.pending(summon, "drop") then
+        local pending_data = remote.call("nexus-bosses", "get_pending_data")
+        ---@cast pending_data {kind: string, at: integer, data: table}[]
+        for _, entry in ipairs(pending_data) do
+          if entry.kind == "drop" then
+            assert(entry.data.count == 3, "the rare pylon did not reduce the Commander drop to three soldiers")
+            return true
           end
-          error("the Commander drop has no debug data")
         end
+        error("the Commander drop has no debug data")
       end
-      if elapsed >= 6000 then
-        error("the Commander did not queue its lair drop in time: " .. helpers.describe_summon(last_summon))
+      if ticks_since_active >= 6000 then
+        error("the Commander did not queue its lair drop in time: " .. helpers.describe_summon(summon))
       end
     end)
   end)

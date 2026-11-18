@@ -2,40 +2,6 @@
 
 local helpers = require("tests.helpers")
 
----@param summon table
----@return table|nil
-local function boss_record(summon)
-  for _, record in ipairs(summon.tracked) do
-    if record.required and record.role == "boss" then
-      return record
-    end
-  end
-end
-
----@param summon table
----@param kind string
----@return table|nil
-local function pending_entry(summon, kind)
-  for _, entry in ipairs(summon.pending or {}) do
-    if entry.kind == kind then
-      return entry
-    end
-  end
-end
-
----@param summon table
----@param role string
----@return integer
-local function role_count(summon, role)
-  local count = 0
-  for _, record in ipairs(summon.tracked) do
-    if record.role == role and not record.dead and not record.gone then
-      count = count + 1
-    end
-  end
-  return count
-end
-
 ---@param a MapPosition
 ---@param b MapPosition
 ---@return number
@@ -57,35 +23,32 @@ describe("boss telegraphs", function()
     helpers.light("arachnid-queen", { 0, 0 })
     local health_tick
     local nests_at
-    async(800)
-    on_tick(function()
-      local summon = helpers.active()
-      if not (summon and summon.phase == "active") then
-        return
-      end
+    helpers.on_active(800, function(summon, ticks_since_active)
       if not health_tick then
-        local boss = boss_record(summon)
+        local boss = helpers.tracked(summon, "boss")
         if boss then
           assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, boss.initial * 0.6),
             "the Queen health could not be changed")
           health_tick = game.tick
         end
       elseif not nests_at then
-        local entry = pending_entry(summon, "nests")
+        local entry = helpers.pending(summon, "nests")
         if entry then
           nests_at = entry.at
           assert(nests_at > game.tick, "the nest telegraph did not have a delay")
-          assert(role_count(summon, "nest") == 0, "nests appeared before their telegraph expired")
+          assert(helpers.role_count(summon, "nest") == 0, "nests appeared before their telegraph expired")
         elseif game.tick > health_tick + 70 then
           error("the Queen did not queue the nest attack after crossing two thirds health")
         end
       elseif game.tick < nests_at then
-        assert(role_count(summon, "nest") == 0, "nests appeared before their telegraph expired")
-      elseif role_count(summon, "nest") > 0 then
-        done()
-        return false
+        assert(helpers.role_count(summon, "nest") == 0, "nests appeared before their telegraph expired")
+      elseif helpers.role_count(summon, "nest") > 0 then
+        return true
       elseif game.tick > nests_at + 60 then
         error("the Queen nests did not appear when their telegraph expired")
+      end
+      if ticks_since_active >= 800 then
+        error("the Queen nest telegraph test timed out: " .. helpers.describe_summon(summon))
       end
     end)
   end)
@@ -96,21 +59,16 @@ describe("boss telegraphs", function()
     local rise_at
     ---@type MapPosition|nil
     local target
-    async(1000)
-    on_tick(function()
-      local summon = helpers.active()
-      if not (summon and summon.phase == "active") then
-        return
-      end
+    helpers.on_active(1000, function(summon, ticks_since_active)
       if not health_tick then
-        local boss = boss_record(summon)
+        local boss = helpers.tracked(summon, "boss")
         if boss then
           assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, boss.initial * 0.4),
             "the Devourer health could not be changed")
           health_tick = game.tick
         end
       elseif not rise_at then
-        local entry = pending_entry(summon, "rise")
+        local entry = helpers.pending(summon, "rise")
         if entry then
           rise_at = entry.at
           assert(rise_at > game.tick, "the rise telegraph did not have a delay")
@@ -129,14 +87,16 @@ describe("boss telegraphs", function()
           error("the Devourer did not queue its rise after crossing half health")
         end
       elseif game.tick >= rise_at then
-        local boss = boss_record(summon)
+        local boss = helpers.tracked(summon, "boss")
         if target and boss and not boss.hidden and boss.position and boss.health > 0 then
           assert(distance(boss.position, target) < 15, "the Devourer rose more than 15 tiles from the marked point")
-          done()
-          return false
+          return true
         elseif game.tick > rise_at + 60 then
           error("the Devourer did not rise after its telegraph expired")
         end
+      end
+      if ticks_since_active >= 1000 then
+        error("the Devourer rise test timed out: " .. helpers.describe_summon(summon))
       end
     end)
   end)

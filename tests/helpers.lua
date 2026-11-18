@@ -30,9 +30,11 @@ function M.reset()
       centers[#centers + 1] = previous_position
     end
     for _, center in ipairs(centers) do
-      for _, entity in ipairs(surface.find_entities_filtered({ position = center, radius = 400, force = "enemy" })) do
-        if entity.valid then
-          entity.destroy()
+      for _, force in ipairs({ "enemy", "player" }) do
+        for _, entity in ipairs(surface.find_entities_filtered({ position = center, radius = 400, force = force })) do
+          if entity.valid and entity.type ~= "character" then
+            entity.destroy()
+          end
         end
       end
     end
@@ -77,6 +79,94 @@ function M.describe_summon(summon)
   end
   return string.format("phase=%s beacon_valid=%s spawn_note=%s", tostring(summon.phase), tostring(summon.beacon_valid),
     tostring(summon.spawn_note))
+end
+
+---@param summon table|nil
+---@param role string
+---@param name string|nil
+---@return table|nil
+function M.tracked(summon, role, name)
+  for _, record in ipairs(summon and summon.tracked or {}) do
+    if record.role == role and (not name or record.name == name) then
+      return record
+    end
+  end
+end
+
+---@param summon table|nil
+---@param kind string
+---@return table|nil
+function M.pending(summon, kind)
+  for _, entry in ipairs(summon and summon.pending or {}) do
+    if entry.kind == kind then
+      return entry
+    end
+  end
+end
+
+---@param summon table|nil
+---@param role string
+---@return integer
+function M.role_count(summon, role)
+  local count = 0
+  for _, record in ipairs(summon and summon.tracked or {}) do
+    if record.role == role and not record.dead and not record.gone then
+      count = count + 1
+    end
+  end
+  return count
+end
+
+---@param surface LuaSurface
+---@param name string
+---@param position MapPosition|nil
+---@param radius number|nil
+---@return LuaEntity|nil
+function M.find_entity(surface, name, position, radius)
+  local filters = { name = name }
+  if position then
+    filters.position = position
+    filters.radius = radius or 5
+  end
+  for _, entity in ipairs(surface.find_entities_filtered(filters)) do
+    if entity.valid then
+      return entity
+    end
+  end
+end
+
+---Waits for the active fight and steps it once per tick until the step returns true.
+---@param timeout_ticks integer
+---@param step fun(summon: table, ticks_since_active: integer): boolean|nil
+function M.on_active(timeout_ticks, step)
+  assert(timeout_ticks > 0, "timeout_ticks must be greater than zero")
+  local elapsed = 0
+  local active_ticks = 0
+  local was_active = false
+  local last_summon
+  async(timeout_ticks)
+  on_tick(function()
+    elapsed = elapsed + 1
+    local summon = M.active()
+    last_summon = summon
+    if summon and summon.phase == "active" then
+      if not was_active then
+        active_ticks = 0
+        was_active = true
+      end
+      active_ticks = active_ticks + 1
+      if step(summon, active_ticks) then
+        done()
+        return false
+      end
+    else
+      was_active = false
+      active_ticks = 0
+    end
+    if elapsed >= timeout_ticks then
+      error("active fight step timed out: " .. M.describe_summon(last_summon))
+    end
+  end)
 end
 
 ---Waits for the active summon to reach a phase, then calls the callback with its snapshot.
