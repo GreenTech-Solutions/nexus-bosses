@@ -246,6 +246,6 @@ end)
 if script.active_mods["factorio-test"] then
   require("__factorio-test__/init")({
     "tests.harness", "tests.fight", "tests.telegraph", "tests.bosses", "tests.search",
-    "tests.whisper", "tests.lair", "tests.vault", -- Lair state persists; the vault test is last because it builds a surface.
+    "tests.whisper", "tests.defeat", "tests.lair", "tests.vault", -- Lair state persists; the vault test is last because it builds a surface.
   })
 end

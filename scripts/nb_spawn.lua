@@ -13,7 +13,6 @@ M.REDISPATCH_SECONDS = 45
 local PRECURSOR_MIN = 90
 local PRECURSOR_MAX = 120
 local ATTACK_RADIUS = 45
-local BUILDING_SEARCH_RADIUS = 600
 
 ---All player targets matching the requested filters.
 ---@param surface LuaSurface
@@ -24,6 +23,7 @@ local BUILDING_SEARCH_RADIUS = 600
 ---@return LuaEntity[]
 function M.targets(surface, summon, position, radius, filter)
   filter = filter or {}
+  local requires_claim = filter.claimed == true or (filter.claimed == nil and filter.military)
   local query = {
     position = position,
     radius = radius,
@@ -38,7 +38,7 @@ function M.targets(surface, summon, position, radius, filter)
     local excluded = filter.exclude and entity.unit_number and filter.exclude[entity.unit_number]
     if entity.valid and (not filter.building or entity.prototype.is_building)
       and entity.type ~= "lightning-attractor"
-      and (not filter.military or entity.last_user ~= nil)
+      and (not requires_claim or entity.last_user ~= nil)
       and (not is_fulgora_ruin or entity.last_user ~= nil)
       and not excluded then
       candidates[#candidates + 1] = entity
@@ -85,7 +85,7 @@ function M.nearest_building(surface, position, summon)
   -- last_user tells them apart. Only military targets: a large base has tens of thousands of belts and poles.
   local targets = surface.find_entities_filtered({
     position = summon.position,
-    radius = BUILDING_SEARCH_RADIUS,
+    radius = cfg.DEFENCE_RADIUS,
     force = summon.force,
     is_military_target = true,
   })

@@ -247,6 +247,7 @@ describe("reworked bosses", function()
   test("the Plague Hulk's spores disable and restore a turret in the marked circle", function()
     local surface = helpers.nexus()
     helpers.light("plague-hulk", { 0, 0 })
+    helpers.defend()
     local approach_turret
     local turret
     local disabled_at
@@ -307,6 +308,7 @@ describe("reworked bosses", function()
   test("the Plague Hulk has no spores if its sortie dies before approaching", function()
     local surface = helpers.nexus()
     helpers.light("plague-hulk", { 0, 0 })
+    helpers.defend()
     local approach_turret = player_entity_at(surface, "gun-turret", { x = 20, y = 0 })
     approach_turret.destructible = false
     local killed = false
@@ -575,6 +577,7 @@ describe("reworked bosses", function()
     helpers.reset()
     remote.call("nexus-bosses", "set_next_colossus", "mother")
     helpers.light("colossus", { 0, 0 })
+    helpers.defend()
     helpers.on_active(90 * 60, function(summon, ticks_since_active)
       if ticks_since_active >= 85 * 60 then
         assert(helpers.role_count(summon, "escort") == 18,

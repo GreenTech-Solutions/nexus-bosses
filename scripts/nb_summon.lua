@@ -21,6 +21,7 @@ local story = require("scripts.nb_story")
 local vault = require("scripts.nb_vault")
 
 local M = {}
+local UNDEFENDED_SECONDS = 60
 
 ---@class NbPending
 ---@field at integer
@@ -67,6 +68,7 @@ local M = {}
 ---@field waves table<integer, boolean>
 ---@field paused boolean
 ---@field active_seconds integer
+---@field undefended integer|nil
 ---@field tracked NbTracked[]
 ---@field by_unit table<uint64, NbTracked>
 ---@field watch string[]
@@ -315,11 +317,49 @@ end
 ---@param force LuaForce
 local function update_health_bar(summon, force)
   local module = module_of(summon)
-  local status = module and module.status and module.status(summon) or nil
+  local status = summon.undefended and { "nexus-bosses.status-undefended", UNDEFENDED_SECONDS - summon.undefended }
+    or (module and module.status and module.status(summon) or nil)
   local resist = expedition.has_log(summon.force, summon.boss) and resistance_caption(summon) or nil
   summon.health_bar = { status = status, resist = resist }
   gui.update(force, { "nexus-bosses.bar-title", title_name(summon), { "nexus-bosses.stage-" .. cfg.CIRCLES[summon.circle].stage } },
     records.health_share(summon), status, resist)
+end
+
+---@param summon NbSummon
+---@param surface LuaSurface
+---@param force LuaForce
+---@return boolean
+local function has_defence(summon, surface, force)
+  if #spawn.targets(surface, summon, summon.position, cfg.DEFENCE_RADIUS, { military = true, claimed = false }) > 0 then
+    return true
+  end
+  for _, player in pairs(force.players) do
+    local character = player.character
+    if character and character.valid and character.surface_index == surface.index
+      and character.health and character.health > 0
+      and util.distance(character.position, summon.position) <= cfg.DEFENCE_RADIUS then
+      return true
+    end
+  end
+  return false
+end
+
+---@param summon NbSummon
+---@param surface LuaSurface
+local function destroy_required_entities(summon, surface)
+  for _, record in ipairs(summon.tracked) do
+    if record.required and records.alive(record) and not record.hidden and record.entity.valid then
+      local position = records.position(record)
+      if position then
+        if record.name == cfg.WATCHER then
+          surface.create_entity({ name = "big-explosion", position = position })
+        else
+          util.burrow(surface, position)
+        end
+      end
+      record.entity.destroy()
+    end
+  end
 end
 
 -- Ending ------------------------------------------------------------------------------------------------------------
@@ -347,7 +387,7 @@ end
 ---@param summon NbSummon
 ---@param message_key string key in the group nexus-bosses, whose first parameter is the name of the boss
 ---@param color Color
----@param options {refund: boolean|nil, keep_beacon: boolean|nil, params: LocalisedString[]|nil}
+---@param options {refund: boolean|nil, keep_beacon: boolean|nil, params: LocalisedString[]|nil, destroy_required: boolean|nil}
 local function end_summon(summon, message_key, color, options)
   local force = force_of(summon)
   local beacon = summon.beacon
@@ -362,6 +402,9 @@ local function end_summon(summon, message_key, color, options)
   local module = module_of(summon)
   if module and module.release then
     module.release(summon)
+  end
+  if options.destroy_required and surface then
+    destroy_required_entities(summon, surface)
   end
   cleanup(summon, force)
   if force then
@@ -522,6 +565,21 @@ local function step_active(summon, force, surface)
     return
   end
   summon.active_seconds = summon.active_seconds + 1
+  if has_defence(summon, surface, force) then
+    if summon.undefended then
+      summon.undefended = nil
+      util.say(force, { "nexus-bosses.msg-trial-defended", boss_name(summon.boss) }, util.COLORS.good)
+    end
+  else
+    summon.undefended = (summon.undefended or 0) + 1
+    if summon.undefended == 1 then
+      util.say(force, { "nexus-bosses.msg-trial-undefended", boss_name(summon.boss) }, util.COLORS.warning)
+    end
+    if summon.undefended >= UNDEFENDED_SECONDS then
+      end_summon(summon, "msg-trial-lost", util.COLORS.bad, { destroy_required = true })
+      return
+    end
+  end
   if game.tick >= summon.music_until then
     -- the tracks take turns while the boss lives
     local music_index = summon.music_index or 0
@@ -904,6 +962,7 @@ function M.snapshot()
     countdown_left = summon.countdown,
     countdown_total = summon.countdown_total,
     active_seconds = summon.active_seconds,
+    undefended = summon.undefended,
     boss_state = boss_state,
     tracked = records.snapshot(summon),
     pending = pending,

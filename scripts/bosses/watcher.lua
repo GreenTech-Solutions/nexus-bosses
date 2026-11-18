@@ -16,7 +16,6 @@ local MARK_SECONDS = 12
 local MARK_RADIUS = 60
 local TELEGRAPH_TICKS = 4 * 60
 local APPROACH_SECONDS = 18
-local APPROACH_RADIUS = 1500
 local ROCKETS = 4
 local AMMO = { { name = cfg.WATCHER_AMMO, count = 1 } }
 
@@ -97,7 +96,7 @@ function M.tick(summon, surface, _force)
     spider.supply(saucer, AMMO)
     local target = surface.find_nearest_enemy({
       position = summon.position,
-      max_distance = APPROACH_RADIUS,
+      max_distance = cfg.DEFENCE_RADIUS,
       force = "enemy",
     })
     if target then

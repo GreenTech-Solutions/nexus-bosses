@@ -22,6 +22,7 @@ local M = {}
 
 M.PLANET = "nexus"
 M.PLANET_TECH = "planet-discovery-nexus"
+M.DEFENCE_RADIUS = 600
 
 -- Enemy evolution is pinned on the Nexus surface; some spawner prototypes scale their health with it.
 M.EVOLUTION = 0.99
