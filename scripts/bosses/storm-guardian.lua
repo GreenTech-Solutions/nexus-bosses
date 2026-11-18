@@ -1,8 +1,7 @@
--- Storm Guardian: a walking electric giant with 20 walkers and 20 flyers. While a storm of Nexus-Threat rages it feeds
--- on it: it heals 0.5 % of its health every second and calls lightning down around itself. Between the storms it is
--- only a very big target. Without Nexus-Threat's storms (its startup setting nexus-threat-activation off) it never
--- feeds or calls lightning. Charged shards in its beacon (summon.charge, up to cfg.CHARGES) reduce healing only; the
--- pylon weakens the chance of lightning.
+-- Storm Guardian: a walking electric giant with 20 walkers and 20 flyers. It feeds during Nexus-Threat storms, or
+-- after 60 seconds without one it calls its own 40-second storm / 40-second calm cycle. During any storm it heals
+-- 0.5 % of its health every second and calls lightning around itself. Charged shards reduce healing; a pylon weakens
+-- lightning.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -21,6 +20,9 @@ local LIGHTNING_SECONDS = 3
 local FEED_SOUND_SECONDS = 6
 local LIGHTNING_RADIUS = 12
 local LIGHTNING_TELEGRAPH_TICKS = 60
+local OWN_STORM_WAIT = 60
+local OWN_STORM_ON = 40
+local OWN_STORM_OFF = 40
 
 ---@param summon NbSummon
 ---@param surface LuaSurface
@@ -71,7 +73,17 @@ function M.tick(summon, surface, force)
   local guardian = record.entity
   local state = assert(summon.guardian)
   local share = 1 - (summon.charge or 0) / cfg.CHARGES
-  local storm = util.storm_active()
+  local threat_storm = util.storm_active()
+  if threat_storm then
+    state.last_storm = seconds
+  end
+  if not state.own_cycle and seconds - (state.last_storm or 0) >= OWN_STORM_WAIT then
+    state.own_cycle = seconds
+    util.say(force, { "nexus-bosses.msg-guardian-own-storm" }, util.COLORS.warning)
+  end
+  local own_elapsed = state.own_cycle and (seconds - state.own_cycle) % (OWN_STORM_ON + OWN_STORM_OFF) or nil
+  local own_storm = own_elapsed ~= nil and own_elapsed < OWN_STORM_ON
+  local storm = threat_storm or own_storm
   local feeding = share > 0 and storm
   if feeding ~= state.feeding then
     state.feeding = feeding
@@ -120,12 +132,29 @@ end
 ---@return LocalisedString|nil
 function M.status(summon)
   local state = summon.guardian
+  local own_elapsed = state and state.own_cycle
+    and (summon.active_seconds - state.own_cycle) % (OWN_STORM_ON + OWN_STORM_OFF) or nil
+  if own_elapsed and own_elapsed < OWN_STORM_ON then
+    return { "nexus-bosses.status-guardian-own-storm", math.max(0, math.ceil(OWN_STORM_ON - own_elapsed)) }
+  end
   if state and state.feeding then
     return { "nexus-bosses.status-guardian-feeds" }
   elseif (summon.charge or 0) >= cfg.CHARGES then
     return { "nexus-bosses.status-guardian-charged" }
   end
   return { "nexus-bosses.status-guardian-starves" }
+end
+
+---@param summon NbSummon
+---@return table
+function M.snapshot(summon)
+  local state = summon.guardian
+  local own_elapsed = state and state.own_cycle
+    and (summon.active_seconds - state.own_cycle) % (OWN_STORM_ON + OWN_STORM_OFF) or nil
+  return {
+    feeding = state ~= nil and state.feeding == true,
+    own_storm = own_elapsed ~= nil and own_elapsed < OWN_STORM_ON,
+  }
 end
 
 return M

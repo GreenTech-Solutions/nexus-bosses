@@ -82,6 +82,8 @@ M.LAIR_LOOT_SHARE_PYLON = 0.5 -- half the beacon recipe with a pylon
 M.LAIR_FREQUENCY = 4 / 3
 M.LAIR_FREQUENCY_PER_WIN = 0.1
 M.LAIR_FREQUENCY_MAX = 1.6
+M.ESCALATION = { { below = 0.66, factor = 1.25 }, { below = 0.33, factor = 1.5 } }
+M.FREQUENCY_CAP = 2
 -- Pylons: a broken pylon of suppression stands in every found lair; a trophy of its boss of a better quality
 -- repairs it and weakens that boss's main mechanic when called in the lair
 M.PYLON = "nexus-bosses-pylon"

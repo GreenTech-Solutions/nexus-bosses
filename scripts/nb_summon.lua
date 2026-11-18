@@ -68,6 +68,7 @@ local UNDEFENDED_SECONDS = 60
 ---@field waves table<integer, boolean>
 ---@field paused boolean
 ---@field active_seconds integer
+---@field phase_index integer
 ---@field undefended integer|nil
 ---@field tracked NbTracked[]
 ---@field by_unit table<uint64, NbTracked>
@@ -321,8 +322,30 @@ local function update_health_bar(summon, force)
     or (module and module.status and module.status(summon) or nil)
   local resist = expedition.has_log(summon.force, summon.boss) and resistance_caption(summon) or nil
   summon.health_bar = { status = status, resist = resist }
-  gui.update(force, { "nexus-bosses.bar-title", title_name(summon), { "nexus-bosses.stage-" .. cfg.CIRCLES[summon.circle].stage } },
+  gui.update(force, {
+    "nexus-bosses.bar-title",
+    title_name(summon),
+    { "nexus-bosses.stage-" .. cfg.CIRCLES[summon.circle].stage },
+    { "nexus-bosses.bar-phase", (summon.phase_index or 0) + 1 },
+  },
     records.health_share(summon), status, resist)
+end
+
+---@param summon NbSummon
+---@param force LuaForce
+local function update_escalation(summon, force)
+  local next_phase = summon.phase_index or 0
+  local share = records.health_share(summon)
+  for index, stage in ipairs(cfg.ESCALATION) do
+    if share < stage.below then
+      next_phase = math.max(next_phase, index)
+    end
+  end
+  if next_phase > (summon.phase_index or 0) then
+    summon.phase_index = next_phase
+    local stage = assert(cfg.ESCALATION[next_phase])
+    util.say(force, { "nexus-bosses.msg-escalation", boss_name(summon.boss), stage.factor }, util.COLORS.warning)
+  end
 end
 
 ---@param summon NbSummon
@@ -580,6 +603,7 @@ local function step_active(summon, force, surface)
       return
     end
   end
+  update_escalation(summon, force)
   if game.tick >= summon.music_until then
     -- the tracks take turns while the boss lives
     local music_index = summon.music_index or 0
@@ -803,6 +827,7 @@ function M.on_built(entity, player)
     waves = { [math.floor(countdown * 2 / 3)] = true, [math.floor(countdown / 3)] = true },
     paused = false,
     active_seconds = 0,
+    phase_index = 0,
     tracked = {},
     by_unit = {},
     watch = { entity.name },
@@ -973,6 +998,8 @@ function M.snapshot()
     lair = summon.lair,
     weaken = summon.weaken or 0,
     frequency = summon.frequency or 1,
+    phase_index = summon.phase_index or 0,
+    effective_frequency = util.frequency(summon),
     spawn_distance = summon.spawn_distance,
   }
 end

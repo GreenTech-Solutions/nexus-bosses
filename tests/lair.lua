@@ -45,6 +45,12 @@ describe("pylon and lair mechanics", function()
     local lair_interval = util.interval({ weaken = 0, frequency = 4 / 3 }, 12)
     assert(lair_interval and math.abs(lair_interval - 9) < 0.0001,
       "a lair should make the mechanic more frequent")
+    assert(util.frequency({ frequency = 1.6, phase_index = 2 }) == 2,
+      "lair and health escalation should stop at the shared frequency cap")
+    assert(util.frequency({ frequency = 1, phase_index = 1 }) == 1.25,
+      "the first health phase should increase mechanic frequency by 25 %")
+    assert(util.interval({ frequency = 1, phase_index = 2 }, 12) == 8,
+      "the second health phase should shorten a 12-second interval to eight seconds")
   end)
 
   test("mechanic due timers start once, repeat, and clear on a nil interval", function()

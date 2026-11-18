@@ -6,6 +6,7 @@ local util = require("scripts.nb_util")
 local records = require("scripts.nb_records")
 local spawn = require("scripts.nb_spawn")
 local telegraph = require("scripts.nb_telegraph")
+local strike = require("scripts.nb_strike")
 
 local M = {}
 
@@ -19,8 +20,11 @@ local NUKE_SECONDS = 90
 local NUKE_RADIUS = 60
 local NUKE_WARNING_RADIUS = 20
 local NUKE_WARNING_TICKS = 5 * 60
+local MARK_SECONDS = 12
+local MARK_RADIUS = 60
+local MARK_WARNING_TICKS = 4 * 60
 local NUKE_SPEED = 0.4
-local NUKE_SETTING = "bm-allow-nuker"
+local NUKE_SETTING = "nexus-bosses-commander-nuke"
 local NUKE_PROJECTILE = cfg.COMMANDER_NUKE
 local DROP_EXPLOSION = cfg.COMMANDER_DROP_EXPLOSION
 local DROP_UNIT = cfg.COMMANDER_DROP_UNIT
@@ -54,12 +58,21 @@ end
 ---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param boss LuaEntity
+---@param count integer
 local function schedule_drop(summon, surface, boss, count)
-  local boss_x, boss_y = util.xy(boss.position)
-  local beacon_x, beacon_y = util.xy(summon.position)
-  local angle = math.atan2(beacon_y - boss_y, beacon_x - boss_x)
   local distance = DROP_MIN_DISTANCE + math.random() * (DROP_MAX_DISTANCE - DROP_MIN_DISTANCE)
-  local position = util.offset(boss.position, angle, distance)
+  local position
+  if (summon.phase_index or 0) >= 2 then
+    local beacon_x, beacon_y = util.xy(summon.position)
+    local boss_x, boss_y = util.xy(boss.position)
+    local angle = math.atan2(boss_y - beacon_y, boss_x - beacon_x) + math.pi
+    position = util.offset(summon.position, angle, distance)
+  else
+    local boss_x, boss_y = util.xy(boss.position)
+    local beacon_x, beacon_y = util.xy(summon.position)
+    local angle = math.atan2(beacon_y - boss_y, beacon_x - boss_x)
+    position = util.offset(boss.position, angle, distance)
+  end
   telegraph.circle(summon, surface, position, DROP_RADIUS, DROP_WARNING_TICKS)
   telegraph.queue(summon, "drop", DROP_WARNING_TICKS, { position = util.copy_position(position), count = count })
 end
@@ -103,6 +116,11 @@ end
 function M.on_pending(summon, surface, _force, entry)
   if entry.kind == "drop" then
     spawn_drop(summon, surface, entry.data.position, entry.data.count or DROP_COUNT)
+  elseif entry.kind == "strike" then
+    local boss = records.main(summon)
+    if boss then
+      strike.fire(surface, boss.entity, entry, 4)
+    end
   elseif entry.kind == "nuke" and nuker_enabled() then
     local boss = records.main(summon)
     if boss then
@@ -142,6 +160,11 @@ function M.tick(summon, surface, _force)
     end
   end
 
+  local mark_interval = (summon.phase_index or 0) >= 1 and util.interval(summon, MARK_SECONDS) or nil
+  if util.due(state, "next_mark", seconds, mark_interval) then
+    strike.mark(summon, surface, record.entity, MARK_RADIUS, MARK_WARNING_TICKS)
+  end
+
   local nuke_allowed = nuker_enabled() and (summon.weaken or 0) == 0
   local nuke_interval = nuke_allowed and util.interval(summon, NUKE_SECONDS) or nil
   if util.due(state, "next_nuke", seconds, nuke_interval) then
@@ -155,21 +178,40 @@ function M.status(summon)
   local state = assert(summon.commander)
   local drop_remaining = state.next_drop and math.ceil(math.max(0, state.next_drop - summon.active_seconds)) or nil
   local nuke_remaining = state.next_nuke and math.ceil(math.max(0, state.next_nuke - summon.active_seconds)) or nil
+  local mark_remaining = state.next_mark and math.ceil(math.max(0, state.next_mark - summon.active_seconds)) or nil
   for _, entry in ipairs(summon.pending or {}) do
     local remaining = math.max(0, math.ceil((entry.at - game.tick) / 60))
     if entry.kind == "drop" then
       drop_remaining = remaining
     elseif entry.kind == "nuke" then
       nuke_remaining = remaining
+    elseif entry.kind == "strike" then
+      mark_remaining = remaining
     end
   end
-  if not drop_remaining then
-    return nil
+  local status
+  if drop_remaining then
+    if nuker_enabled() and nuke_remaining then
+      status = { "nexus-bosses.status-commander-both", drop_remaining, nuke_remaining }
+    else
+      status = { "nexus-bosses.status-commander-drop", drop_remaining }
+    end
   end
-  if nuker_enabled() and nuke_remaining then
-    return { "nexus-bosses.status-commander-both", drop_remaining, nuke_remaining }
+  if (summon.phase_index or 0) >= 1 then
+    local mark = { "nexus-bosses.status-commander-mark", mark_remaining or 0 }
+    return status and { "", status, " · ", mark } or mark
   end
-  return { "nexus-bosses.status-commander-drop", drop_remaining }
+  return status
+end
+
+---@param summon NbSummon
+---@return table
+function M.snapshot(summon)
+  local state = summon.commander
+  return {
+    next_mark = state and state.next_mark or nil,
+    next_nuke = state and state.next_nuke or nil,
+  }
 end
 
 return M

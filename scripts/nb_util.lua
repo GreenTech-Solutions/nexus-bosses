@@ -15,7 +15,16 @@ M.COLORS = {
 ---@type {name: string, seconds: integer}[]
 M.FIGHT_TRACKS = { { name = "nexus-bosses-fight-urgent", seconds = 57 }, { name = "nexus-bosses-fight-pulse", seconds = 71 } }
 
----Seconds between uses: a lair makes it more often; weakened lets a pylon lengthen this interval or turn it off.
+---Effective mechanic frequency combines health escalation and lair difficulty, up to the shared cap.
+---@param summon table
+---@return number
+function M.frequency(summon)
+  local phase = cfg.ESCALATION[summon.phase_index or 0]
+  local escalation = phase and phase.factor or 1
+  return math.min(cfg.FREQUENCY_CAP, (summon.frequency or 1) * escalation)
+end
+
+---Seconds between uses: health and lair speed mechanics up; weakened lets a pylon lengthen this interval or turn it off.
 ---@param summon table
 ---@param seconds number the base interval
 ---@param weakened boolean|nil
@@ -25,7 +34,7 @@ function M.interval(summon, seconds, weakened)
   if weakened and weaken >= 1 then
     return nil
   end
-  local interval = seconds / (summon.frequency or 1)
+  local interval = seconds / M.frequency(summon)
   if weakened then
     interval = interval / (1 - weaken)
   end

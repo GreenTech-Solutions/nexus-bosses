@@ -590,6 +590,34 @@ describe("reworked bosses", function()
     end)
   end)
 
+  test("the Colossus escalation advances at health thresholds and does not reverse after healing", function()
+    helpers.light("colossus", { 0, 0 })
+    local lowered = false
+    local healed = false
+    local lowered_again = false
+    helpers.on_active(900, function(summon)
+      local boss = helpers.tracked(summon, "boss")
+      assert(boss and boss.initial, "the Colossus is missing from the summon snapshot")
+      if not lowered then
+        assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, boss.initial * 0.5),
+          "the Colossus health could not be lowered to 50 %")
+        lowered = true
+      elseif not healed and summon.phase_index == 1 then
+        assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, boss.initial * 0.9),
+          "the Colossus health could not be restored to 90 %")
+        healed = true
+      elseif healed and not lowered_again then
+        assert(summon.phase_index == 1, "healing the Colossus reversed its escalation phase")
+        assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, boss.initial * 0.2),
+          "the Colossus health could not be lowered to 20 %")
+        lowered_again = true
+      elseif lowered_again and summon.phase_index == 2 then
+        helpers.reset()
+        return true
+      end
+    end)
+  end)
+
   test("the Last Commander drops six escorts", function()
     helpers.light("last-commander", { 0, 0 })
     helpers.on_active(60 * 60, function(summon, ticks_since_active)
@@ -601,6 +629,223 @@ describe("reworked bosses", function()
       end
       if ticks_since_active >= 3500 then
         error("the Last Commander test timed out: " .. helpers.describe_summon(summon))
+      end
+    end)
+  end)
+
+  test("the Last Commander marks buildings in phase two and drops beyond the beacon in phase three", function()
+    local surface = helpers.nexus()
+    helpers.light("last-commander", { 0, 0 })
+    helpers.defend()
+    local target
+    local phase_one_at
+    local mark_checked = false
+    local function commander_timeout(summon, boss)
+      local distance = target and target.valid and util.distance(boss.position, target.position) or -1
+      return string.format("active_seconds=%s phase_index=%s boss_state.next_mark=%s boss_wall_distance=%s %s",
+        tostring(summon.active_seconds), tostring(summon.phase_index),
+        tostring(summon.boss_state and summon.boss_state.next_mark), tostring(distance),
+        helpers.describe_summon(summon))
+    end
+    helpers.on_active(110 * 60, function(summon, ticks_since_active)
+      local boss = helpers.tracked(summon, "boss")
+      assert(boss and boss.position and boss.initial, "the Last Commander is missing from the summon snapshot")
+      if not target then
+        target = wall_at(surface, { x = boss.position.x + 40, y = boss.position.y })
+        target.destructible = false
+        assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, boss.initial * 0.5),
+          "the Commander health could not be lowered to phase two")
+      elseif summon.phase_index == 1 and not mark_checked then
+        phase_one_at = phase_one_at or game.tick
+        if target and target.valid then
+          local nearby = surface.find_non_colliding_position("stone-wall",
+            { x = boss.position.x + 15, y = boss.position.y }, 8, 1)
+          assert(nearby and target.teleport(nearby), "the Commander test wall could not stay near the boss")
+        end
+        local mark = helpers.pending(summon, "strike")
+        if mark then
+          local found_target = false
+          local pending_data = remote.call("nexus-bosses", "get_pending_data")
+          ---@cast pending_data {kind: string, at: integer, data: table}[]
+          for _, entry in ipairs(pending_data) do
+            if entry.kind == "strike" and entry.at == mark.at and entry.data.target == target.unit_number then
+              found_target = true
+              break
+            end
+          end
+          assert(found_target, "the Commander strike did not retain its marked building")
+          assert(game.tick - phase_one_at <= (12 / summon.effective_frequency + 5) * 60,
+            "the Commander did not queue its phase-two strike within its scaled interval and warning")
+          mark_checked = true
+          assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, boss.initial * 0.2),
+            "the Commander health could not be lowered to phase three")
+        elseif game.tick - phase_one_at > (12 / summon.effective_frequency + 5) * 60 then
+          error("the Commander did not queue a phase-two strike: " .. commander_timeout(summon, boss))
+        end
+      elseif mark_checked and summon.phase_index == 2 then
+        local drop = helpers.pending(summon, "drop")
+        if drop then
+          ---@type MapPosition|nil
+          local drop_position
+          local pending_data = remote.call("nexus-bosses", "get_pending_data")
+          ---@cast pending_data {kind: string, at: integer, data: {position: MapPosition}}[]
+          for _, entry in ipairs(pending_data) do
+            if entry.kind == "drop" and entry.at == drop.at then
+              drop_position = entry.data.position
+              break
+            end
+          end
+          if not drop_position then
+            error("the phase-three drop has no position")
+          end
+          local beacon_position = summon.beacon_position --[[@as MapPosition]]
+          assert(util.distance(drop_position, boss.position) > util.distance(beacon_position, boss.position),
+            "the phase-three drop did not land beyond the beacon on the side away from the Commander")
+          helpers.reset()
+          return true
+        end
+      end
+      if ticks_since_active >= 6000 then
+        error("the Last Commander phase test timed out: " .. commander_timeout(summon, boss))
+      end
+    end)
+  end)
+
+  test("the Last Commander queues a nuke when its setting is enabled", function()
+    local setting_name = "nexus-bosses-commander-nuke"
+    local setting = settings.global[setting_name]
+    local original = setting and setting.value
+    local restored = false
+    local function restore_setting()
+      if not restored then
+        ---@diagnostic disable-next-line: assign-type-mismatch
+        -- luacheck: ignore 122
+        settings.global[setting_name] = { value = original }
+        restored = true
+      end
+    end
+    after_test(restore_setting)
+    local function timeout_details(summon)
+      return string.format("active_seconds=%s effective_frequency=%s boss_state.next_nuke=%s",
+        tostring(summon.active_seconds), tostring(summon.effective_frequency),
+        tostring(summon.boss_state and summon.boss_state.next_nuke))
+    end
+
+    local ok, message = pcall(function()
+      ---@diagnostic disable-next-line: assign-type-mismatch
+      -- luacheck: ignore 122
+      settings.global[setting_name] = { value = true }
+      helpers.light("last-commander", { 0, 0 })
+      helpers.defend()
+      helpers.on_active(110 * 60, function(summon, ticks_since_active)
+        local callback_ok, complete = pcall(function()
+          if helpers.pending(summon, "nuke") then
+            return true
+          end
+          if summon.active_seconds > math.ceil(90 / summon.effective_frequency) + 2 then
+            error("the Commander did not queue a nuke while its setting was enabled: "
+              .. timeout_details(summon))
+          end
+          if ticks_since_active >= 110 * 60 then
+            error("the Commander nuke setting test timed out: " .. timeout_details(summon))
+          end
+          return false
+        end)
+        if not callback_ok then
+          restore_setting()
+          helpers.reset()
+          error(complete)
+        end
+        if complete then
+          restore_setting()
+          helpers.reset()
+        end
+        return complete
+      end)
+    end)
+    if not ok then
+      restore_setting()
+      helpers.reset()
+      error(message)
+    end
+  end)
+
+  test("the Last Commander does not queue a nuke when its setting is disabled", function()
+    local setting_name = "nexus-bosses-commander-nuke"
+    local setting = settings.global[setting_name]
+    local original = setting and setting.value
+    local restored = false
+    local function restore_setting()
+      if not restored then
+        ---@diagnostic disable-next-line: assign-type-mismatch
+        -- luacheck: ignore 122
+        settings.global[setting_name] = { value = original }
+        restored = true
+      end
+    end
+    after_test(restore_setting)
+
+    local ok, message = pcall(function()
+      ---@diagnostic disable-next-line: assign-type-mismatch
+      -- luacheck: ignore 122
+      settings.global[setting_name] = { value = false }
+      helpers.light("last-commander", { 0, 0 })
+      helpers.defend()
+      helpers.on_active(110 * 60, function(summon, ticks_since_active)
+        local callback_ok, complete = pcall(function()
+          if helpers.pending(summon, "nuke") then
+            error("the Commander queued a nuke while its setting was disabled")
+          end
+          if summon.active_seconds > math.ceil(90 / summon.effective_frequency) + 2 then
+            return true
+          end
+          if ticks_since_active >= 110 * 60 then
+            error("the Commander nuke setting test timed out")
+          end
+          return false
+        end)
+        if not callback_ok then
+          restore_setting()
+          helpers.reset()
+          error(complete)
+        end
+        if complete then
+          restore_setting()
+          helpers.reset()
+        end
+        return complete
+      end)
+    end)
+    if not ok then
+      restore_setting()
+      helpers.reset()
+      error(message)
+    end
+  end)
+
+  test("the Storm Guardian calls its own storm after 60 seconds without a Nexus-Threat storm", function()
+    helpers.light("storm-guardian", { 0, 0 })
+    helpers.defend()
+    local damaged = false
+    local damaged_health
+    helpers.on_active(90 * 60, function(summon)
+      local boss = helpers.tracked(summon, "boss")
+      assert(boss and boss.initial, "the Storm Guardian is missing from the summon snapshot")
+      if not damaged and summon.active_seconds >= 5 then
+        damaged_health = boss.initial * 0.5
+        assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, damaged_health),
+          "the Storm Guardian health could not be lowered for the healing check")
+        damaged = true
+      elseif summon.active_seconds >= 65 then
+        assert(summon.boss_state and summon.boss_state.own_storm,
+          "the Storm Guardian did not report its own storm after 60 seconds")
+        local current_health = boss.health
+        if type(current_health) ~= "number" or type(damaged_health) ~= "number"
+          or current_health <= damaged_health + 1 then
+          error("the Storm Guardian did not heal during its own storm")
+        end
+        helpers.reset()
+        return true
       end
     end)
   end)
