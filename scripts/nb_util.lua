@@ -15,16 +15,44 @@ M.COLORS = {
 ---@type {name: string, seconds: integer}[]
 M.FIGHT_TRACKS = { { name = "nexus-bosses-fight-urgent", seconds = 57 }, { name = "nexus-bosses-fight-pulse", seconds = 71 } }
 
----Seconds between two uses of a mechanic in this fight: a lair makes it more often, a pylon less; nil: none at all.
+---Seconds between uses: a lair makes it more often; weakened lets a pylon lengthen this interval or turn it off.
 ---@param summon table
 ---@param seconds number the base interval
+---@param weakened boolean|nil
 ---@return number|nil
-function M.interval(summon, seconds)
+function M.interval(summon, seconds, weakened)
   local weaken = summon.weaken or 0
-  if weaken >= 1 then
+  if weakened and weaken >= 1 then
     return nil
   end
-  return seconds / ((summon.frequency or 1) * (1 - weaken))
+  local interval = seconds / (summon.frequency or 1)
+  if weakened then
+    interval = interval / (1 - weaken)
+  end
+  return interval
+end
+
+---True once per interval. state[key] is the active second of the next use; nil clears it and never fires.
+---@param state table
+---@param key string
+---@param seconds integer the active seconds of the fight
+---@param interval number|nil
+---@return boolean
+function M.due(state, key, seconds, interval)
+  if not interval then
+    state[key] = nil
+    return false
+  end
+  local next_use = state[key]
+  if not next_use then
+    state[key] = seconds + interval
+    return false
+  end
+  if seconds < next_use then
+    return false
+  end
+  state[key] = seconds + interval
+  return true
 end
 
 ---@param position MapPosition

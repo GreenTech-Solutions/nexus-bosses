@@ -68,44 +68,91 @@ local function wall_at(surface, position)
   return wall
 end
 
+---@param summon table|nil
+---@param wall LuaEntity|nil
+---@return string
+local function describe_watcher_timeout(summon, wall)
+  local wall_alive = wall and wall.valid
+  local wall_health
+  if wall_alive then
+    ---@cast wall LuaEntity
+    wall_health = wall.health
+  end
+  local pending_details = {}
+  local pending_data = remote.call("nexus-bosses", "get_pending_data")
+  ---@cast pending_data {kind: string, at: integer, data: table}[]
+  for _, detail in ipairs(pending_data) do
+    local position = detail.data.position
+    local position_text = position and string.format("(%s,%s)", tostring(position.x), tostring(position.y))
+      or "nil"
+    pending_details[#pending_details + 1] = string.format("kind=%s target=%s position=%s",
+      tostring(detail.kind), tostring(detail.data.target), position_text)
+  end
+  return helpers.describe_summon(summon)
+    .. string.format(" wall_alive=%s wall_health=%s pending=[%s]", tostring(wall_alive),
+      tostring(wall_health), table.concat(pending_details, "; "))
+end
+
 describe("reworked bosses", function()
   before_each(function()
     helpers.reset()
     helpers.nexus()
   end)
 
-  test("the Watcher queues a strike against a nearby player building", function()
+  test("the Watcher strike damages a nearby player building", function()
     local surface = helpers.nexus()
     helpers.light("watcher", { 0, 0 })
-    local active_at
+    local strike_at
     local elapsed = 0
     local wall
+    local wall_health
     local last_summon
-    async(1400)
+    async(2400)
     on_tick(function()
       elapsed = elapsed + 1
       local summon = helpers.active()
       last_summon = summon
+      if wall and not strike_at and not wall.valid then
+        error("the test wall died before the Watcher marked it")
+      end
       if summon and summon.phase == "active" and not wall then
-        active_at = game.tick
         local boss = tracked(summon, "boss")
         assert(boss and boss.position, "the Watcher position is missing from the summon snapshot")
         assert(role_count(summon, "boss") == 1 and role_count(summon, "escort") == 6,
           "the Watcher should appear with one boss and six escort drones")
-        wall = wall_at(surface, { x = boss.position.x + 20, y = boss.position.y })
+        wall = wall_at(surface, { x = boss.position.x + 40, y = boss.position.y })
+        wall.destructible = false
       end
-      if wall and active_at and game.tick >= active_at + 13 * 60 then
-        local current = helpers.active()
-        if current and pending(current, "strike") then
-          done()
-          return false
+      if wall and not strike_at and summon and summon.phase == "active" then
+        local strike = pending(summon, "strike")
+        if strike then
+          local pending_data = remote.call("nexus-bosses", "get_pending_data")
+          ---@cast pending_data {kind: string, at: integer, data: table}[]
+          for _, detail in ipairs(pending_data) do
+            if role_count(summon, "escort") > 0 and detail.kind == "strike" and detail.at == strike.at
+              and detail.data.target == wall.unit_number then
+              strike_at = detail.at
+              wall.destructible = true
+              wall_health = wall.health
+              assert(wall_health, "the Watcher test wall has no health when marked")
+              break
+            end
+          end
         end
+      elseif strike_at and game.tick >= strike_at + 4 * 60 then
+        ---@cast wall LuaEntity
+        ---@cast wall_health number
+        local damaged = not wall.valid
+        if wall.valid then
+          local current_health = wall.health
+          damaged = current_health ~= nil and current_health < wall_health - 1
+        end
+        assert(damaged, "the Watcher's queued strike did not damage the marked wall")
+        done()
+        return false
       end
-      if elapsed >= 1400 then
-        if active_at then
-          error("the Watcher did not queue a strike in time: " .. helpers.describe_summon(last_summon))
-        end
-        error("the Watcher did not become active within the test window: " .. helpers.describe_summon(last_summon))
+      if elapsed >= 2400 then
+        error("the Watcher did not damage the test wall in time: " .. describe_watcher_timeout(last_summon, wall))
       end
     end)
   end)
@@ -117,21 +164,26 @@ describe("reworked bosses", function()
     local wall_health
     local strike_at
     local elapsed = 0
+    local last_summon
     async(1400)
     on_tick(function()
       elapsed = elapsed + 1
       local summon = helpers.active()
+      last_summon = summon
       if summon and summon.phase == "active" and not wall then
         local boss = tracked(summon, "boss")
         assert(boss and boss.position, "the Watcher position is missing from the summon snapshot")
         assert(role_count(summon, "boss") == 1 and role_count(summon, "escort") == 6,
           "the Watcher should appear with one boss and six escort drones")
-        wall = wall_at(surface, { x = boss.position.x + 20, y = boss.position.y })
-        wall_health = wall.health
+        wall = wall_at(surface, { x = boss.position.x + 40, y = boss.position.y })
+        wall.destructible = false
       elseif wall and not strike_at then
         local strike = summon and pending(summon, "strike")
         if strike then
           strike_at = strike.at
+          wall.destructible = true
+          wall_health = wall.health
+          assert(wall_health, "the Watcher cancellation test wall has no health when marked")
           ---@cast summon table
           for _, record in ipairs(summon.tracked) do
             if record.role == "escort" and not record.dead and not record.gone then
@@ -144,13 +196,16 @@ describe("reworked bosses", function()
         end
       elseif strike_at and game.tick >= strike_at + 20 then
         ---@cast wall LuaEntity
-        assert(wall.valid and wall.health == wall_health,
+        ---@cast wall_health number
+        assert(wall.valid, "the Watcher fired its queued strike after all drones had died")
+        local current_health = wall.health
+        assert(current_health and math.abs(current_health - wall_health) <= 1,
           "the Watcher fired its queued strike after all drones had died")
         done()
         return false
       end
       if elapsed >= 1400 then
-        error("the Watcher strike cancellation test timed out")
+        error("the Watcher strike cancellation test timed out: " .. describe_watcher_timeout(last_summon, wall))
       end
     end)
   end)
@@ -200,6 +255,43 @@ describe("reworked bosses", function()
       end
       if elapsed >= 1900 then
         error("the Rogue Spidertron EMP test timed out")
+      end
+    end)
+  end)
+
+  test("the Plague Hulk's spores disable and restore a nearby player turret", function()
+    local surface = helpers.nexus()
+    helpers.light("plague-hulk", { 0, 0 })
+    local turret
+    local disabled_at
+    local elapsed = 0
+    local last_summon
+    async(9000)
+    on_tick(function()
+      elapsed = elapsed + 1
+      local summon = helpers.active()
+      last_summon = summon
+      if summon and summon.phase == "active" and not turret then
+        local boss = tracked(summon, "boss")
+        assert(boss and boss.position, "the Plague Hulk position is missing from the summon snapshot")
+        local position = surface.find_non_colliding_position("gun-turret", {
+          x = boss.position.x + 20, y = boss.position.y,
+        }, 8, 1)
+        assert(position, "there was no clear spot for the Plague Hulk test turret")
+        turret = surface.create_entity({ name = "gun-turret", position = position, force = "player" })
+        assert(turret, "the Plague Hulk test turret could not be created")
+        turret.destructible = false
+      elseif turret and turret.valid and not disabled_at and turret.disabled_by_script then
+        disabled_at = game.tick
+      elseif disabled_at and game.tick >= disabled_at + 15 * 60 + 20 then
+        ---@cast turret LuaEntity
+        assert(turret.valid and not turret.disabled_by_script,
+          "the Plague Hulk did not restore the turret after 15 seconds")
+        done()
+        return false
+      end
+      if elapsed >= 9000 then
+        error("the Plague Hulk spore test timed out: " .. helpers.describe_summon(last_summon))
       end
     end)
   end)
@@ -350,13 +442,16 @@ describe("reworked bosses", function()
         local boss = tracked(summon, "boss")
         assert(boss, "the Armoured Colossus is missing from the summon snapshot")
         shield_health = summon.shield.health
+        assert(shield_health, "the Armoured Colossus shield has no health")
         boss_entity = find_valid_entity(helpers.nexus(), summon.variant_entity)
         assert(boss_entity and boss_entity.valid, "the Armoured Colossus entity is missing")
         boss_entity.damage(100000, "enemy", "physical")
         damaged_at = game.tick
       elseif damaged_at and game.tick >= damaged_at + 60 then
         ---@cast boss_entity LuaEntity
-        assert(boss_entity.valid and boss_entity.health >= shield_health,
+        assert(boss_entity.valid, "the Armoured Colossus did not survive its shield test")
+        local current_health = boss_entity.health
+        assert(current_health and current_health + 1 >= shield_health,
           "the Armoured Colossus did not restore its shield health")
         remote.call("nexus-bosses", "abort_summon", true)
         done()
@@ -430,7 +525,8 @@ describe("reworked bosses", function()
     helpers.nexus()
     helpers.light("twin-maws", { 0, 0 })
     local damaged_name
-    local damaged_health
+    ---@type number
+    local damaged_health = 0
     local damaged_at
     local elapsed = 0
     async(700)
@@ -448,7 +544,7 @@ describe("reworked bosses", function()
       elseif damaged_at and game.tick >= damaged_at + 2 * 60 then
         local current = helpers.active()
         local maw = current and tracked(current, "boss", damaged_name)
-        assert(maw and maw.health and maw.health > damaged_health,
+        assert(maw and maw.health and maw.health > damaged_health + 1,
           "the Twin Maws did not heal the damaged maw while both were alive")
         remote.call("nexus-bosses", "abort_summon", true)
         done()

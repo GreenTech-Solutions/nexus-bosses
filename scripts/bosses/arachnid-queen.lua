@@ -81,12 +81,7 @@ local function telegraph_nests(summon, surface, queen, count)
       telegraph.filling_circle(summon, surface, position, 4, NEST_TELEGRAPH_TICKS)
     end
   end
-  summon.pending = summon.pending or {}
-  summon.pending[#summon.pending + 1] = {
-    at = game.tick + NEST_TELEGRAPH_TICKS,
-    kind = "nests",
-    data = { positions = positions },
-  }
+  telegraph.queue(summon, "nests", NEST_TELEGRAPH_TICKS, { positions = positions })
 end
 
 ---@param summon table

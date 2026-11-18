@@ -142,6 +142,16 @@ M.GUARDIAN = "nexus-storm-guardian"
 M.DEVOURER = "nexus-devourer"
 M.WATCHER = "nexus-watcher"
 M.SPIDERTRON = "nexus-rogue-spidertron"
+M.WATCHER_DRONE = "flying-electric-unit-3"
+M.WATCHER_AMMO = "flying-saucer-laser-ammo"
+M.COLOSSUS_FIRE_PROJECTILE = "mf-cluster-fire-projectile-big"
+M.COLOSSUS_STORM_EXPLOSION = "electric-shock2"
+M.COLOSSUS_ACID_PROJECTILE = "acid-stream-spitter-behemoth"
+M.COMMANDER_NUKE = "mf-small-atomic-rocket"
+M.COMMANDER_DROP_EXPLOSION = "big-explosion"
+M.COMMANDER_DROP_UNIT = "bm_fake_human_machine_gunner_5"
+M.TURRET_TYPES = { "ammo-turret", "electric-turret", "fluid-turret", "artillery-turret" }
+M.POLE_TYPES = { "electric-pole" }
 
 -- Health before the startup setting "nexus-bosses-boss-health". The hulk is a spawner, whose health the game
 -- multiplies by 10^evolution: the prototype gets HULK_HEALTH / 10^0.99.
@@ -174,7 +184,7 @@ local SPECS = {
   },
   ["watcher"] = {
     entity = M.WATCHER,
-    precursors = { "flying-electric-unit-3" },
+    precursors = { M.WATCHER_DRONE },
   },
   ["rogue-spidertron"] = {
     entity = M.SPIDERTRON,
@@ -194,7 +204,7 @@ local SPECS = {
   },
   ["storm-guardian"] = {
     entity = "walking-electric-unit-boss-10",
-    precursors = { "walking-electric-unit-3", "flying-electric-unit-3" },
+    precursors = { "walking-electric-unit-3", M.WATCHER_DRONE },
   },
   ["devourer"] = {
     entity = "big-demolisher",
@@ -202,7 +212,7 @@ local SPECS = {
   },
   ["last-commander"] = {
     entity = M.COMMANDER,
-    precursors = { "bm_fake_human_machine_gunner_5" },
+    precursors = { M.COMMANDER_DROP_UNIT },
   },
 }
 
@@ -238,22 +248,25 @@ M.REQUIRED = {
   { "unit", "walking-electric-unit-5", "Electric_flying_enemies" },
   { "unit", "flying-electric-unit-5", "Electric_flying_enemies" },
   { "unit", "walking-electric-unit-3", "Electric_flying_enemies" },
-  { "unit", "flying-electric-unit-3", "Electric_flying_enemies" },
+  { "unit", M.WATCHER_DRONE, "Electric_flying_enemies" },
   { "turret", "maf-worm-boss-fire-shooter", "Big-Monsters" },
   { "turret", "bm-worm-boss-acid-shooter", "Big-Monsters" },
   { "spider-vehicle", "maf_flying_saucer_8", "Big-Monsters" },
   { "spider-vehicle", "bm-spidertron_5", "Big-Monsters" },
-  { "unit", "biterzilla15", "Big-Monsters" },
   { "unit", "bm_fake_human_ultimate_boss_cannon_20", "Big-Monsters" },
-  { "unit", "bm_fake_human_machine_gunner_5", "Big-Monsters" },
-  { "projectile", "mf-small-atomic-rocket", "Big-Monsters" },
-  { "explosion", "big-explosion", "base" },
+  { "unit", M.COMMANDER_DROP_UNIT, "Big-Monsters" },
+  { "stream", M.COLOSSUS_FIRE_PROJECTILE, "Big-Monsters" },
+  { "explosion", M.COLOSSUS_STORM_EXPLOSION, "Big-Monsters" },
+  { "stream", M.COLOSSUS_ACID_PROJECTILE, "Big-Monsters" },
+  { "projectile", M.COMMANDER_NUKE, "Big-Monsters" },
+  { "explosion", M.COMMANDER_DROP_EXPLOSION, "base" },
   { "segmented-unit", "big-demolisher", "space-age" },
   { "planet", "nexus", "Nexus" },
   { "container", "crash-site-spaceship-wreck-medium-1", "base" },
   { "container", "crash-site-spaceship-wreck-medium-2", "base" },
   { "container", "crash-site-spaceship-wreck-medium-3", "base" },
   { "radar", "radar", "base" },
+  { "ammo", M.WATCHER_AMMO, "Big-Monsters" },
   { "container", "crash-site-spaceship", "base" },
   { "container", "crash-site-spaceship-wreck-big-1", "base" },
   { "container", "crash-site-chest-1", "base" },
@@ -262,6 +275,9 @@ M.REQUIRED = {
   { "simple-entity", "fulgoran-ruin-medium", "space-age" },
   { "simple-entity", "fulgoran-ruin-vault", "space-age" },
 }
+for _, variant in ipairs(M.COLOSSUS_VARIANTS) do
+  M.REQUIRED[#M.REQUIRED + 1] = { "unit", variant.original, "Big-Monsters" }
+end
 
 ---@param id string
 ---@return string

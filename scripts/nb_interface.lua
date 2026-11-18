@@ -19,11 +19,10 @@
 --   wake_ruin(position)                wakes the attractor ruin nearest to a position, storm or not
 --   find_story(force_name, key)        finds the log of the camp ("camp") or of the last stand ("last_stand")
 --   repair_pylon(force_name, boss_id, quality)  repairs the pylon of a lair, as a trophy of that quality would
---   interval(seconds, weaken, frequency) computes a mechanic interval for tests and debugging
+--   resist(entity_name)                reads an entity's combat resistances for tests and debugging
 --   hallucinate(player_index, kind?)   a hallucination now: 1 shade, 2 whisper, 3 false alarm, 4 vignette and whisper
 
 local cfg = require("lib.nb_data")
-local util = require("scripts.nb_util")
 local state = require("scripts.nb_state")
 local resistance = require("scripts.nb_resist")
 local summon = require("scripts.nb_summon")
@@ -55,12 +54,6 @@ remote.add_interface("nexus-bosses", {
     return summon.abort(destroy_bosses == true)
   end,
   get_pending_data = summon.pending_data,
-  interval = function(seconds, weaken, frequency)
-    assert(type(seconds) == "number" and seconds > 0, "nexus-bosses.interval: expected positive seconds")
-    assert(type(weaken) == "number" and weaken >= 0, "nexus-bosses.interval: expected non-negative weaken")
-    assert(type(frequency) == "number" and frequency > 0, "nexus-bosses.interval: expected positive frequency")
-    return util.interval({ weaken = weaken, frequency = frequency }, seconds)
-  end,
   set_tracked_health = function(unit_number, health)
     assert(type(unit_number) == "number" and unit_number > 0 and unit_number % 1 == 0,
       "nexus-bosses.set_tracked_health: expected a positive unit number")

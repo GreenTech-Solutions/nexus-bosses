@@ -111,12 +111,7 @@ local function dive(summon, surface, force, record)
   local dive_seconds = DIVE_SECONDS * (1 - (summon.weaken or 0))
   local delay = math.floor(dive_seconds * 60 + 0.5)
   telegraph.filling_circle(summon, surface, state.rise_at, 12, delay)
-  summon.pending = summon.pending or {}
-  summon.pending[#summon.pending + 1] = {
-    at = game.tick + delay,
-    kind = "rise",
-    data = { position = util.copy_position(state.rise_at) },
-  }
+  telegraph.queue(summon, "rise", delay, { position = util.copy_position(state.rise_at) })
   surface.create_entity({ name = "big-demolisher-fissure-explosion", position = head })
   worm.destroy()
   util.say(force, { "nexus-bosses.msg-devourer-dives", dive_seconds }, util.COLORS.warning)
@@ -134,11 +129,7 @@ local function rise(summon, surface, force, record, target)
   local position = surface.find_non_colliding_position(cfg.DEVOURER, target, RISE_SEARCH_RADIUS, 1) or target
   local worm = create_worm(surface, position, summon)
   if not worm then
-    summon.pending[#summon.pending + 1] = {
-      at = game.tick + 60,
-      kind = "rise",
-      data = { position = util.copy_position(target) },
-    }
+    telegraph.queue(summon, "rise", 60, { position = util.copy_position(target) })
     return
   end
   worm.health = record.hidden_health
@@ -168,11 +159,7 @@ function M.tick(summon, surface, force)
     end
     if not has_rise then
       -- A save made during a dive by the previous mod version has no pending rise entry.
-      summon.pending[#summon.pending + 1] = {
-        at = game.tick,
-        kind = "rise",
-        data = { position = util.copy_position(state.rise_at or summon.position) },
-      }
+      telegraph.queue(summon, "rise", 0, { position = util.copy_position(state.rise_at or summon.position) })
     end
     return
   end

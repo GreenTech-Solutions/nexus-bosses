@@ -15,6 +15,38 @@ local PRECURSOR_MAX = 120
 local ATTACK_RADIUS = 45
 local BUILDING_SEARCH_RADIUS = 600
 
+---The nearest player target matching the requested filters.
+---@param surface LuaSurface
+---@param summon table
+---@param position MapPosition
+---@param radius number
+---@param filter table|nil
+---@return LuaEntity|nil
+function M.nearest_target(surface, summon, position, radius, filter)
+  filter = filter or {}
+  local query = {
+    position = position,
+    radius = radius,
+    force = summon.force,
+    type = filter.types,
+    is_military_target = filter.military or nil,
+  }
+  local candidates = {}
+  for _, entity in ipairs(surface.find_entities_filtered(query)) do
+    -- Fulgoran ruins belong to the player force, but only ones claimed by a player are valid targets.
+    local is_fulgora_ruin = entity.name:find("^fulgoran%-ruin%-") ~= nil
+    local excluded = filter.exclude and entity.unit_number and filter.exclude[entity.unit_number]
+    if entity.valid and (not filter.building or entity.prototype.is_building)
+      and entity.type ~= "lightning-attractor"
+      and (not filter.military or entity.last_user ~= nil)
+      and (not is_fulgora_ruin or entity.last_user ~= nil)
+      and not excluded then
+      candidates[#candidates + 1] = entity
+    end
+  end
+  return #candidates > 0 and surface.get_closest(position, candidates) or nil
+end
+
 ---@param surface LuaSurface
 ---@param name string
 ---@param position MapPosition

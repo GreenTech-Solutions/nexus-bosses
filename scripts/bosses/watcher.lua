@@ -9,7 +9,7 @@ local spider = require("scripts.nb_spider")
 
 local M = {}
 
-local DRONE = "flying-electric-unit-3"
+local DRONE = cfg.WATCHER_DRONE
 local DRONES = 6
 local WAVE_SECONDS = 60
 local MARK_SECONDS = 12
@@ -18,25 +18,7 @@ local TELEGRAPH_TICKS = 4 * 60
 local APPROACH_SECONDS = 18
 local APPROACH_RADIUS = 1500
 local ROCKETS = 4
-local AMMO = { { name = "flying-saucer-laser-ammo", count = 1 } }
-
----@param surface LuaSurface
----@param force LuaForce
----@param center MapPosition
----@param radius number
----@return LuaEntity|nil
-local function nearest_building(surface, force, center, radius)
-  local nearest, nearest_distance
-  for _, entity in ipairs(surface.find_entities_filtered({ position = center, radius = radius, force = force })) do
-    if entity.valid and entity.prototype.is_building then
-      local distance = util.distance(center, entity.position)
-      if not nearest_distance or distance < nearest_distance then
-        nearest, nearest_distance = entity, distance
-      end
-    end
-  end
-  return nearest
-end
+local AMMO = { { name = cfg.WATCHER_AMMO, count = 1 } }
 
 ---@param summon table
 ---@param surface LuaSurface
@@ -60,7 +42,6 @@ function M.spawn(summon, surface)
   end
   spider.supply(saucer, AMMO)
   summon.watcher = {
-    next_mark = util.interval(summon, MARK_SECONDS),
     last_wave = 0,
     last_approach = 0,
   }
@@ -79,10 +60,15 @@ function M.tick(summon, surface, _force)
   local saucer = boss.entity
   local state = summon.watcher
   local seconds = summon.active_seconds
-  local drones = records.of_role(summon, "escort")
+  local drone_records = records.of_role(summon, "escort")
+  local drone_count = #drone_records
+  local drones = {}
+  for _, record in ipairs(drone_records) do
+    drones[#drones + 1] = record.entity
+  end
   if seconds - state.last_wave >= WAVE_SECONDS then
     state.last_wave = seconds
-    while #drones < DRONES do
+    while drone_count < DRONES do
       local position = util.offset(saucer.position, math.random() * 2 * math.pi, math.random() * 8)
       local drone = spawn.create_unit(surface, DRONE, position)
       if not drone then
@@ -90,25 +76,19 @@ function M.tick(summon, surface, _force)
       end
       records.add(summon, drone, false, "escort")
       drones[#drones + 1] = drone
+      drone_count = drone_count + 1
     end
     spawn.dispatch(surface, drones, summon.position)
   end
 
-  local mark_interval = util.interval(summon, MARK_SECONDS)
-  if mark_interval and not state.next_mark then
-    state.next_mark = (state.last_mark or 0) + mark_interval
-  end
-  if mark_interval and state.next_mark and seconds >= state.next_mark then
-    state.next_mark = seconds + mark_interval
-    local target = nearest_building(surface, game.forces[summon.force], saucer.position, MARK_RADIUS)
-    if target and #drones > 0 then
-      telegraph.line(surface, saucer, target, TELEGRAPH_TICKS)
-      telegraph.circle(surface, target, 3, TELEGRAPH_TICKS)
-      summon.pending[#summon.pending + 1] = {
-        at = game.tick + TELEGRAPH_TICKS,
-        kind = "strike",
-        data = { target = target.unit_number, position = util.copy_position(target.position) },
-      }
+  local mark_interval = util.interval(summon, MARK_SECONDS, true)
+  if util.due(state, "next_mark", seconds, mark_interval) and drone_count > 0 then
+    local target = spawn.nearest_target(surface, summon, saucer.position, MARK_RADIUS, { building = true })
+    if target then
+      telegraph.line(summon, surface, saucer, target, TELEGRAPH_TICKS)
+      telegraph.circle(summon, surface, target, 3, TELEGRAPH_TICKS)
+      telegraph.queue(summon, "strike", TELEGRAPH_TICKS,
+        { target = target.unit_number, position = util.copy_position(target.position) }, { target })
     end
   end
 
@@ -134,7 +114,7 @@ function M.on_pending(summon, surface, _force, entry)
   if entry.kind ~= "strike" or #records.of_role(summon, "escort") == 0 then
     return
   end
-  local target = entry.data.target and game.get_entity_by_unit_number(entry.data.target)
+  local target = entry.entities and entry.entities[1]
   if not (target and target.valid) then
     return
   end

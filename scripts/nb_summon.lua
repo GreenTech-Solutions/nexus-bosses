@@ -26,6 +26,7 @@ local M = {}
 ---@field at integer
 ---@field kind string
 ---@field data table
+---@field entities LuaEntity[]|nil
 
 ---@class NbSummonRender
 ---@field render LuaRenderObject
@@ -37,7 +38,7 @@ local M = {}
 local OWN = {
   ["arachnid-queen"] = { module = require("scripts.bosses.arachnid-queen"), watch = { cfg.QUEEN } },
   ["watcher"] = {
-    module = require("scripts.bosses.watcher"), watch = { cfg.WATCHER, "flying-electric-unit-3" },
+    module = require("scripts.bosses.watcher"), watch = { cfg.WATCHER, cfg.WATCHER_DRONE },
   },
   ["rogue-spidertron"] = { module = require("scripts.bosses.rogue-spidertron"), watch = { cfg.SPIDERTRON } },
   ["twin-maws"] = { module = require("scripts.bosses.twin-maws"), watch = { cfg.MAW_FIRE, cfg.MAW_ACID } },
@@ -606,9 +607,8 @@ function M.on_built(entity, player)
     charge = charge,
     lair = lair,
     weaken = weaken,
-    frequency = 1.0,
+    frequency = lair and bearing.lair_frequency(force.name, boss_id) or 1,
   }
-  summon.frequency = summon.lair and bearing.lair_frequency(force.name, boss_id) or 1
   if boss_id == "colossus" then
     summon.variant = storage.next_colossus_variant
       or (cfg.COLOSSUS_VARIANTS[math.random(#cfg.COLOSSUS_VARIANTS)] --[[@as table]]).id

@@ -51,7 +51,7 @@ function M.spawn(summon, surface)
       units[#units + 1] = unit
     end
   end
-  summon.guardian = { feeding = false, next_lightning = util.interval(summon, LIGHTNING_SECONDS) }
+  summon.guardian = { feeding = false }
   spawn.dispatch(surface, units, summon.position)
   return true, nil
 end
@@ -96,21 +96,12 @@ function M.tick(summon, surface, force)
     end
   end
   local lightning_interval = util.interval(summon, LIGHTNING_SECONDS)
-  if lightning_interval and not state.next_lightning then
-    state.next_lightning = seconds + lightning_interval
-  end
-  if storm and lightning_interval and state.next_lightning and seconds >= state.next_lightning then
-    state.next_lightning = seconds + lightning_interval
+  if storm and util.due(state, "next_lightning", seconds, lightning_interval) then
     if math.random() < 1 - (summon.weaken or 0) then
       local position = util.offset(guardian.position, math.random() * 2 * math.pi,
         math.random() * LIGHTNING_RADIUS)
       telegraph.filling_circle(summon, surface, position, 2, LIGHTNING_TELEGRAPH_TICKS)
-      summon.pending = summon.pending or {}
-      summon.pending[#summon.pending + 1] = {
-        at = game.tick + LIGHTNING_TELEGRAPH_TICKS,
-        kind = "strike",
-        data = { position = util.copy_position(position) },
-      }
+      telegraph.queue(summon, "strike", LIGHTNING_TELEGRAPH_TICKS, { position = util.copy_position(position) })
     end
   end
 end

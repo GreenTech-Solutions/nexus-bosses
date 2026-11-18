@@ -1,5 +1,6 @@
 -- The Colossus is one of six Big Monsters units copied under Nexus Bosses' names. Each variant has its own attack.
 
+local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
 local records = require("scripts.nb_records")
 local spawn = require("scripts.nb_spawn")
@@ -28,10 +29,9 @@ local SPITTER_RADIUS = 40
 local SPITTER_ATTACK_RADIUS = 6
 local SPITTER_SHOTS = 5
 local MOTHER_ESCORTS = 6
-local TURRET_TYPES = { ["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true }
 local SPITTER_PROJECTILES = {
-  ["fire-spitter"] = "mf-cluster-fire-projectile-big",
-  ["acid-spitter"] = "acid-stream-spitter-behemoth",
+  ["fire-spitter"] = cfg.COLOSSUS_FIRE_PROJECTILE,
+  ["acid-spitter"] = cfg.COLOSSUS_ACID_PROJECTILE,
 }
 
 ---@param summon table
@@ -49,26 +49,9 @@ function M.spawn(summon, surface)
     return false, "msg-fail-position"
   end
   records.add(summon, boss, true, "boss")
-  summon.colossus = { next_attack = util.interval(summon, INTERVALS[summon.variant]) }
+  summon.colossus = {}
   spawn.dispatch(surface, { boss }, summon.position)
   return true, nil
-end
-
----@param surface LuaSurface
----@param force LuaForce
----@param center MapPosition
----@return LuaEntity|nil
-local function nearest_turret(surface, force, center)
-  local nearest, nearest_distance
-  for _, entity in ipairs(surface.find_entities_filtered({ position = center, radius = SPITTER_RADIUS, force = force })) do
-    if entity.valid and TURRET_TYPES[entity.type] then
-      local distance = util.distance(center, entity.position)
-      if not nearest_distance or distance < nearest_distance then
-        nearest, nearest_distance = entity, distance
-      end
-    end
-  end
-  return nearest
 end
 
 ---@param summon table
@@ -85,9 +68,9 @@ local function schedule_attack(summon, surface, boss)
     telegraph.filling_circle(summon, surface, point, 3, warning)
     data.position = util.copy_position(point)
   elseif variant == "storm" then
-    telegraph.ring(surface, boss, 6, warning)
+    telegraph.ring(summon, surface, boss, 6, warning)
   elseif variant == "armored" then
-    telegraph.ring(surface, boss, 8, warning)
+    telegraph.ring(summon, surface, boss, 8, warning)
   elseif variant == "mother" then
     local boss_x, boss_y = util.xy(boss.position)
     local beacon_x, beacon_y = util.xy(summon.position)
@@ -96,19 +79,16 @@ local function schedule_attack(summon, surface, boss)
     telegraph.filling_circle(summon, surface, point, 4, warning)
     data.position = util.copy_position(point)
   elseif variant == "fire-spitter" or variant == "acid-spitter" then
-    local turret = nearest_turret(surface, game.forces[summon.force], boss.position)
+    local turret = spawn.nearest_target(surface, summon, boss.position, SPITTER_RADIUS,
+      { types = cfg.TURRET_TYPES })
     if not turret then
       return
     end
-    telegraph.filling_circle(summon, surface, turret, SPITTER_ATTACK_RADIUS, warning)
     data.position = util.copy_position(turret.position)
+    telegraph.filling_circle(summon, surface, data.position, SPITTER_ATTACK_RADIUS, warning)
   end
 
-  summon.pending[#summon.pending + 1] = {
-    at = game.tick + warning,
-    kind = kind,
-    data = data,
-  }
+  telegraph.queue(summon, kind, warning, data)
 end
 
 ---@param summon table
@@ -139,7 +119,7 @@ function M.on_pending(summon, surface, _force, entry)
   if entry.kind == "colossus-fire" then
     local point = entry.data.position
     surface.create_entity({
-      name = "mf-cluster-fire-projectile-big",
+      name = cfg.COLOSSUS_FIRE_PROJECTILE,
       position = point,
       target_position = point,
       source = boss.entity,
@@ -147,10 +127,10 @@ function M.on_pending(summon, surface, _force, entry)
       speed = 1,
     })
   elseif entry.kind == "colossus-storm" then
-    surface.create_entity({ name = "electric-shock2", position = boss.entity.position, force = "enemy" })
+    surface.create_entity({ name = cfg.COLOSSUS_STORM_EXPLOSION, position = boss.entity.position, force = "enemy" })
   elseif entry.kind == "colossus-armored" then
     summon.shield = { health = boss.entity.health, until_tick = game.tick + SHIELD_SECONDS * 60 }
-    summon.renders[#summon.renders + 1] = { render = telegraph.ring(surface, boss.entity, 8, SHIELD_SECONDS * 60) }
+    telegraph.ring(summon, surface, boss.entity, 8, SHIELD_SECONDS * 60)
   elseif entry.kind == "colossus-mother" then
     spawn_mother_escort(summon, surface, entry.data.position)
   elseif entry.kind == "colossus-fire-spitter" or entry.kind == "colossus-acid-spitter" then
@@ -197,9 +177,8 @@ function M.tick(summon, surface, _force)
   end
 
   local state = summon.colossus
-  local interval = util.interval(summon, INTERVALS[summon.variant])
-  if interval and state.next_attack and seconds >= state.next_attack then
-    state.next_attack = seconds + interval
+  local interval = util.interval(summon, INTERVALS[summon.variant], true)
+  if util.due(state, "next_attack", seconds, interval) then
     schedule_attack(summon, surface, boss)
   end
 end
@@ -223,10 +202,16 @@ function M.status(summon)
     end
   end
 
-  if not summon.colossus.next_attack then
+  local interval = util.interval(summon, INTERVALS[summon.variant], true)
+  if not interval then
     return nil
   end
-  local remaining = math.max(0, summon.colossus.next_attack - summon.active_seconds)
+  local next_attack = summon.colossus.next_attack
+  if not next_attack then
+    return { "nexus-bosses.status-colossus-attack", { "nexus-bosses.colossus-attack-" .. summon.variant },
+      math.ceil(interval) }
+  end
+  local remaining = math.max(0, math.ceil(next_attack - summon.active_seconds))
   return {
     "nexus-bosses.status-colossus-attack",
     { "nexus-bosses.colossus-attack-" .. summon.variant },

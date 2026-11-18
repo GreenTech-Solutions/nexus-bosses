@@ -75,11 +75,8 @@ function M.tick(summon, surface, _force)
         max_health = record.death_max_health or record.initial,
       }
       local delay = math.floor(RISE_SECONDS * 60 / (summon.frequency or 1) + 0.5)
-      telegraph.circle(surface, position, RISE_RADIUS, delay, summon)
-      summon.pending[#summon.pending + 1] = {
-        kind = "rise",
-        at = game.tick + delay,
-      }
+      telegraph.circle(summon, surface, position, RISE_RADIUS, delay)
+      telegraph.queue(summon, "rise", delay, {})
       return
     end
   end

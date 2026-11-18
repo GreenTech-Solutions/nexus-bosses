@@ -18,13 +18,13 @@ local function play(surface, target)
 end
 
 ---A circle outline and filled disk on the ground that last until the attack.
+---@param summon table
 ---@param surface LuaSurface
 ---@param target MapPosition|LuaEntity
 ---@param radius number
 ---@param ticks integer how long until the attack
----@param summon table|nil
 ---@return LuaRenderObject
-function M.circle(surface, target, radius, ticks, summon)
+function M.circle(summon, surface, target, radius, ticks)
   play(surface, target)
   local outline = rendering.draw_circle({
     color = COLOR,
@@ -48,11 +48,9 @@ function M.circle(surface, target, radius, ticks, summon)
     blink_interval = 0,
     time_to_live = ticks,
   })
-  if summon then
-    summon.renders = summon.renders or {}
-    summon.renders[#summon.renders + 1] = { render = outline }
-    summon.renders[#summon.renders + 1] = { render = disk }
-  end
+  summon.renders = summon.renders or {}
+  summon.renders[#summon.renders + 1] = { render = outline }
+  summon.renders[#summon.renders + 1] = { render = disk }
   return disk
 end
 
@@ -63,26 +61,24 @@ end
 ---@param radius number
 ---@param ticks integer how long until the attack
 function M.filling_circle(summon, surface, target, radius, ticks)
-  local disk = M.circle(surface, target, radius, ticks)
+  local disk = M.circle(summon, surface, target, radius, ticks)
   disk.radius = 0.1
-  summon.renders = summon.renders or {}
-  summon.renders[#summon.renders + 1] = {
-    render = disk,
-    radius = radius,
-    start_tick = game.tick,
-    end_tick = game.tick + ticks,
-  }
+  local entry = summon.renders[#summon.renders]
+  entry.radius = radius
+  entry.start_tick = game.tick
+  entry.end_tick = game.tick + ticks
 end
 
 ---A line from an entity or position to a target.
+---@param summon table
 ---@param surface LuaSurface
 ---@param from MapPosition|LuaEntity
 ---@param to MapPosition|LuaEntity
 ---@param ticks integer how long until the attack
 ---@return LuaRenderObject
-function M.line(surface, from, to, ticks)
+function M.line(summon, surface, from, to, ticks)
   play(surface, to)
-  return rendering.draw_line({
+  local line = rendering.draw_line({
     color = COLOR,
     width = 3,
     from = from,
@@ -91,17 +87,21 @@ function M.line(surface, from, to, ticks)
     blink_interval = 0,
     time_to_live = ticks,
   })
+  summon.renders = summon.renders or {}
+  summon.renders[#summon.renders + 1] = { render = line }
+  return line
 end
 
 ---A ring around an entity.
+---@param summon table
 ---@param surface LuaSurface
 ---@param entity LuaEntity
 ---@param radius number
 ---@param ticks integer how long until the attack
 ---@return LuaRenderObject
-function M.ring(surface, entity, radius, ticks)
+function M.ring(summon, surface, entity, radius, ticks)
   play(surface, entity)
-  return rendering.draw_circle({
+  local ring = rendering.draw_circle({
     color = COLOR,
     radius = radius,
     width = 3,
@@ -112,6 +112,25 @@ function M.ring(surface, entity, radius, ticks)
     blink_interval = 0,
     time_to_live = ticks,
   })
+  summon.renders = summon.renders or {}
+  summon.renders[#summon.renders + 1] = { render = ring }
+  return ring
+end
+
+---Queues a boss strike. Data stays serializable; LuaEntity references are kept separately and checked when used.
+---@param summon table
+---@param kind string
+---@param ticks integer
+---@param data table|nil
+---@param entities LuaEntity[]|nil
+function M.queue(summon, kind, ticks, data, entities)
+  summon.pending = summon.pending or {}
+  summon.pending[#summon.pending + 1] = {
+    at = game.tick + ticks,
+    kind = kind,
+    data = data or {},
+    entities = entities,
+  }
 end
 
 return M

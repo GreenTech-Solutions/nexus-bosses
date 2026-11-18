@@ -21,10 +21,9 @@ local NUKE_WARNING_RADIUS = 20
 local NUKE_WARNING_TICKS = 5 * 60
 local NUKE_SPEED = 0.4
 local NUKE_SETTING = "bm-allow-nuker"
-local NUKE_PROJECTILE = "mf-small-atomic-rocket"
-local DROP_EXPLOSION = "big-explosion"
-local DROP_UNIT = "bm_fake_human_machine_gunner_5"
-local TURRET_TYPES = { ["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true }
+local NUKE_PROJECTILE = cfg.COMMANDER_NUKE
+local DROP_EXPLOSION = cfg.COMMANDER_DROP_EXPLOSION
+local DROP_UNIT = cfg.COMMANDER_DROP_UNIT
 
 ---@param summon table
 ---@param surface LuaSurface
@@ -41,10 +40,7 @@ function M.spawn(summon, surface)
     return false, "msg-fail-position"
   end
   records.add(summon, commander, true, "boss")
-  local drop_interval = util.interval(summon, DROP_SECONDS)
-  local weaken = summon.weaken or 0
-  local nuke_interval = weaken == 0 and util.interval(summon, NUKE_SECONDS) or nil
-  summon.commander = { next_drop = drop_interval, next_nuke = nuke_interval }
+  summon.commander = {}
   spawn.dispatch(surface, { commander }, summon.position)
   return true, nil
 end
@@ -53,23 +49,6 @@ end
 local function nuker_enabled()
   local setting = settings.global[NUKE_SETTING]
   return setting ~= nil and setting.value == true
-end
-
----@param surface LuaSurface
----@param force LuaForce
----@param center MapPosition
----@return LuaEntity|nil
-local function nearest_turret(surface, force, center)
-  local nearest, nearest_distance
-  for _, entity in ipairs(surface.find_entities_filtered({ position = center, radius = NUKE_RADIUS, force = force })) do
-    if entity.valid and TURRET_TYPES[entity.type] then
-      local distance = util.distance(center, entity.position)
-      if not nearest_distance or distance < nearest_distance then
-        nearest, nearest_distance = entity, distance
-      end
-    end
-  end
-  return nearest
 end
 
 ---@param summon table
@@ -81,27 +60,18 @@ local function schedule_drop(summon, surface, boss, count)
   local angle = math.atan2(beacon_y - boss_y, beacon_x - boss_x)
   local distance = DROP_MIN_DISTANCE + math.random() * (DROP_MAX_DISTANCE - DROP_MIN_DISTANCE)
   local position = util.offset(boss.position, angle, distance)
-  telegraph.circle(surface, position, DROP_RADIUS, DROP_WARNING_TICKS, summon)
-  summon.pending[#summon.pending + 1] = {
-    at = game.tick + DROP_WARNING_TICKS,
-    kind = "drop",
-    data = { position = util.copy_position(position), count = count },
-  }
+  telegraph.circle(summon, surface, position, DROP_RADIUS, DROP_WARNING_TICKS)
+  telegraph.queue(summon, "drop", DROP_WARNING_TICKS, { position = util.copy_position(position), count = count })
 end
 
 ---@param summon table
 ---@param surface LuaSurface
 ---@param boss LuaEntity
----@param force LuaForce
-local function schedule_nuke(summon, surface, boss, force)
-  local turret = nearest_turret(surface, force, boss.position)
+local function schedule_nuke(summon, surface, boss)
+  local turret = spawn.nearest_target(surface, summon, boss.position, NUKE_RADIUS, { types = cfg.TURRET_TYPES })
   local position = util.copy_position(turret and turret.position or summon.position)
-  telegraph.circle(surface, turret or position, NUKE_WARNING_RADIUS, NUKE_WARNING_TICKS, summon)
-  summon.pending[#summon.pending + 1] = {
-    at = game.tick + NUKE_WARNING_TICKS,
-    kind = "nuke",
-    data = { position = position },
-  }
+  telegraph.circle(summon, surface, position, NUKE_WARNING_RADIUS, NUKE_WARNING_TICKS)
+  telegraph.queue(summon, "nuke", NUKE_WARNING_TICKS, { position = position })
 end
 
 ---@param summon table
@@ -145,8 +115,8 @@ end
 
 ---@param summon table
 ---@param surface LuaSurface
----@param force LuaForce
-function M.tick(summon, surface, force)
+---@param _force LuaForce
+function M.tick(summon, surface, _force)
   local record = records.main(summon)
   if not record then
     return
@@ -157,27 +127,20 @@ function M.tick(summon, surface, force)
   end
 
   local state = summon.commander
-  local weaken = summon.weaken or 0
-  local drop_interval = util.interval(summon, DROP_SECONDS)
-  if drop_interval and state.next_drop and summon.active_seconds >= state.next_drop then
+  local seconds = summon.active_seconds
+  local drop_due = util.due(state, "next_drop", seconds, util.interval(summon, DROP_SECONDS))
+  if drop_due then
+    local weaken = summon.weaken or 0
     local drop_count = math.floor(DROP_COUNT * (1 - weaken) + 0.5)
     if drop_count > 0 then
       schedule_drop(summon, surface, record.entity, drop_count)
     end
-    state.next_drop = summon.active_seconds + drop_interval
   end
 
-  if nuker_enabled() and weaken == 0 then
-    local nuke_interval = util.interval(summon, NUKE_SECONDS)
-    if nuke_interval then
-      state.next_nuke = state.next_nuke or summon.active_seconds + nuke_interval
-    end
-    if nuke_interval and state.next_nuke and summon.active_seconds >= state.next_nuke then
-      state.next_nuke = summon.active_seconds + nuke_interval
-      schedule_nuke(summon, surface, record.entity, force)
-    end
-  else
-    state.next_nuke = nil
+  local nuke_allowed = nuker_enabled() and (summon.weaken or 0) == 0
+  local nuke_interval = nuke_allowed and util.interval(summon, NUKE_SECONDS) or nil
+  if util.due(state, "next_nuke", seconds, nuke_interval) then
+    schedule_nuke(summon, surface, record.entity)
   end
 end
 
@@ -185,8 +148,8 @@ end
 ---@return LocalisedString|nil
 function M.status(summon)
   local state = summon.commander
-  local drop_remaining = state.next_drop and math.max(0, state.next_drop - summon.active_seconds) or nil
-  local nuke_remaining = state.next_nuke and math.max(0, state.next_nuke - summon.active_seconds) or nil
+  local drop_remaining = state.next_drop and math.ceil(math.max(0, state.next_drop - summon.active_seconds)) or nil
+  local nuke_remaining = state.next_nuke and math.ceil(math.max(0, state.next_nuke - summon.active_seconds)) or nil
   for _, entry in ipairs(summon.pending or {}) do
     local remaining = math.max(0, math.ceil((entry.at - game.tick) / 60))
     if entry.kind == "drop" then
