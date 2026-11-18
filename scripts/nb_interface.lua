@@ -23,11 +23,14 @@
 --   repair_pylon(force_name, boss_id, quality)  repairs the pylon of a lair, as a trophy of that quality would
 --   resist(entity_name)                reads an entity's combat resistances for tests and debugging
 --   hallucinate(player_index, kind?)   a hallucination now: 1 shade, 2 whisper, 3 false alarm, 4 vignette and whisper
+--   migrate()                          reruns pending save migrations for tests and debugging
+--   forget_migration(name)             clears a migration marker for tests
 
 local cfg = require("lib.nb_data")
 local state = require("scripts.nb_state")
 local resistance = require("scripts.nb_resist")
 local summon = require("scripts.nb_summon")
+local migrate = require("scripts.nb_migrate")
 local expedition = require("scripts.nb_expedition")
 local codex = require("scripts.nb_codex")
 local bearing = require("scripts.nb_bearing")
@@ -56,6 +59,14 @@ remote.add_interface("nexus-bosses", {
   end,
   abort_summon = function(destroy_bosses)
     return summon.abort(destroy_bosses == true)
+  end,
+  migrate = function()
+    migrate.run()
+  end,
+  forget_migration = function(name)
+    assert(type(name) == "string", "nexus-bosses.forget_migration: expected a migration name")
+    storage.migrated = storage.migrated or {}
+    storage.migrated[name] = nil
   end,
   get_pending_data = summon.pending_data,
   set_tracked_health = function(unit_number, health)

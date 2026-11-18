@@ -941,6 +941,23 @@ function M.on_configuration_changed()
   M.restore_events()
 end
 
+---Cancels a legacy BM summon, destroys its tracked entities and returns its beacon.
+---@param message_key string
+---@return boolean true when there was a summon
+function M.cancel_refund(message_key)
+  local summon = storage.summon
+  if not summon then
+    return false
+  end
+  for _, record in ipairs(summon.tracked or {}) do
+    if records.alive(record) and not record.hidden then
+      record.entity.destroy()
+    end
+  end
+  end_summon(summon, message_key, util.COLORS.warning, { refund = true })
+  return true
+end
+
 ---Ends the active summon without a victory. For administrators and tests.
 ---@param destroy_bosses boolean|nil also destroy what the trial created
 ---@return boolean true when there was a summon

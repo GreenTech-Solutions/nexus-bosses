@@ -9,6 +9,7 @@ local state = require("scripts.nb_state")
 local nexus = require("scripts.nb_nexus")
 local progress = require("scripts.nb_progress")
 local summon = require("scripts.nb_summon")
+local migrate = require("scripts.nb_migrate")
 local expedition = require("scripts.nb_expedition")
 local codex = require("scripts.nb_codex")
 local bearing = require("scripts.nb_bearing")
@@ -215,6 +216,7 @@ script.on_configuration_changed(function()
   story.init()
   whisper.init()
   vault.init()
+  migrate.run()
   expedition.sync_bearing()
   story.sync_all()
   vault.sync_all()
@@ -246,6 +248,6 @@ end)
 if script.active_mods["factorio-test"] then
   require("__factorio-test__/init")({
     "tests.harness", "tests.fight", "tests.telegraph", "tests.bosses", "tests.search",
-    "tests.whisper", "tests.defeat", "tests.lair", "tests.vault", -- Lair state persists; the vault test is last because it builds a surface.
+    "tests.whisper", "tests.defeat", "tests.lair", "tests.migration", "tests.vault", -- Lair state persists; the vault test is last because it builds a surface.
   })
 end
