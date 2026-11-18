@@ -6,6 +6,7 @@ local progress = require("scripts.nb_progress")
 local expedition = require("scripts.nb_expedition")
 local bearing = require("scripts.nb_bearing")
 local story = require("scripts.nb_story")
+local resistance = require("scripts.nb_resist")
 
 local M = {}
 
@@ -33,6 +34,29 @@ local function paragraph(parent, caption, style)
 end
 
 local EXPEDITION = "expedition"
+
+---@param table_element LuaGuiElement
+---@param label LocalisedString
+---@param value LocalisedString
+local function tactics_row(table_element, label, value)
+  table_element.add({ type = "label", caption = label })
+  table_element.add({ type = "label", caption = value })
+end
+
+---@param page LuaGuiElement
+---@param boss_id string
+local function add_tactics(page, boss_id)
+  local table_element = page.add({ type = "table", column_count = 2 })
+  if boss_id == "colossus" then
+    -- The Colossus comes in variants with different weaknesses: one row for all of them.
+    tactics_row(table_element, { "nexus-bosses.codex-variants" }, "")
+  else
+    local weak, strong = resistance.of(cfg.BOSSES[boss_id].entity)
+    tactics_row(table_element, { "nexus-bosses.codex-weak" }, resistance.list_caption(weak))
+    tactics_row(table_element, { "nexus-bosses.codex-strong" }, resistance.list_caption(strong))
+  end
+  tactics_row(table_element, { "nexus-bosses.codex-mechanic" }, { "nexus-bosses.mechanic-" .. boss_id })
+end
 
 ---The page of the expedition: the prologue from its camp and the epilogue from the last stand of its commander.
 ---@param page LuaGuiElement
@@ -79,6 +103,7 @@ local function fill_page(page, force_name, boss_id)
   page.add({ type = "line" })
   if expedition.has_log(force_name, boss_id) then
     paragraph(page, { "nexus-bosses.log-" .. boss_id })
+    add_tactics(page, boss_id)
   else
     paragraph(page, { "nexus-bosses.codex-no-log" }).style.font_color = MUTED
   end

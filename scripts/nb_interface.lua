@@ -21,6 +21,7 @@
 
 local cfg = require("lib.nb_data")
 local state = require("scripts.nb_state")
+local resistance = require("scripts.nb_resist")
 local summon = require("scripts.nb_summon")
 local expedition = require("scripts.nb_expedition")
 local codex = require("scripts.nb_codex")
@@ -51,6 +52,11 @@ remote.add_interface("nexus-bosses", {
   end,
   find_log = function(force_name, boss_id)
     expedition.find_log(force_name, boss_id)
+  end,
+  resist = function(entity_name)
+    assert(type(entity_name) == "string", "nexus-bosses.resist: expected an entity name")
+    local weak, strong = resistance.of(entity_name)
+    return { weak = weak, strong = strong }
   end,
   toggle_detector = function(player_index)
     expedition.toggle_detector(assert(game.get_player(player_index), "nexus-bosses.toggle_detector: no such player"))

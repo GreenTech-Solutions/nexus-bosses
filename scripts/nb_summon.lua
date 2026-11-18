@@ -18,6 +18,7 @@ local nexus = require("scripts.nb_nexus")
 local spawn = require("scripts.nb_spawn")
 local progress = require("scripts.nb_progress")
 local gui = require("scripts.nb_gui")
+local resistance = require("scripts.nb_resist")
 local expedition = require("scripts.nb_expedition")
 local bearing = require("scripts.nb_bearing")
 local story = require("scripts.nb_story")
@@ -48,6 +49,12 @@ end
 local function module_of(summon)
   local own = OWN[summon.boss]
   return own and own.module
+end
+
+---@param summon table
+---@return string
+local function main_entity(summon)
+  return summon.variant_entity or cfg.BOSSES[summon.boss].entity
 end
 
 ---@param summon table
@@ -177,8 +184,10 @@ end
 local function update_health_bar(summon, force)
   local module = module_of(summon)
   local status = module and module.status and module.status(summon) or nil
+  local resist = expedition.has_log(summon.force, summon.boss) and resistance.caption(main_entity(summon)) or nil
+  summon.health_bar = { status = status, resist = resist }
   gui.update(force, { "nexus-bosses.bar-title", boss_name(summon.boss), { "nexus-bosses.stage-" .. cfg.CIRCLES[summon.circle].stage } },
-    records.health_share(summon), status)
+    records.health_share(summon), status, resist)
 end
 
 -- Ending ------------------------------------------------------------------------------------------------------------
@@ -689,6 +698,7 @@ function M.snapshot()
     active_seconds = summon.active_seconds,
     tracked = records.snapshot(summon),
     health_share = records.health_share(summon),
+    health_bar = summon.health_bar and { status = summon.health_bar.status, resist = summon.health_bar.resist },
     spawn_note = summon.spawn_note,
     charge = summon.charge,
     lair = summon.lair,
