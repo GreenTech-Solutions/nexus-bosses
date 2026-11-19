@@ -145,9 +145,22 @@ end
 
 ---@param player LuaPlayer
 ---@param surface LuaSurface
+---@return boolean
+local function fight_is_here(player, surface)
+  local summon = storage.summon --[[@as NbSummon|nil]]
+  local character = player.character
+  return summon ~= nil and character ~= nil and character.surface_index == summon.surface_index
+    and surface.index == summon.surface_index
+end
+
+---@param player LuaPlayer
+---@param surface LuaSurface
 ---@param stage integer
 ---@param kind integer|nil 1 shade, 2 whisper, 3 false alarm, 4 vignette and whisper; nil: any of them
 local function hallucinate(player, surface, stage, kind)
+  if fight_is_here(player, surface) then
+    return
+  end
   kind = kind or math.random(4)
   if kind == 1 or kind == 3 then
     player.play_music({ name = "nexus-bosses-hallucination", fade_in_duration = 120, fade_out_duration = 120 })
@@ -184,26 +197,36 @@ end
 
 ---Every CHECK_TICKS.
 ---@param tick integer
-function M.on_tick(tick)
+---@param test_callback fun(player: LuaPlayer, surface: LuaSurface, stage: integer)|nil
+function M.on_tick(tick, test_callback)
   local w = storage.whisper
   local surface = util.nexus()
-  if not surface or surface.darkness < NIGHT then
+  if not surface then
     return
   end
+  local dark = surface.darkness >= NIGHT
   for _, player in pairs(game.connected_players) do
     local character = player.character
     local mode = settings.get_player_settings(player)["nexus-bosses-hallucinations"].value
     if character and character.surface_index == surface.index and mode ~= "off" then
       local force = player.force --[[@as LuaForce]]
       local stage = stage_of(force)
-      if stage and lonely(surface, force, character.position) then
+      if stage then
         local interval = (INTERVALS[stage] or INTERVALS[1]) * 60 * (mode == "rare" and RARE_FACTOR or 1)
         local due = w.next[player.index]
-        if not due then
+        if fight_is_here(player, surface) then
           w.next[player.index] = tick + math.floor(interval * (0.5 + math.random()))
-        elseif tick >= due then
-          w.next[player.index] = tick + math.floor(interval * (0.5 + math.random()))
-          hallucinate(player, surface, stage)
+        elseif dark and lonely(surface, force, character.position) then
+          if not due then
+            w.next[player.index] = tick + math.floor(interval * (0.5 + math.random()))
+          elseif tick >= due then
+            w.next[player.index] = tick + math.floor(interval * (0.5 + math.random()))
+            if test_callback then
+              test_callback(player, surface, stage)
+            else
+              hallucinate(player, surface, stage)
+            end
+          end
         end
       end
     end

@@ -39,16 +39,6 @@ local HALLS = {
 local FLOOR = "fulgoran-paving"
 local CORRIDOR = "fulgoran-conduit"
 
-function M.init()
-  storage.vault = storage.vault or {}
-  local v = storage.vault
-  v.obelisks = v.obelisks or {}
-  v.marked = v.marked or {}
-  v.attempts = v.attempts or {}
-  v.earned = v.earned or {}
-  v.revealed = v.revealed or {}
-end
-
 ---@return LuaSurface|nil
 local function vault_surface()
   return game.get_surface(cfg.VAULT_SURFACE)
@@ -72,12 +62,34 @@ local function gated()
   return prototypes.technology[cfg.SILENCE_TECH] ~= nil
 end
 
+---Whether any player force has researched Silence or the vault does not use the warp-drive gate.
+---@return boolean
+local function should_raise_relic()
+  if not gated() then
+    return true
+  end
+  for _, force in pairs(game.forces) do
+    if force.name ~= "enemy" and force.name ~= "neutral" then
+      local technology = force.technologies[cfg.SILENCE_TECH]
+      if technology and technology.researched then
+        return true
+      end
+    end
+  end
+  return false
+end
+
 ---Place the relic once on the vault surface.
 ---@param surface LuaSurface
 ---@return LuaEntity|nil
 local function raise_relic(surface)
   local v = storage.vault
   if v.relic and v.relic.valid then
+    return v.relic
+  end
+  local existing = surface.find_entities_filtered({ name = cfg.RELIC, limit = 1 })
+  if existing[1] then
+    v.relic = existing[1]
     return v.relic
   end
   local relic = surface.create_entity({ name = cfg.RELIC, position = { x = 104, y = 0 }, force = "neutral" })
@@ -88,6 +100,39 @@ local function raise_relic(surface)
       tint = { r = 1, g = 0.75, b = 0.35 }, render_layer = "lower-object" })
   end
   return relic
+end
+
+---Place the relic when Silence is researched, or adopt the existing relic on an older save.
+---@param surface LuaSurface
+---@return LuaEntity|nil
+local function ensure_relic(surface)
+  local v = storage.vault
+  if v.relic and v.relic.valid then
+    return v.relic
+  end
+  local existing = surface.find_entities_filtered({ name = cfg.RELIC, limit = 1 })
+  if existing[1] then
+    v.relic = existing[1]
+    return v.relic
+  end
+  if should_raise_relic() then
+    return raise_relic(surface)
+  end
+  return nil
+end
+
+function M.init()
+  storage.vault = storage.vault or {}
+  local v = storage.vault
+  v.obelisks = v.obelisks or {}
+  v.marked = v.marked or {}
+  v.attempts = v.attempts or {}
+  v.earned = v.earned or {}
+  v.revealed = v.revealed or {}
+  local surface = vault_surface()
+  if surface then
+    ensure_relic(surface)
+  end
 end
 
 ---Reveals the next code places earned by a force and its wrong-code hints.
@@ -434,6 +479,7 @@ local function build_vault()
   end
   local v = storage.vault
   if v.built then
+    ensure_relic(surface)
     return surface
   end
   v.built = true
@@ -504,9 +550,7 @@ local function build_vault()
     rendering.draw_light({ sprite = "utility/light_medium", target = v.reliquary, surface = surface, scale = 6,
       intensity = 1, color = { r = 1, g = 0.8, b = 0.45 } })
   end
-  if not gated() then
-    raise_relic(surface)
-  end
+  ensure_relic(surface)
   return surface
 end
 
@@ -596,7 +640,7 @@ function M.on_reliquary_closed(player)
   progress.research(force, cfg.SILENCE_TECH)
   util.say(force, { "nexus-bosses.msg-vault-key-accepted" }, util.COLORS.good)
   util.play(force, "silence")
-  raise_relic(reliquary.surface)
+  ensure_relic(reliquary.surface)
 end
 
 ---A player opened the console: a commander's badge earns one glyph.

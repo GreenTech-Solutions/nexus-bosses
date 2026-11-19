@@ -3,6 +3,7 @@
 local cfg = require("lib.nb_data")
 local expedition = require("scripts.nb_expedition")
 local helpers = require("tests.helpers")
+local util = require("scripts.nb_util")
 local vault = require("scripts.nb_vault")
 
 ---@param values table
@@ -93,7 +94,9 @@ describe("vault finale", function()
       assert(reliquary_inventory.get_item_count(cfg.WARP_KEY) == 0, "the warp key was not consumed")
       assert(storage.vault.relic and storage.vault.relic.valid, "the relic was not placed after the warp key")
     else
-      assert(storage.vault.relic and storage.vault.relic.valid, "the relic was not placed without the Silence gate")
+      if not (storage.vault.relic and storage.vault.relic.valid) then
+        error("the relic was not placed without the Silence gate")
+      end
     end
   end)
 
@@ -135,6 +138,63 @@ describe("vault finale", function()
     storage.expedition.logs[force.name] = old_logs
     if not ok then
       error(err)
+    end
+  end)
+
+  test("a researched Silence raises one relic when the vault is built", function()
+    local player = assert(game.get_player(1), "the first test player is missing")
+    local force = player.force --[[@as LuaForce]]
+    local technology = force.technologies[cfg.SILENCE_TECH]
+    if not technology then
+      return
+    end
+
+    local nexus = helpers.nexus()
+    local old_character = player.character
+    local old_position = old_character and util.copy_position(old_character.position)
+    local old_surface = old_character and old_character.surface
+    if old_character then
+      player.teleport({ x = 0, y = 0 }, nexus)
+    else
+      local position = nexus.find_non_colliding_position("character", { x = 0, y = 0 }, 10, 0.5) or { x = 0, y = 0 }
+      local character = nexus.create_entity({ name = "character", position = position, force = force })
+      assert(character, "could not create a character to build the vault")
+      player.set_controller({ type = defines.controllers.character, character = character })
+    end
+
+    local existing_surface = game.get_surface(cfg.VAULT_SURFACE)
+    if existing_surface then
+      for _, entity in ipairs(existing_surface.find_entities_filtered({})) do
+        if entity.valid then
+          entity.destroy()
+        end
+      end
+    end
+    storage.vault = {}
+    vault.init()
+    storage.vault.open = true
+    technology.researched = true
+
+    local ok, failure = pcall(function()
+      vault.descend(player)
+      local surface = assert(game.get_surface(cfg.VAULT_SURFACE), "the vault surface was not created")
+      local relics = surface.find_entities_filtered({ name = cfg.RELIC })
+      assert(#relics == 1, "a researched Silence did not raise exactly one relic when the vault was built")
+      if not (storage.vault.relic and storage.vault.relic.valid) then
+        error("the built relic was not stored")
+      end
+
+      vault.descend(player)
+      relics = surface.find_entities_filtered({ name = cfg.RELIC })
+      assert(#relics == 1, "building the vault again created a second relic")
+    end)
+
+    technology.researched = true
+    if old_character and old_position and old_surface and old_character.valid then
+      player.teleport(old_position, old_surface)
+    end
+    if not ok then
+      error(failure)
     end
   end)
 end)

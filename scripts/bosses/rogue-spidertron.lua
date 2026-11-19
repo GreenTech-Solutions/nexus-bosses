@@ -27,9 +27,13 @@ local AMMO = { { name = "explosive-rocket", count = 400 } }
 local function best_pole(surface, summon, position, exclude)
   local poles = spawn.targets(surface, summon, position, SEARCH_RADIUS,
     { types = cfg.POLE_TYPES, exclude = exclude })
+  local distances = {}
+  for _, pole in ipairs(poles) do
+    distances[pole.unit_number] = util.distance(position, pole.position)
+  end
   table.sort(poles, function(a, b)
-    local distance_a = util.distance(position, a.position)
-    local distance_b = util.distance(position, b.position)
+    local distance_a = distances[a.unit_number] or math.huge
+    local distance_b = distances[b.unit_number] or math.huge
     if distance_a == distance_b then
       return (a.unit_number or 0) < (b.unit_number or 0)
     end
@@ -40,7 +44,7 @@ local function best_pole(surface, summon, position, exclude)
   for index = 1, math.min(20, #poles) do
     local pole = poles[index]
     local count = surface.count_entities_filtered({ position = pole.position, radius = EMP_RADIUS, force = summon.force })
-    local distance = util.distance(position, pole.position)
+    local distance = distances[pole.unit_number] or math.huge
     if not best_count or count > best_count or (count == best_count and distance < best_distance) then
       best, best_count, best_distance = pole, count, distance
     end
@@ -88,12 +92,19 @@ function M.tick(summon, surface, _force)
   end
 
   local pole = state.target
-  if not (pole and pole.valid) then
+  if pole and not pole.valid then
+    pole = nil
+    state.target = nil
+  end
+  if not pole and seconds >= (state.next_pole_search or seconds) then
     pole = best_pole(surface, summon, entity.position, state.exclude)
     state.target = pole
     if pole then
+      state.next_pole_search = nil
       telegraph.line(summon, surface, entity, pole, 18 * 60)
       spider.approach(entity, pole, APPROACH_STAND_OFF)
+    else
+      state.next_pole_search = seconds + 5
     end
   end
   if not pole then
@@ -212,6 +223,9 @@ end
 function M.status(summon)
   local remaining = 0
   local state = assert(summon.spidertron)
+  if not util.interval(summon, EMP_COOLDOWN_SECONDS, true) then
+    return { "nexus-bosses.status-suppressed" }
+  end
   for _, disabled in pairs(state.emp or {}) do
     local duration = math.floor(disabled.until_tick - game.tick)
     if duration > remaining then

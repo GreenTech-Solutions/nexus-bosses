@@ -23,15 +23,25 @@ function M.run()
   end
 
   if not migrated["vault-relic"] then
-    local surface = game.get_surface(cfg.VAULT_SURFACE)
-    local vault_state = storage.vault
-    if surface and vault_state and not (vault_state.relic and vault_state.relic.valid) then
-      local relics = surface.find_entities_filtered({ name = cfg.RELIC, limit = 1 })
-      if relics[1] then
-        vault_state.relic = relics[1]
+    vault.init()
+    migrated["vault-relic"] = true
+  end
+
+  if not migrated["lair-guards"] then
+    storage.guards = storage.guards or {}
+    storage.guards.done = storage.guards.done or {}
+    for _, force in pairs(game.forces) do
+      if force.name ~= "enemy" and force.name ~= "neutral" then
+        for _, boss_id in ipairs(cfg.ORDER) do
+          local pylon = storage.bearing.pylons[boss_id]
+          if bearing.is_found(force.name, boss_id)
+            and (bearing.wins_of(force.name, boss_id) > 0 or (pylon and pylon.valid)) then
+            storage.guards.done["lair:" .. boss_id] = true
+          end
+        end
       end
     end
-    migrated["vault-relic"] = true
+    migrated["lair-guards"] = true
   end
 
   if not migrated.glyphs then

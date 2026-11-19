@@ -221,8 +221,8 @@ function M.tick(summon, surface, _force)
     local squad = state.squad
     if squad and not squad.spored then
       for _, unit in ipairs(squad.units) do
-        if unit.valid and spawn.nearest_target(surface, summon, unit.position, SPORE_TRIGGER,
-          { types = cfg.TURRET_TYPES }) then
+        if unit.valid and surface.count_entities_filtered({ position = unit.position, radius = SPORE_TRIGGER,
+          force = summon.force, type = cfg.TURRET_TYPES, limit = 1 }) > 0 then
           squad.spored = true
           local weaken = summon.weaken or 0
           if weaken < 1 then

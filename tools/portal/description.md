@@ -1,6 +1,6 @@
 ![](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/00-fight.gif)
 
-Nine bosses can be summoned on Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus). Light a summon beacon, defend it from the precursor waves, then fight the boss and claim its trophy.
+Nine bosses can be summoned on Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus). Light a summon beacon, defend it from the precursor waves, then fight the boss and claim its trophy. With the warp-drive gate enabled, place the warp key made from all nine trophies in the vault reliquary to research Silence and raise the relic.
 
 ## How it works
 
@@ -21,8 +21,8 @@ After a boss log is found, its Codex page shows any weak damage types computed f
 | Chorus | Colossus | One of six variants arrives, each with a different attack. The armoured variant absorbs damage for 10 seconds every 40 seconds; damage of its weak types breaks the shell after it absorbs 5 % of its maximum health. | The beacon names the variant; weak types are Physical (fire cluster and fire spray), Explosion (electric shock), Laser and Electric (armour shield), Acid and Poison (brood), or Fire (acid spray). |
 | Chorus | Plague Hulk | Ten infected turrets guard it. Every 120 seconds it sends up to seven sortie units; when the squad first comes within 30 tiles of player turrets, a three-second warning marks a 15-tile circle where turrets stop for up to 15 seconds. | Impact, Acid, Poison, Explosion, Laser and Electric. |
 | Convergence | Storm Guardian | After 60 seconds without a Nexus-Threat storm, it calls its own 40-second storm / 40-second calm cycle. During storms it heals up to 0.5 % of its health per second and calls lightning around itself. | Impact and Explosion. |
-| Convergence | Devourer | It dives at half health and resurfaces eight seconds later beyond the beacon. In a lair it also dives at 66 % and 33 % health. | Acid. |
-| Convergence | Last Commander | A four-second circle marks where six soldiers land every 45 seconds. Below 66 % health, it marks a nearby building for four seconds before firing four rockets every 12 seconds; below 33 %, soldiers land beyond the beacon. Its atomic rocket is controlled by a Nexus Bosses setting and a lair pylon can disable it. | No weak damage types; the Codex shows none. |
+| Convergence | Devourer | It dives at half health, or at 66 % and 33 % in a lair, and resurfaces eight seconds later beyond the beacon. | Acid. |
+| Convergence | Last Commander | A four-second circle marks where six soldiers land every 45 seconds. Below 66 % health, it marks a nearby building for four seconds before firing four rockets every 12 seconds; below 33 %, soldiers land beyond the beacon. Its atomic rocket targets the nearest turret within 60 tiles every 90 seconds, or the beacon if no turret is in range; a lair pylon can disable it. | No weak damage types; the Codex shows none. |
 
 ![Queen nest telegraphs](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/11-telegraph-queen.jpg)
 
@@ -43,7 +43,7 @@ After a boss log is found, its Codex page shows any weak damage types computed f
 
   ![Pylon of suppression](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/10-pylon-of-suppression.jpg)
 
-- **Vault.** The vault becomes available after all nine bosses are defeated. Exploration and fights reveal the four glyphs for its code. With the warp-drive gate enabled, the nine trophies craft a warp key; placing it in the reliquary consumes it and researches Silence. The relic in the vault gives research productivity +10 %.
+- **Vault.** The vault becomes available after all nine bosses are defeated. Exploration and fights reveal the four glyphs for its code. With the warp-drive gate enabled, place the warp key made from the nine trophies in the reliquary; it is consumed to research Silence, and the relic rises in the vault. The relic gives research productivity +10 %.
 
   ![Vault reliquary and warp key](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/14-vault-reliquary.jpg)
 
@@ -61,7 +61,7 @@ Big Monsters' random events are off by default. The map setting can enable them 
 
 ### When does the Last Commander's atomic rocket fire?
 
-When Nexus Bosses' `nexus-bosses-commander-nuke` setting is enabled (on by default), the rocket targets the nearest turret every 90 seconds. In a lair fight, any repaired pylon that weakens the Commander disables it, regardless of trophy quality.
+When Nexus Bosses' `nexus-bosses-commander-nuke` setting is enabled (on by default), the rocket targets the nearest turret within 60 tiles of the Commander every 90 seconds, or the beacon if no turret is in range. In a lair fight, any repaired pylon that weakens the Commander disables it, regardless of trophy quality.
 
 ## Settings
 

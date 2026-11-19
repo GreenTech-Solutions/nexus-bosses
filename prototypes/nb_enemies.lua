@@ -41,8 +41,8 @@ local function immune_to(prototype, damage_type)
   table.insert(prototype.resistances, { type = damage_type, percent = 100 })
 end
 
--- Arachnid Queen and her nests. The nest is an arachnid spawner that breeds warriors and spitters only (at the
--- evolution of Nexus the original would breed leviathans of 80 000 health) and keeps four of them at its side.
+-- Arachnid Queen and her nests. Their health is set by cfg.QUEEN_HEALTH and cfg.NEST_HEALTH. The nest is an arachnid
+-- spawner that breeds warriors and spitters only and keeps four of them at its side.
 local queen = copy("unit", "maf-boss-arachnid-biter-10", cfg.QUEEN)
 queen.max_health = cfg.QUEEN_HEALTH * HEALTH
 
@@ -102,7 +102,7 @@ spidertron.max_health = cfg.SPIDERTRON_HEALTH * HEALTH
 data:extend({ queen, nest, maw_fire, maw_acid, commander, hulk, guardian, watcher, spidertron })
 data:extend(colossus_variants)
 
--- Devourer: a big demolisher with 9.9 million health. Every segment prototype of a demolisher has the health of the
+-- Devourer: a big demolisher whose health is set by cfg.DEVOURER_HEALTH. Every segment prototype has the health of the
 -- head, so the segments are copied too; they carry the Devourer's name in the tooltip of the body.
 local devourer = copy("segmented-unit", "big-demolisher", cfg.DEVOURER)
 devourer.max_health = cfg.DEVOURER_HEALTH * HEALTH

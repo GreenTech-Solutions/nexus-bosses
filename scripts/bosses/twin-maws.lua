@@ -68,7 +68,7 @@ function M.tick(summon, surface, _force)
         position = position,
         max_health = record.death_max_health or record.initial,
       }
-      local delay = math.floor(RISE_SECONDS * 60 / (summon.frequency or 1) + 0.5)
+      local delay = math.floor(RISE_SECONDS * 60 / util.frequency(summon) + 0.5)
       telegraph.circle(summon, surface, position, RISE_RADIUS, delay)
       telegraph.queue(summon, "rise", delay, {})
       return
@@ -118,6 +118,9 @@ end
 ---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
+  if not util.interval(summon, RISE_SECONDS, true) then
+    return { "nexus-bosses.status-suppressed" }
+  end
   local fallen = summon.maws and summon.maws.fallen
   local function health_percent(name)
     for _, record in ipairs(summon.tracked) do

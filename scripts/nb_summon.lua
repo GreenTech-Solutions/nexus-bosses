@@ -70,6 +70,7 @@ local UNDEFENDED_SECONDS = 60
 ---@field active_seconds integer
 ---@field phase_index integer
 ---@field undefended integer|nil
+---@field defended_until integer|nil
 ---@field tracked NbTracked[]
 ---@field by_unit table<uint64, NbTracked>
 ---@field watch string[]
@@ -353,7 +354,7 @@ end
 ---@param force LuaForce
 ---@return boolean
 local function has_defence(summon, surface, force)
-  if #spawn.targets(surface, summon, summon.position, cfg.DEFENCE_RADIUS, { military = true, claimed = false }) > 0 then
+  if summon.defended_until and game.tick < summon.defended_until then
     return true
   end
   for _, player in pairs(force.players) do
@@ -361,17 +362,25 @@ local function has_defence(summon, surface, force)
     if character and character.valid and character.surface_index == surface.index
       and character.health and character.health > 0
       and util.distance(character.position, summon.position) <= cfg.DEFENCE_RADIUS then
+      summon.defended_until = game.tick + 5 * 60
       return true
     end
   end
+  if #spawn.targets(surface, summon, summon.position, cfg.DEFENCE_RADIUS, { military = true, claimed = false }) > 0 then
+    summon.defended_until = game.tick + 5 * 60
+    return true
+  end
+  summon.defended_until = nil
   return false
 end
 
 ---@param summon NbSummon
 ---@param surface LuaSurface
-local function destroy_required_entities(summon, surface)
+---@param destroy_support boolean
+local function destroy_required_entities(summon, surface, destroy_support)
   for _, record in ipairs(summon.tracked) do
-    if record.required and records.alive(record) and not record.hidden and record.entity.valid then
+    local support = destroy_support and (record.role == "nest" or record.role == "guard" or record.role == "escort")
+    if (record.required or support) and records.alive(record) and not record.hidden and record.entity.valid then
       local position = records.position(record)
       if position then
         if record.name == cfg.WATCHER then
@@ -410,7 +419,7 @@ end
 ---@param summon NbSummon
 ---@param message_key string key in the group nexus-bosses, whose first parameter is the name of the boss
 ---@param color Color
----@param options {refund: boolean|nil, keep_beacon: boolean|nil, params: LocalisedString[]|nil, destroy_required: boolean|nil}
+---@param options {refund: boolean|nil, keep_beacon: boolean|nil, params: LocalisedString[]|nil, destroy_required: boolean|nil, destroy_support: boolean|nil}
 local function end_summon(summon, message_key, color, options)
   local force = force_of(summon)
   local beacon = summon.beacon
@@ -422,12 +431,12 @@ local function end_summon(summon, message_key, color, options)
   if options.refund and surface then
     give_back(surface, summon.position, summon.item, summon.quality, nil)
   end
+  if options.destroy_required and surface then
+    destroy_required_entities(summon, surface, options.destroy_support == true)
+  end
   local module = module_of(summon)
   if module and module.release then
     module.release(summon)
-  end
-  if options.destroy_required and surface then
-    destroy_required_entities(summon, surface)
   end
   cleanup(summon, force)
   if force then
@@ -599,7 +608,8 @@ local function step_active(summon, force, surface)
       util.say(force, { "nexus-bosses.msg-trial-undefended", boss_name(summon.boss) }, util.COLORS.warning)
     end
     if summon.undefended >= UNDEFENDED_SECONDS then
-      end_summon(summon, "msg-trial-lost", util.COLORS.bad, { destroy_required = true })
+      end_summon(summon, "msg-trial-lost", util.COLORS.bad,
+        { destroy_required = true, destroy_support = true })
       return
     end
   end

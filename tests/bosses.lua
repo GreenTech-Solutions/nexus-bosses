@@ -2,6 +2,7 @@
 
 local helpers = require("tests.helpers")
 local util = require("scripts.nb_util")
+local cfg = require("lib.nb_data")
 
 ---@param surface LuaSurface
 ---@param name string
@@ -597,6 +598,14 @@ describe("reworked bosses", function()
         assert(after_nonweak and math.abs(after_nonweak - health_before) <= 1,
           "non-weak damage reduced the Armoured Colossus health during its shell")
 
+        boss_entity.damage(health_before + 10000, "player", nonweak_type)
+        if not boss_entity.valid then
+          error("damage greater than its remaining health killed the Colossus under its shell")
+        end
+        local after_overkill = boss_entity.health
+        assert(after_overkill and math.abs(after_overkill - health_before) <= 1,
+          "overkill damage increased or reduced health under the shell")
+
         local resistance_entry = boss_entity.prototype.resistances and boss_entity.prototype.resistances[weak_type]
         local share = resistance_entry and resistance_entry.percent or 0
         local decrease = resistance_entry and resistance_entry.decrease or 0
@@ -662,6 +671,28 @@ describe("reworked bosses", function()
         lowered_again = true
       elseif lowered_again and summon.phase_index == 2 then
         helpers.reset()
+        return true
+      end
+    end)
+  end)
+
+  test("the Queen's nest sorties use the health-escalated interval", function()
+    helpers.light("arachnid-queen", { x = 0, y = 0 })
+    local lowered = false
+    helpers.on_active(60 * 60, function(summon)
+      if not lowered then
+        local boss = helpers.tracked(summon, "boss", cfg.QUEEN)
+        assert(boss, "the Queen is missing from the summon snapshot")
+        assert(remote.call("nexus-bosses", "set_tracked_health", boss.unit_number, boss.initial * 0.6),
+          "the Queen's health could not be lowered below 66 %")
+        lowered = true
+      end
+
+      local active = storage.summon --[[@as NbSummon|nil]]
+      if active and active.queen and active.queen.clutches >= 1 and active.phase_index >= 1 then
+        assert(active.queen.next_sortie, "the Queen's sortie interval was not scheduled")
+        assert(util.interval(active, 20) < 20, "the Queen's nest sortie interval did not speed up in phase two")
+        remote.call("nexus-bosses", "abort_summon", true)
         return true
       end
     end)
@@ -928,7 +959,7 @@ describe("reworked bosses", function()
     end)
   end)
 
-  test("a dead Twin Maw rises after 20 seconds with half health", function()
+  test("a dead Twin Maw rises after its rise delay with half health", function()
     local surface = helpers.nexus()
     helpers.light("twin-maws", { 0, 0 })
     local death_tick = 0
@@ -938,6 +969,7 @@ describe("reworked bosses", function()
     ---@type number
     local max_health = 0
     local death_after_active_ticks
+    local rise_at
     helpers.on_active(1800, function(summon, ticks_since_active)
       if death_tick == 0 then
         local maw = helpers.tracked(summon, "boss", "nexus-maw-fire")
@@ -952,7 +984,11 @@ describe("reworked bosses", function()
         death_after_active_ticks = ticks_since_active
         entity.die()
       end
-      if death_tick > 0 and death_after_active_ticks and ticks_since_active >= death_after_active_ticks + 20 * 60 then
+      local rise = helpers.pending(summon, "rise")
+      if rise then
+        rise_at = rise.at
+      end
+      if rise_at and game.tick >= rise_at then
         local revived = helpers.tracked(summon, "boss", fallen_name)
         local entity = helpers.find_entity(surface, fallen_name, fallen_position, 1)
         if entity then

@@ -2,6 +2,7 @@
 
 local cfg = require("lib.nb_data")
 local helpers = require("tests.helpers")
+local progress = require("scripts.nb_progress")
 local records = require("scripts.nb_records")
 
 ---@param value any
@@ -63,7 +64,7 @@ describe("save migrations", function()
   end)
 
   test("migration is idempotent", function()
-    for _, name in ipairs({ "bm-summon", "vault-relic", "glyphs", "whisper-timers" }) do
+    for _, name in ipairs({ "bm-summon", "vault-relic", "lair-guards", "glyphs", "whisper-timers" }) do
       remote.call("nexus-bosses", "forget_migration", name)
     end
     storage.whisper.next[1] = game.tick + 600
@@ -79,7 +80,8 @@ describe("save migrations", function()
     assert(same(first_migrations, storage.migrated), "the second migration call changed migration markers")
     assert(same(first_whisper_timers, storage.whisper.next), "the second migration call changed whisper timers")
     if not (storage.migrated["bm-summon"] == true and storage.migrated["vault-relic"] == true
-      and storage.migrated.glyphs == true and storage.migrated["whisper-timers"] == true) then
+      and storage.migrated["lair-guards"] == true and storage.migrated.glyphs == true
+      and storage.migrated["whisper-timers"] == true) then
       error("the migration did not mark every migration as complete")
     end
   end)
@@ -198,5 +200,80 @@ describe("save migrations", function()
       remote.call("nexus-bosses", "abort_summon", true)
       return true
     end)
+  end)
+
+  test("the vault relic migration places one relic after Silence was researched", function()
+    local force = game.forces.player
+    local technology = force.technologies[cfg.SILENCE_TECH]
+    local surface = game.get_surface(cfg.VAULT_SURFACE) or game.create_surface(cfg.VAULT_SURFACE)
+    for _, relic in ipairs(surface.find_entities_filtered({ name = cfg.RELIC })) do
+      relic.destroy()
+    end
+    storage.vault.relic = nil
+    if technology then
+      progress.research(force, cfg.SILENCE_TECH)
+    end
+    local old_marker = storage.migrated["vault-relic"]
+    storage.migrated["vault-relic"] = nil
+
+    remote.call("nexus-bosses", "migrate")
+    local relics = surface.find_entities_filtered({ name = cfg.RELIC })
+    assert(#relics == 1, "the vault relic migration did not place exactly one relic")
+    if not (storage.vault.relic and storage.vault.relic.valid) then
+      error("the migrated relic was not stored")
+    end
+    remote.call("nexus-bosses", "migrate")
+    assert(surface.count_entities_filtered({ name = cfg.RELIC }) == 1,
+      "repeating the vault relic migration created a second relic")
+
+    relics[1].destroy()
+    storage.vault.relic = nil
+    storage.migrated["vault-relic"] = old_marker
+  end)
+
+  test("the lair guard migration skips old found lairs and ones with wins or pylons", function()
+    local force = game.forces.player
+    local surface = helpers.nexus()
+    local win_boss = cfg.ORDER[1]
+    local pylon_boss = cfg.ORDER[2]
+    local untouched_boss = cfg.ORDER[3]
+    local spot = surface.find_non_colliding_position(cfg.PYLON, { x = 300, y = 300 }, 10, 1)
+    assert(spot, "there was no clear spot for the migration test pylon")
+    local pylon = surface.create_entity({ name = cfg.PYLON, position = spot, force = "neutral" })
+    assert(pylon, "the migration test pylon could not be created")
+
+    local old_found = copy(storage.bearing.found) or {}
+    local old_wins = copy(storage.bearing.wins) or {}
+    local old_pylons = copy(storage.bearing.pylons) or {}
+    local old_done = copy(storage.guards.done) or {}
+    local old_migrated = copy(storage.migrated) or {}
+    storage.bearing.found = { [force.name] = {
+      [win_boss] = game.tick,
+      [pylon_boss] = game.tick,
+      [untouched_boss] = game.tick,
+    } }
+    storage.bearing.wins = { [force.name] = { [win_boss] = 1 } }
+    storage.bearing.pylons = { [pylon_boss] = pylon }
+    storage.guards.done = {}
+    storage.migrated = {
+      ["bm-summon"] = true,
+      ["vault-relic"] = true,
+      glyphs = true,
+      ["whisper-timers"] = true,
+    }
+
+    remote.call("nexus-bosses", "migrate")
+    assert(storage.guards.done["lair:" .. win_boss] == true, "a lair with a recorded win was not marked done")
+    assert(storage.guards.done["lair:" .. pylon_boss] == true, "a lair with a pylon was not marked done")
+    assert(not storage.guards.done["lair:" .. untouched_boss], "a found lair without a win or pylon was marked done")
+
+    storage.bearing.found = old_found
+    storage.bearing.wins = old_wins
+    storage.bearing.pylons = old_pylons
+    storage.guards.done = old_done
+    storage.migrated = old_migrated
+    if pylon.valid then
+      pylon.destroy()
+    end
   end)
 end)

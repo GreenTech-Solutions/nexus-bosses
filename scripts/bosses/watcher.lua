@@ -121,6 +121,10 @@ end
 ---@param summon NbSummon
 ---@return LocalisedString
 function M.status(summon)
+  local interval = util.interval(summon, MARK_SECONDS, true)
+  if not interval then
+    return { "nexus-bosses.status-suppressed" }
+  end
   local drones = #records.of_role(summon, "escort")
   local state = assert(summon.watcher)
   for _, entry in ipairs(summon.pending or {}) do
@@ -131,7 +135,6 @@ function M.status(summon)
   if drones == 0 then
     return { "nexus-bosses.status-watcher-no-drones" }
   end
-  local interval = util.interval(summon, MARK_SECONDS, true)
   local next_mark = state.next_mark or (summon.active_seconds + (interval or 0))
   local remaining = math.max(0, math.ceil(next_mark - summon.active_seconds))
   return { "nexus-bosses.status-watcher-drones-next", drones, remaining }

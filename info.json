@@ -4,7 +4,7 @@
   "title": "Nexus Bosses",
   "author": "Alex Green",
   "factorio_version": "2.1",
-  "description": "Nine summonable bosses for Nexus (Nexus Extended Promethium Endgame). Light a summon beacon, defend it through the countdown, kill the boss and take its trophy. The nine trophies craft the warp key, which opens the routes of the warp drive to the Oort cloud and Sol.",
+  "description": "Nine summonable bosses for Nexus (Nexus Extended Promethium Endgame). Light a summon beacon, defend it through the countdown, then defeat the boss and claim its trophy. With the warp-drive gate enabled, place the warp key made from all nine trophies in the vault reliquary to research Silence and raise the relic.",
   "dependencies": [
     "base >= 2.1.0",
     "space-age >= 2.1.0",

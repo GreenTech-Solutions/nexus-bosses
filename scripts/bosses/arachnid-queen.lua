@@ -124,7 +124,8 @@ function M.tick(summon, surface, _force)
     end
   end
 
-  if seconds % NEST_SORTIE_SECONDS == 0 then
+  local interval = util.interval(summon, NEST_SORTIE_SECONDS)
+  if util.due(state, "next_sortie", seconds, interval) then
     for _, nest in ipairs(records.of_role(summon, "nest")) do
       spawn.send_spawner_units(summon, surface, nest.entity)
     end

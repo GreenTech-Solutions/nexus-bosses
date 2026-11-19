@@ -1,7 +1,6 @@
--- Devourer: a demolisher of 5 million health that claims the land around the beacon (a territory of five by five
--- chunks). Every 15 seconds it is set "enraged" against the nearest building of the player, the strongest order the API
--- has for a segmented unit. It dives at half health, or at two thirds and one third in a lair, then breaks out on the
--- far side of the beacon with the health it had.
+-- Devourer: a demolisher whose health is set by cfg.DEVOURER_HEALTH. It claims the land around the beacon, orders
+-- itself against the nearest player building, and dives at half health (or at two thirds and one third in a lair).
+-- It breaks out on the far side of the beacon with the health it had.
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -175,7 +174,7 @@ function M.tick(summon, surface, force)
     dive(summon, surface, force, record)
     return
   end
-  if summon.active_seconds % ORDER_SECONDS == 0 then
+  if util.due(state, "next_order", summon.active_seconds, util.interval(summon, ORDER_SECONDS)) then
     give_orders(summon, surface, record.entity --[[@as LuaSegmentedUnit]])
   end
 end

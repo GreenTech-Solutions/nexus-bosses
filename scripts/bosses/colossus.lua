@@ -332,6 +332,10 @@ function M.status(summon)
   if not state then
     return nil
   end
+  local interval = util.interval(summon, INTERVALS[summon.variant], true)
+  if not interval then
+    return { "nexus-bosses.status-suppressed" }
+  end
   local shield = state.shield
   if shield and game.tick < shield.until_tick then
     local main = records.main(summon)
@@ -355,10 +359,6 @@ function M.status(summon)
     end
   end
 
-  local interval = util.interval(summon, INTERVALS[summon.variant], true)
-  if not interval then
-    return nil
-  end
   local next_attack = state.next_attack
   if not next_attack then
     return { "nexus-bosses.status-colossus-attack", { "nexus-bosses.colossus-attack-" .. summon.variant },
