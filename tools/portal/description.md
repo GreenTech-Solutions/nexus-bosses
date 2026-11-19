@@ -1,6 +1,6 @@
-![](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/00-fight.webp)
+![Devourer dives and resurfaces inside the rear battery](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/00-fight.webp)
 
-Nine bosses can be summoned on Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus). Light a summon beacon, defend it from the precursor waves, then fight the boss and claim its trophy. With the warp-drive gate enabled, place the warp key made from all nine trophies in the vault reliquary to research Silence and raise the relic.
+Nine bosses can be summoned on Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus). Each one has a mechanic that your defense has to answer, and the fight shows it on the ground before it hits.
 
 ## How it works
 
@@ -10,44 +10,64 @@ Nine bosses can be summoned on Nexus, the last planet of [Nexus Extended Prometh
 
 ## The nine bosses
 
-After a boss log is found, its Codex page shows any weak damage types computed from its prototype resistances. The Colossus page lists the types for each variant.
+The exact numbers are in the Codex once the boss log is found.
 
-| Stage | Boss | Mechanic | Answer |
-| --- | --- | --- | --- |
-| Whisper | Arachnid Queen | At two-thirds and one-third health, she lays two nests. Each sends warriors every 20 seconds until destroyed. | Fire, Laser and Electric. |
-| Whisper | Watcher | Six electric drones escort it and return in waves. Every 12 seconds, if any drone lives, it marks a player building within 60 tiles and fires four rockets after a four-second warning. | Laser and Electric. |
-| Whisper | Rogue Spidertron | It chooses among the 20 nearest power poles within 200 tiles, targeting the one with the most player buildings in its EMP radius. At 25 tiles it marks a 12-tile radius for three seconds, then disables buildings there for 15 seconds. | Poison. |
-| Chorus | Twin Maws | While both maws live, each heals 0.3 % of its maximum health per second. If one dies while the other lives, it rises with half health after 20 seconds. | Fire. |
-| Chorus | Colossus | One of six variants arrives, each with a different attack. The armoured variant absorbs damage for 10 seconds every 40 seconds; damage of its weak types breaks the shell after it absorbs 5 % of its maximum health. | The beacon names the variant; weak types are Physical (fire cluster and fire spray), Explosion (electric shock), Laser and Electric (armour shield), Acid and Poison (brood), or Fire (acid spray). |
-| Chorus | Plague Hulk | Ten infected turrets guard it. Every 120 seconds it sends up to seven sortie units; when the squad first comes within 30 tiles of player turrets, a three-second warning marks a 15-tile circle where turrets stop for up to 15 seconds. | Impact, Acid, Poison, Explosion, Laser and Electric. |
-| Convergence | Storm Guardian | After 60 seconds without a Nexus-Threat storm, it calls its own 40-second storm / 40-second calm cycle. During storms it heals up to 0.5 % of its health per second and calls lightning around itself. | Impact and Explosion. |
-| Convergence | Devourer | It dives at half health, or at 66 % and 33 % in a lair, and resurfaces eight seconds later beyond the beacon. | Acid. |
-| Convergence | Last Commander | A four-second circle marks where six soldiers land every 45 seconds. Below 66 % health, it marks a nearby building for four seconds before firing four rockets every 12 seconds; below 33 %, soldiers land beyond the beacon. Its atomic rocket targets the nearest turret within 60 tiles every 90 seconds, or the beacon if no turret is in range; a lair pylon can disable it. | No weak damage types; the Codex shows none. |
+### Whisper
 
-![Queen nest telegraphs](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/11-telegraph-queen.jpg)
+| Boss | Mechanic | Weak to |
+| --- | --- | --- |
+| Arachnid Queen | Lays two nests at two thirds and one third of her health; the nests send warriors until destroyed. | Fire, Laser, Electric |
+| Watcher | While one of its drones lives, it marks a building and fires rockets at it. | Laser, Electric |
+| Rogue Spidertron | Marks the power pole with the most buildings around it, then disables everything in the circle with an EMP. | Poison |
 
-![Colossus variant and weakness](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/12-colossus-variant.jpg)
+![Arachnid Queen at the wall with two nest marks](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/03-queen.jpg)
+
+### Chorus
+
+| Boss | Mechanic | Weak to |
+| --- | --- | --- |
+| Twin Maws | While both maws live they heal each other; a fallen maw rises again unless the second one dies quickly. | Fire |
+| Colossus | One of six variants arrives, each with its own attack. | Depends on the variant |
+| Plague Hulk | Spores follow its sortie squad and stop the turrets in a marked circle. | Impact, Acid, Poison, Explosion, Laser, Electric |
+
+![Three Colossus variants: fire cluster, armour shield, electric shock](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/06-colossus.jpg)
+
+### Convergence
+
+| Boss | Mechanic | Weak to |
+| --- | --- | --- |
+| Storm Guardian | Heals during a storm and calls lightning around itself; without a storm it calls its own. | Impact, Explosion |
+| Devourer | Dives at half health and resurfaces beyond the beacon. | Acid |
+| Last Commander | Drops soldiers at marked spots, marks buildings for rocket strikes and fires an atomic rocket at the nearest turret. | None |
+
+![Last Commander atomic rocket mark over the base](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/10-last-commander.jpg)
+
+![Devourer breaks through the wall](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/01-devourer.jpg)
+
+## During the fight
+
+The health bar shows the stage, the phase, the next attack with its countdown, and the weak and resistant damage types of the boss. The Colossus bar names the variant.
+
+![Health bars of the Queen, Rogue Spidertron and armoured Colossus](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/11-health-bar.jpg)
 
 ## Between the fights
 
 - **Expedition logs.** Wrecks contain boss logs. Finding a log opens its mechanic, weak and resistant damage types, and answer in the Codex. The signal detector points to the nearest unfound wreck; each victory marks another wreck on the map.
 
-  ![Boss emblems and trophies](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/07-emblems-and-trophies.png)
+  ![Codex page of the Arachnid Queen](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/02-codex.jpg)
 
-  ![Health bar with phase and weakness](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/03-health-bar.jpg)
-
-  ![Signal detector sector](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/13-detector-sector.jpg)
+  ![Signal detector sector on the map](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/13-search.jpg)
 
 - **Lairs and guards.** Two direction finders set to the same boss narrow their bearings until the crossing marks its lair. On the first approach to an unfound wreck or found lair, precursors are alerted when a player comes within 40 tiles; a warning circle appears and the group emerges three seconds later. Each point triggers once. A lair fight increases the boss's main mechanic frequency and gives an extra trophy and loot.
 - **Pylons.** An uncommon-or-better trophy of the lair's boss repairs its pylon. The pylon weakens that boss's main mechanic by 25 %, 50 %, 75 % or 100 %, according to trophy quality. When it weakens a Last Commander lair fight at any quality, the atomic rocket is disabled.
 
-  ![Pylon of suppression](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/10-pylon-of-suppression.jpg)
+  ![Last Commander in its lair under a repaired pylon](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/12-lair-pylon.jpg)
 
 - **Vault.** The vault becomes available after all nine bosses are defeated. Exploration and fights reveal the four glyphs for its code. With the warp-drive gate enabled, place the warp key made from the nine trophies in the reliquary; it is consumed to research Silence, and the relic rises in the vault. The relic gives research productivity +10 %.
 
-  ![Vault reliquary and warp key](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/14-vault-reliquary.jpg)
+  ![Vault reliquary](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/14-vault.jpg)
 
-- **Hallucinations.** At night on Nexus, a player with no force buildings within 64 tiles may see a phantom, receive a whisper or false alert, or see darkened screen edges. The average interval is 10 minutes in Whisper and 5 minutes in Chorus and Convergence, with ±50 % variation. Rare mode halves the frequency; the player setting can also turn hallucinations off. Clock-Interlude plays for a phantom or false alarm.
+- **Hallucinations.** At night on Nexus, far from your buildings, a player may see a phantom or get a false alert. The player setting makes them rare or turns them off.
 
 ## FAQ
 
