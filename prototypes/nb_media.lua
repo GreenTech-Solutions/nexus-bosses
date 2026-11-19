@@ -43,7 +43,7 @@ end
 prototypes[#prototypes + 1] = {
   type = "sound",
   name = "nexus-bosses-telegraph",
-  filename = "__base__/sound/alarm-1.ogg",
+  filename = "__base__/sound/programmable-speaker/alarm-1.ogg",
   volume = 0.4,
   category = "alert",
 }
