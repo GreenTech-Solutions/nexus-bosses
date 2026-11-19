@@ -36,12 +36,12 @@ end
 
 local EXPEDITION = "expedition"
 
----@param table_element LuaGuiElement
+---One line of tactics: a bold label and its text in one wrapped paragraph.
+---@param page LuaGuiElement
 ---@param label LocalisedString
 ---@param value LocalisedString
-local function tactics_row(table_element, label, value)
-  table_element.add({ type = "label", caption = label })
-  table_element.add({ type = "label", caption = value })
+local function tactics_row(page, label, value)
+  paragraph(page, { "", "[font=default-bold]", label, "[/font]  ", value })
 end
 
 ---@param page LuaGuiElement
@@ -64,22 +64,20 @@ local function add_tactics(page, boss_id, force_name)
       variants.add({ type = "label", caption = { "nexus-bosses.colossus-attack-" .. variant.id } })
     end
   else
-    local table_element = page.add({ type = "table", column_count = 2 })
     local spec = cfg.BOSSES[boss_id]
     if spec.entities then
       for _, entity in ipairs(spec.entities) do
-        tactics_row(table_element, { "entity-name." .. entity }, resistance.caption(entity))
+        tactics_row(page, { "entity-name." .. entity }, resistance.caption(entity))
       end
     else
       local weak, strong = resistance.of(spec.entity)
-      tactics_row(table_element, { "nexus-bosses.codex-weak" }, resistance.list_caption(weak))
-      tactics_row(table_element, { "nexus-bosses.codex-strong" }, resistance.list_caption(strong))
+      tactics_row(page, { "nexus-bosses.codex-weak" }, resistance.list_caption(weak))
+      tactics_row(page, { "nexus-bosses.codex-strong" }, resistance.list_caption(strong))
     end
   end
 
-  local table_element = page.add({ type = "table", column_count = 2 })
-  tactics_row(table_element, { "nexus-bosses.codex-mechanic" }, { "nexus-bosses.mechanic-" .. boss_id })
-  tactics_row(table_element, { "nexus-bosses.codex-answer" }, { "nexus-bosses.answer-" .. boss_id })
+  tactics_row(page, { "nexus-bosses.codex-mechanic" }, { "nexus-bosses.mechanic-" .. boss_id })
+  tactics_row(page, { "nexus-bosses.codex-answer" }, { "nexus-bosses.answer-" .. boss_id })
 end
 
 ---The page of the expedition: the prologue from its camp and the epilogue from the last stand of its commander.
