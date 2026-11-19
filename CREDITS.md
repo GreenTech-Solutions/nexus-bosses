@@ -3,6 +3,12 @@
 The code of Nexus Bosses is GPLv3 ([LICENSE](LICENSE)). The assets below are separate works under their own licenses,
 not under the GPL; files were converted to OGG, trimmed, resized or recoloured where noted.
 
+## Boss prototypes
+
+| Prototypes | Source | Author |
+| --- | --- | --- |
+| Watcher, Rogue Spidertron, six Colossus variants, Last Commander | [Big Monsters](https://mods.factorio.com/mod/Big-Monsters) | MFerrari |
+
 ## Sounds
 
 | File | Source | Author | License |
