@@ -110,7 +110,7 @@ local function make_beacon(id, charge)
     "",
     { "nexus-bosses.beacon-stage", { "nexus-bosses.stage-" .. circle.stage } },
     " ",
-    { "nexus-bosses.lore-" .. id },
+    { "nexus-bosses.mechanic-" .. id },
     "\n\n",
     { "nexus-bosses.beacon-dossier" },
     "\n\n",

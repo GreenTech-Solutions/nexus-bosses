@@ -850,8 +850,7 @@ function M.on_built(entity, player)
 
   create_visuals(summon, force, surface)
   spawn.request_land(surface, summon.position)
-  util.say(force, { "nexus-bosses.call-" .. boss_id }, util.COLORS.warning)
-  util.say(force, { "nexus-bosses.msg-countdown-started", boss_name(boss_id), countdown, util.compass(summon.angle) },
+  util.say(force, { "nexus-bosses.call-" .. boss_id, boss_name(boss_id), util.compass(summon.angle), countdown },
     util.COLORS.warning)
   local countdown_note = module and module.countdown_note and module.countdown_note(summon) or nil
   if countdown_note then

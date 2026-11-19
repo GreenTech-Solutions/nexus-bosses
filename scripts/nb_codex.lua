@@ -1,5 +1,5 @@
 -- The codex of the signal: the stages and their bosses on the left (killed, log found), the page of the chosen boss on
--- the right. Without its log a boss is only a name: the dossier, how to fight it, is in the log of the expedition.
+-- the right. Without a log the page shows the main mechanic and log location; a found log adds resistances and answers.
 
 local cfg = require("lib.nb_data")
 local progress = require("scripts.nb_progress")
@@ -123,12 +123,12 @@ local function fill_page(page, force_name, boss_id)
   local boss = cfg.BOSSES[boss_id]
   local stage = cfg.CIRCLES[boss.circle].stage
   paragraph(page, { "", { "nexus-bosses.boss-" .. boss_id }, " · ", { "nexus-bosses.stage-" .. stage } }, "heading_2_label")
-  paragraph(page, { "nexus-bosses.lore-" .. boss_id })
   page.add({ type = "line" })
   local has_log = expedition.has_log(force_name, boss_id)
   if has_log then
     paragraph(page, { "nexus-bosses.log-" .. boss_id })
   else
+    paragraph(page, { "nexus-bosses.mechanic-" .. boss_id })
     paragraph(page, { "nexus-bosses.codex-no-log" }).style.font_color = MUTED
   end
   if boss_id == "colossus" then
