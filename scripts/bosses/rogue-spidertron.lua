@@ -97,6 +97,9 @@ function M.tick(summon, surface, _force)
     end
   end
   if not pole then
+    if #entity.autopilot_destinations == 0 then
+      spider.approach(entity, summon.position)
+    end
     return
   end
 

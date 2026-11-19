@@ -244,6 +244,55 @@ describe("reworked bosses", function()
     end)
   end)
 
+  test("the Rogue Spidertron approaches the beacon until a pole enters its search radius", function()
+    local surface = helpers.nexus()
+    helpers.light("rogue-spidertron", { 0, 0 })
+    local initial_distance
+    local pole
+    local movement_checked = false
+    helpers.on_active(5 * 60 * 60, function(summon, ticks_since_active)
+      local boss = helpers.tracked(summon, "boss")
+      assert(boss and boss.position, "the Rogue Spidertron position is missing from the summon snapshot")
+      local entity = helpers.find_entity(surface, boss.name, boss.position, 5)
+      assert(entity and entity.valid, "the Rogue Spidertron entity is missing")
+
+      if not initial_distance then
+        initial_distance = util.distance(boss.position, summon.beacon_position)
+        local dx, dy = util.xy(boss.position)
+        local beacon_x, beacon_y = util.xy(summon.beacon_position)
+        local length = util.distance(boss.position, summon.beacon_position)
+        assert(length > 0, "the Rogue Spidertron spawned on the beacon")
+        local position = {
+          x = beacon_x - (dx - beacon_x) / length * 70,
+          y = beacon_y - (dy - beacon_y) / length * 70,
+        }
+        pole = player_entity_at(surface, "substation", position, 8)
+        pole.destructible = false
+        assert(util.distance(boss.position, pole.position) > 200,
+          "the test substation must start outside the Rogue Spidertron search radius")
+      end
+
+      if not movement_checked and ticks_since_active >= 30 * 60 then
+        assert(util.distance(boss.position, summon.beacon_position) < initial_distance,
+          "the Rogue Spidertron did not approach the beacon during the first 30 seconds")
+        movement_checked = true
+      end
+
+      local target = summon.boss_state and summon.boss_state.target_position --[[@as MapPosition|nil]]
+      if movement_checked and target and pole then
+        local target_x, target_y = util.xy(target)
+        local pole_x, pole_y = util.xy(pole.position)
+        assert(math.abs(target_x - pole_x) <= 0.1 and math.abs(target_y - pole_y) <= 0.1,
+          "the Rogue Spidertron selected a target other than the beacon substation")
+        return true
+      end
+
+      if ticks_since_active >= 5 * 60 * 60 then
+        error("the Rogue Spidertron did not reach and select the beacon substation")
+      end
+    end)
+  end)
+
   test("the Plague Hulk's spores disable and restore a turret in the marked circle", function()
     local surface = helpers.nexus()
     helpers.light("plague-hulk", { 0, 0 })

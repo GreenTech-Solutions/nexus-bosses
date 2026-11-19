@@ -57,9 +57,9 @@ nest.result_units = {
 
 -- Twin Maws: the two boss worms of Big Monsters.
 local maw_fire = copy("turret", "maf-worm-boss-fire-shooter", cfg.MAW_FIRE)
-maw_fire.max_health = maw_fire.max_health * HEALTH
+maw_fire.max_health = maw_fire.max_health * cfg.MAW_FIRE_HEALTH_SHARE * HEALTH
 local maw_acid = copy("turret", "bm-worm-boss-acid-shooter", cfg.MAW_ACID)
-maw_acid.max_health = maw_acid.max_health * HEALTH
+maw_acid.max_health = maw_acid.max_health * cfg.MAW_ACID_HEALTH_SHARE * HEALTH
 
 -- Last Commander: Big Monsters supplies the unit prototype; this mod spawns and controls the copy.
 local commander = copy("unit", "bm_fake_human_ultimate_boss_cannon_20", cfg.COMMANDER)
@@ -78,7 +78,7 @@ for _, variant in ipairs(cfg.COLOSSUS_VARIANTS) do
     error("nexus-bosses: " .. variant.original .. " of Big Monsters has no max_health")
   end
   local colossus = copy("unit", variant.original, cfg.COLOSSUS_PREFIX .. variant.id)
-  colossus.max_health = original_health * cfg.COLOSSUS_HEALTH_SHARE * HEALTH
+  colossus.max_health = original_health * variant.health_share * HEALTH
   colossus_variants[#colossus_variants + 1] = colossus
 end
 
@@ -102,7 +102,7 @@ spidertron.max_health = cfg.SPIDERTRON_HEALTH * HEALTH
 data:extend({ queen, nest, maw_fire, maw_acid, commander, hulk, guardian, watcher, spidertron })
 data:extend(colossus_variants)
 
--- Devourer: a big demolisher with 5 million health. Every segment prototype of a demolisher has the health of the
+-- Devourer: a big demolisher with 9.9 million health. Every segment prototype of a demolisher has the health of the
 -- head, so the segments are copied too; they carry the Devourer's name in the tooltip of the body.
 local devourer = copy("segmented-unit", "big-demolisher", cfg.DEVOURER)
 devourer.max_health = cfg.DEVOURER_HEALTH * HEALTH

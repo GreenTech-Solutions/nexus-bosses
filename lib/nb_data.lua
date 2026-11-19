@@ -158,30 +158,34 @@ M.COMMANDER_DROP_UNIT = "bm_fake_human_machine_gunner_5"
 M.TURRET_TYPES = { "ammo-turret", "electric-turret", "fluid-turret", "artillery-turret" }
 M.POLE_TYPES = { "electric-pole" }
 
--- Health before the startup setting "nexus-bosses-boss-health". The hulk is a spawner, whose health the game
+-- Boss health values were tuned from tests/duration.lua with a quarter-stage battery on 19.11.2026;
+-- targets are 3 / 4–5 / 5–6 minutes by stage.
+-- Values before the startup setting "nexus-bosses-boss-health". The hulk is a spawner, whose health the game
 -- multiplies by 10^evolution: the prototype gets HULK_HEALTH / 10^0.99.
-M.QUEEN_HEALTH = 500000
+M.QUEEN_HEALTH = 3430000
 M.NEST_HEALTH = 25000
-M.COMMANDER_HEALTH = 5040000
-M.HULK_HEALTH = 2000000
-M.GUARDIAN_HEALTH = 3000000
-M.DEVOURER_HEALTH = 5000000
+M.COMMANDER_HEALTH = 54400000
+M.HULK_HEALTH = 16500000
+M.GUARDIAN_HEALTH = 28400000
+M.DEVOURER_HEALTH = 52000000
 M.DEVOURER_HEALING_PER_TICK = 50 -- the big demolisher heals 400 a tick, 8 % of its health every second
-M.WATCHER_HEALTH = 56000
-M.SPIDERTRON_HEALTH = 26000
+M.WATCHER_HEALTH = 280000
+M.SPIDERTRON_HEALTH = 2600000
+M.MAW_FIRE_HEALTH_SHARE = 4.6 -- share of the original Big Monsters health
+M.MAW_ACID_HEALTH_SHARE = 2.6 -- share of the original Big Monsters health
 M.ESCORT_CAP = 18
 
--- Colossus copies of Big Monsters' level 5 units, selected when the force first needs to know its next variant.
+-- Colossus health shares are based on the original Big Monsters prototypes; variants are selected when the force
+-- first needs to know its next variant.
 M.COLOSSUS_VARIANTS = {
-  { id = "fire", original = "biterzilla15" },
-  { id = "storm", original = "biterzilla25" },
-  { id = "armored", original = "biterzilla35" },
-  { id = "mother", original = "bm-motherbiterzilla5" },
-  { id = "fire-spitter", original = "maf-giant-fire-spitter5" },
-  { id = "acid-spitter", original = "maf-giant-acid-spitter5" },
+  { id = "fire", original = "biterzilla15", health_share = 11.6 },
+  { id = "storm", original = "biterzilla25", health_share = 11.3 },
+  { id = "armored", original = "biterzilla35", health_share = 5.6 },
+  { id = "mother", original = "bm-motherbiterzilla5", health_share = 4.9 },
+  { id = "fire-spitter", original = "maf-giant-fire-spitter5", health_share = 6.6 },
+  { id = "acid-spitter", original = "maf-giant-acid-spitter5", health_share = 9.4 },
 }
 M.COLOSSUS_PREFIX = "nexus-colossus-"
-M.COLOSSUS_HEALTH_SHARE = 0.35 -- Big Monsters spawns these at the evolution of Nexus.
 
 local SPECS = {
   ["arachnid-queen"] = {
