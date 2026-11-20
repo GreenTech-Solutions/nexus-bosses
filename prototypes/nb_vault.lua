@@ -40,8 +40,8 @@ local function vault_container(name, picture, slots, collision)
     inventory_size = slots,
     inventory_type = "normal",
     picture = picture,
-    open_sound = { filename = "__base__/sound/machine-open.ogg", volume = 0.5 },
-    close_sound = { filename = "__base__/sound/machine-close.ogg", volume = 0.5 },
+    open_sound = { filename = "__nexus-bosses__/sounds/container-open.ogg", volume = 0.5 },
+    close_sound = { filename = "__nexus-bosses__/sounds/container-close.ogg", volume = 0.5 },
   }
 end
 

@@ -17,6 +17,7 @@ local SOUNDS = "__nexus-bosses__/sounds/"
 local EFFECTS = {
   { "call", 0.9, "alert" },
   { "countdown", 0.7, "alert" },
+  { "telegraph", 0.4, "alert" },
   { "precursors", 0.8, "enemy" },
   { "whisper", 0.8, "enemy" },
   { "queen-nests", 0.8, "enemy" },
@@ -43,14 +44,6 @@ for _, effect in ipairs(EFFECTS) do
     category = effect[3],
   }
 end
-
-prototypes[#prototypes + 1] = {
-  type = "sound",
-  name = "nexus-bosses-telegraph",
-  filename = "__base__/sound/programmable-speaker/alarm-1.ogg",
-  volume = 0.4,
-  category = "alert",
-}
 
 for _, track in ipairs({
   "fight-urgent",

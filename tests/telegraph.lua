@@ -54,6 +54,11 @@ describe("boss telegraphs", function()
     helpers.nexus()
   end)
 
+  test("the telegraph sound is a sound of the mod", function()
+    assert(_G.helpers.is_valid_sound_path("nexus-bosses-telegraph"),
+      "the telegraph sound prototype is missing")
+  end)
+
   test("the Codex shows the next Colossus variant before its beacon is built", function()
     local player = game.players[1]
     remote.call("nexus-bosses", "set_next_colossus", "armored")

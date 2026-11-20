@@ -15,6 +15,8 @@ not under the GPL; files were converted to OGG, trimmed, resized or recoloured w
 | --- | --- | --- | --- |
 | `sounds/call.ogg` | [Braam](https://freesound.org/people/unfa/sounds/647712/) | unfa | CC0 |
 | `sounds/countdown.ogg` (trimmed) | [Warning Noise](https://opengameart.org/content/warning-noise) | Jerimee | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `sounds/telegraph.ogg` (trimmed) | [7 Space Sounds](https://opengameart.org/content/7-space-sounds) | Joth | CC0 |
+| `sounds/container-open.ogg`, `sounds/container-close.ogg` (trimmed) | [100 CC0 metal and wood SFX](https://opengameart.org/content/100-cc0-metal-and-wood-sfx) | rubberduck | CC0 |
 | `sounds/precursors.ogg` (trimmed) | [Scary Echoey Horn Esque Sound](https://opengameart.org/content/scary-echoey-horn-esque-sound) | Kat | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | `sounds/whisper.ogg` | [Aliens surrounding](https://opengameart.org/content/aliens-surrounding) | levitate | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `sounds/arrive-plague-hulk.ogg`, `sounds/arrive-twin-maws.ogg` | [Silent beast growls](https://opengameart.org/content/silent-beast-growls4) | pauliuw | CC0 |
