@@ -37,7 +37,7 @@ The exact numbers are in the Codex once the boss log is found.
 | Boss | Mechanic | Weak to |
 | --- | --- | --- |
 | Storm Guardian | Heals during a storm and calls lightning around itself; without a storm it calls its own. | Impact, Explosion |
-| Devourer | Dives at half health and resurfaces beyond the beacon. | Acid |
+| Devourer | Dives at health thresholds and resurfaces beyond the beacon. | Acid |
 | Last Commander | Drops soldiers at marked spots, marks buildings for rocket strikes and fires an atomic rocket at the nearest turret. | None |
 
 ![Last Commander atomic rocket mark over the base](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/10-last-commander.jpg)
@@ -67,7 +67,7 @@ The health bar shows the stage, the phase, the next attack with its countdown, a
 
   ![Vault reliquary](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/14-vault.jpg)
 
-- **Hallucinations.** At night on Nexus, far from your buildings, a player may see a phantom or get a false alert. The player setting makes them rare or turns them off.
+- **Hallucinations.** At night on Nexus, far from your buildings, a player may see a phantom or get a false alert: on average every 10 minutes in the Whisper and every 5 minutes in the Chorus and the Convergence. The player setting makes them rare or turns them off.
 
 ## FAQ
 

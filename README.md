@@ -61,7 +61,7 @@ functions are for tests and debugging and may change in any version: `set_ignore
 - The victories belong to the force, so every player of a force sees the same; the result is the same on every peer.
 - The call builds the whole state: call it when a view opens or every few seconds, not every tick.
 
-The other fields of `get_state()` (`summon`, `expedition`, `bearing`, `storms`, `story`, `vault`,
+The other fields of `get_state()` (`summon`, `expedition`, `bearing`, `guards`, `storms`, `story`, `vault`,
 `ignore_player_presence`, `storm_weakened`) are for debugging and may change in any version.
 
 `open_codex(player_index, boss_id?)` opens the Codex of the signal for one player on the page of a boss: `boss_id` is
