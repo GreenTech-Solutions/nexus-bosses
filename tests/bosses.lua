@@ -3,6 +3,8 @@
 local helpers = require("tests.helpers")
 local util = require("scripts.nb_util")
 local cfg = require("lib.nb_data")
+local WATCHER_STAND_OFF = 30
+local WATCHER_APPROACH_SECONDS = 18
 
 ---@param surface LuaSurface
 ---@param name string
@@ -10,8 +12,23 @@ local cfg = require("lib.nb_data")
 ---@param radius number|nil
 ---@return LuaEntity
 local function player_entity_at(surface, name, position, radius)
-  local spot = surface.find_non_colliding_position(name, position, radius or 8, 1)
-  assert(spot, "there was no clear spot for the test " .. name)
+  local search_radius = radius or 8
+  local spot = surface.find_non_colliding_position(name, position, search_radius, 1)
+  local failure_message
+  if not spot then
+    local nearby = {}
+    for _, entity in ipairs(surface.find_entities_filtered({ position = position, radius = search_radius })) do
+      if #nearby >= 10 then
+        break
+      end
+      local x, y = util.xy(entity.position)
+      nearby[#nearby + 1] = string.format("%s force=%s position=(%.1f,%.1f)",
+        entity.name, entity.force.name, x, y)
+    end
+    failure_message = "there was no clear spot for the test " .. name .. "; nearby entities: "
+      .. (#nearby > 0 and table.concat(nearby, "; ") or "none")
+  end
+  assert(spot, failure_message or "there was no clear spot for the test " .. name)
   local entity = surface.create_entity({ name = name, position = spot, force = "player" })
   assert(entity, "the test " .. name .. " could not be created")
   return entity
@@ -51,6 +68,48 @@ local function describe_watcher_timeout(summon, wall)
   return helpers.describe_summon(summon)
     .. string.format(" wall_alive=%s wall_health=%s pending=[%s]", tostring(wall_alive),
       tostring(wall_health), table.concat(pending_details, "; "))
+end
+
+---@param position MapPosition|nil
+---@return string
+local function describe_position(position)
+  if not position then
+    return "nil"
+  end
+  local x, y = util.xy(position)
+  return string.format("(%.1f,%.1f)", x, y)
+end
+
+---@param surface LuaSurface
+---@param summon table|nil
+---@param saucer LuaEntity|nil
+---@param first_destination_checked boolean
+---@param second_destination_checked boolean
+---@return string
+local function describe_watcher_standoff_timeout(surface, summon, saucer, first_destination_checked,
+    second_destination_checked)
+  local boss = helpers.tracked(summon, "boss")
+  local position = saucer and saucer.valid and saucer.position or (boss and boss.position)
+  local nearest = position and surface.find_nearest_enemy({
+    position = position,
+    max_distance = cfg.DEFENCE_RADIUS,
+    force = "enemy",
+  })
+  local nearest_text = nearest and string.format("%s@%s distance=%.1f", nearest.name,
+    describe_position(nearest.position), util.distance(position, nearest.position)) or "none"
+  ---@type MapPosition|nil
+  local destination
+  ---@type number|nil
+  local speed
+  if saucer and saucer.valid then
+    destination = saucer.autopilot_destination
+    speed = saucer.speed
+  end
+  return helpers.describe_summon(summon)
+    .. string.format(" saucer=%s nearest_building=%s first_destination_checked=%s "
+      .. "second_destination_checked=%s autopilot_destination=%s speed=%s",
+      describe_position(position), nearest_text, tostring(first_destination_checked), tostring(second_destination_checked),
+      describe_position(destination), tostring(speed))
 end
 
 describe("reworked bosses", function()
@@ -152,6 +211,93 @@ describe("reworked bosses", function()
       end
       if ticks_since_active >= 1400 then
         error("the Watcher strike cancellation test timed out: " .. describe_watcher_timeout(summon, wall))
+      end
+    end)
+  end)
+
+  test("the Watcher stops at least 30 tiles from every player building", function()
+    local surface = helpers.nexus()
+    local beacon_position = { x = 0, y = 0 }
+    -- Keep the test buildings destructible; find_nearest_enemy ignores indestructible entities.
+    for index = 0, 7 do
+      player_entity_at(surface, "gun-turret", util.offset(beacon_position, 2 * math.pi * index / 8, 20), 3)
+    end
+
+    helpers.light("watcher", beacon_position)
+    local countdown = helpers.active()
+    assert(countdown and countdown.angle and countdown.beacon_position,
+      "the Watcher test summon has no approach direction")
+    local approach_x = math.cos(countdown.angle)
+    local approach_y = math.sin(countdown.angle)
+    local side_x = -approach_y
+    local side_y = approach_x
+    for _, offset in ipairs({ -6, -2, 2, 6 }) do
+      wall_at(surface, {
+        x = countdown.beacon_position.x + approach_x * 35 + side_x * offset,
+        y = countdown.beacon_position.y + approach_y * 35 + side_y * offset,
+      })
+    end
+
+    local first_destination_checked = false
+    local second_destination_checked = false
+    local function assert_safe_position(position, label)
+      local nearby = surface.find_nearest_enemy({
+        position = position,
+        max_distance = WATCHER_STAND_OFF - 2,
+        force = "enemy",
+      })
+      assert(not nearby, string.format("the Watcher's %s point is only %.1f tiles from %s",
+        label, nearby and util.distance(position, nearby.position) or 0, nearby and nearby.name or "a player building"))
+    end
+
+    helpers.on_active(70 * 60, function(summon, ticks_since_active)
+      local boss = helpers.tracked(summon, "boss")
+      local saucer = boss and boss.position and helpers.find_entity(surface, boss.name, boss.position, 5)
+      if not (saucer and saucer.valid) then
+        if ticks_since_active >= 60 * 60 then
+          error("the Watcher standoff test timed out: "
+            .. describe_watcher_standoff_timeout(surface, summon, saucer, first_destination_checked,
+              second_destination_checked))
+        end
+        return
+      end
+
+      local destination = saucer.autopilot_destination
+      if not first_destination_checked and destination then
+        assert_safe_position(destination, "first approach")
+        first_destination_checked = true
+      end
+
+      if not second_destination_checked and summon.active_seconds >= WATCHER_APPROACH_SECONDS + 1 then
+        destination = saucer.autopilot_destination
+        if destination then
+          assert_safe_position(destination, "second approach")
+          second_destination_checked = true
+        elseif saucer.speed == 0 then
+          assert_safe_position(saucer.position, "second approach stop")
+          second_destination_checked = true
+        end
+      end
+
+      local stopped = saucer.autopilot_destination == nil or saucer.speed == 0
+      if first_destination_checked and second_destination_checked and stopped then
+        local nearest = surface.find_nearest_enemy({
+          position = saucer.position,
+          max_distance = cfg.DEFENCE_RADIUS,
+          force = "enemy",
+        })
+        if nearest then
+          local distance = util.distance(saucer.position, nearest.position)
+          assert(distance >= WATCHER_STAND_OFF - 2,
+            string.format("the Watcher stopped %.1f tiles from %s", distance, nearest.name))
+        end
+        return true
+      end
+
+      if ticks_since_active >= 60 * 60 then
+        error("the Watcher standoff test timed out: "
+          .. describe_watcher_standoff_timeout(surface, summon, saucer, first_destination_checked,
+            second_destination_checked))
       end
     end)
   end)

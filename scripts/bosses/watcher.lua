@@ -16,8 +16,85 @@ local MARK_SECONDS = 12
 local MARK_RADIUS = 60
 local TELEGRAPH_TICKS = 4 * 60
 local APPROACH_SECONDS = 18
+local STAND_OFF = 30
+local STAND_OFF_TOLERANCE = 2
+local STAND_OFF_ADJUSTMENTS = 8
 local ROCKETS = 4
 local AMMO = { { name = cfg.WATCHER_AMMO, count = 1 } }
+
+---@param surface LuaSurface
+---@param saucer LuaEntity
+---@param target LuaEntity
+---@return MapPosition.struct|nil
+local function safe_approach_point(surface, saucer, target)
+  local sx, sy = util.xy(saucer.position)
+  local tx, ty = util.xy(target.position)
+  local dx, dy = sx - tx, sy - ty
+  local length = math.sqrt(dx * dx + dy * dy)
+  if length == 0 then
+    dx, dy, length = 1, 0, 1
+  end
+  local point = {
+    x = tx + dx / length * STAND_OFF,
+    y = ty + dy / length * STAND_OFF,
+  }
+
+  for _ = 1, STAND_OFF_ADJUSTMENTS do
+    local building = surface.find_nearest_enemy({
+      position = point,
+      max_distance = STAND_OFF - STAND_OFF_TOLERANCE,
+      force = "enemy",
+    })
+    if not building then
+      return point
+    end
+
+    local bx, by = util.xy(building.position)
+    dx, dy = point.x - bx, point.y - by
+    length = math.sqrt(dx * dx + dy * dy)
+    if length == 0 then
+      return nil
+    end
+    point = {
+      x = bx + dx / length * STAND_OFF,
+      y = by + dy / length * STAND_OFF,
+    }
+  end
+
+  -- Allow eight adjustments, then validate the last point without moving it again.
+  if surface.find_nearest_enemy({
+    position = point,
+    max_distance = STAND_OFF - STAND_OFF_TOLERANCE,
+    force = "enemy",
+  }) then
+    return nil
+  end
+  return point
+end
+
+---@param surface LuaSurface
+---@param saucer LuaEntity
+local function approach(surface, saucer)
+  if not saucer.valid then
+    return
+  end
+  local target = surface.find_nearest_enemy({
+    position = saucer.position,
+    max_distance = cfg.DEFENCE_RADIUS,
+    force = "enemy",
+  })
+  if not target then
+    return
+  end
+
+  local point = safe_approach_point(surface, saucer, target)
+  if not point then
+    saucer.autopilot_destination = nil
+    return
+  end
+  saucer.autopilot_destination = nil
+  saucer.add_autopilot_destination(point)
+end
 
 ---@param summon NbSummon
 ---@param surface LuaSurface
@@ -30,7 +107,7 @@ function M.spawn(summon, surface)
     return false, "msg-fail-position"
   end
   records.add(summon, saucer, true, "boss")
-  local units = { saucer }
+  local units = {}
   for _ = 1, DRONES do
     local drone_position = util.offset(saucer.position, math.random() * 2 * math.pi, math.random() * 8)
     local drone = spawn.create_unit(surface, DRONE, drone_position)
@@ -44,6 +121,7 @@ function M.spawn(summon, surface)
     last_wave = 0,
     last_approach = 0,
   }
+  approach(surface, saucer)
   spawn.dispatch(surface, units, summon.position)
   return true, nil
 end
@@ -88,14 +166,7 @@ function M.tick(summon, surface, _force)
   if seconds - state.last_approach >= APPROACH_SECONDS then
     state.last_approach = seconds
     spider.supply(saucer, AMMO)
-    local target = surface.find_nearest_enemy({
-      position = summon.position,
-      max_distance = cfg.DEFENCE_RADIUS,
-      force = "enemy",
-    })
-    if target then
-      spider.approach(saucer, target)
-    end
+    approach(surface, saucer)
   end
 end
 
