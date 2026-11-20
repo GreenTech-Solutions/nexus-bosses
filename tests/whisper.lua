@@ -11,6 +11,11 @@ describe("hallucinations", function()
     helpers.nexus()
   end)
 
+  test("the whisper has its own sound", function()
+    assert(_G.helpers.is_valid_sound_path("nexus-bosses-whisper"),
+      "the whisper sound prototype is missing")
+  end)
+
   test("the hallucination music is a sound, not a music track", function()
     local game_helpers = _G.helpers
     assert(game_helpers.is_valid_sound_path("nexus-bosses-hallucination"),

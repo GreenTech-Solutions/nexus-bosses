@@ -119,7 +119,7 @@ local function whisper(player, stage)
   local line = { "nexus-bosses.whisper-" .. cfg.CIRCLES[stage].stage .. "-" .. math.random(LINES) }
   player.print({ "", "[font=default-italic]", line, "[/font]" }, { color = WHISPER_COLOR, sound = defines.print_sound.never })
   player.play_sound({
-    path = "nexus-bosses-precursors",
+    path = "nexus-bosses-whisper",
     position = util.offset(player.position, math.random() * 2 * math.pi, 20),
     volume_modifier = 0.3,
   })
