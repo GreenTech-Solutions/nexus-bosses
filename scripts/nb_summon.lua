@@ -504,7 +504,7 @@ local function complete_spawn(summon, force, surface)
   if summon.boss == "storm-guardian" then
     util.play(force, "arrive-storm-guardian-stinger")
   end
-  summon.music_index = 0
+  summon.music_index = math.random(#util.FIGHT_TRACKS) - 1
   summon.music_until = 0
   if summon.spawn_note == "closer" then
     local spawn_distance = summon.spawn_distance or 0

@@ -1,6 +1,7 @@
 -- Tests for resistance data and the fight bar's log-gated resistance label.
 
 local helpers = require("tests.helpers")
+local util = require("scripts.nb_util")
 
 local DAMAGE_TYPES = { "physical", "impact", "fire", "acid", "poison", "explosion", "laser", "electric" }
 local DAMAGE_TYPE_SET = {}
@@ -58,6 +59,14 @@ describe("fight bar tactics", function()
   before_each(function()
     helpers.reset()
     helpers.nexus()
+  end)
+
+  test("every fight track is a valid ambient sound", function()
+    local game_helpers = _G.helpers
+    assert(#util.FIGHT_TRACKS == 5, "there should be five fight tracks")
+    for _, track in ipairs(util.FIGHT_TRACKS) do
+      assert(game_helpers.is_valid_ambient_sound(track.name), "invalid ambient sound: " .. track.name)
+    end
   end)
 
   test("weak resistance is the lowest non-uniform share, and equal zero shares are not weak", function()

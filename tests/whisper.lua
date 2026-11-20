@@ -11,6 +11,14 @@ describe("hallucinations", function()
     helpers.nexus()
   end)
 
+  test("the hallucination music is a sound, not a music track", function()
+    local game_helpers = _G.helpers
+    assert(game_helpers.is_valid_sound_path("nexus-bosses-hallucination"),
+      "the hallucination sound prototype is missing")
+    assert(not game_helpers.is_valid_ambient_sound("nexus-bosses-hallucination"),
+      "the hallucination sound must not be an ambient music track")
+  end)
+
   test("all four hallucinations can be triggered for a player on Nexus", function()
     local surface = helpers.nexus()
     local player = assert(game.get_player(1), "the first test player is missing")

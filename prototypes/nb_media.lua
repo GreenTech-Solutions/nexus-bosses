@@ -1,8 +1,10 @@
 -- Sounds, music and effect sprites. Authors and licenses: CREDITS.md.
 --   sound          nexus-bosses-<name>, played to a force by scripts/nb_util.lua (force.play_sound)
---   ambient-sound  nexus-bosses-fight-* and nexus-bosses-hallucination: script tracks (force/player.play_music);
---                  nexus-bosses-signal and nexus-bosses-signal-*: the music of Nexus, from TFMG-music (a required
---                  dependency: its author asks for the music to be used as a dependency, not copied)
+--                  nexus-bosses-hallucination: Clock-Interlude of TFMG-music, played to a player over the music by
+--                  scripts/nb_whisper.lua (player.play_sound)
+--   ambient-sound  nexus-bosses-fight-* script tracks (force.play_music); nexus-bosses-signal*: the music of Nexus,
+--                  from TFMG-music (a required dependency: its author asks for the music to be used as a dependency,
+--                  not copied)
 --   animation      nexus-bosses-summon-circle under a lit beacon; sprite nexus-bosses-spark on a feeding Storm Guardian;
 --                  sprite nexus-bosses-vignette: the edges of the screen darken in a hallucination (scripts/nb_whisper.lua)
 
@@ -48,7 +50,13 @@ prototypes[#prototypes + 1] = {
   category = "alert",
 }
 
-for _, track in ipairs({ "fight-urgent", "fight-pulse" }) do
+for _, track in ipairs({
+  "fight-urgent",
+  "fight-perpetual-tension",
+  "fight-pulse",
+  "fight-undead-cyborg",
+  "fight-alert-outsider",
+}) do
   prototypes[#prototypes + 1] = {
     type = "ambient-sound",
     name = "nexus-bosses-" .. track,
@@ -83,10 +91,11 @@ for _, track in ipairs({
 end
 
 prototypes[#prototypes + 1] = {
-  type = "ambient-sound",
+  type = "sound",
   name = "nexus-bosses-hallucination",
-  track_type = "script-track",
-  sound = { filename = "__TFMG-music__/arrival/Clock-Interlude.ogg", volume = 0.5 },
+  filename = "__TFMG-music__/arrival/Clock-Interlude.ogg",
+  volume = 0.3,
+  category = "ambient",
 }
 
 prototypes[#prototypes + 1] = {

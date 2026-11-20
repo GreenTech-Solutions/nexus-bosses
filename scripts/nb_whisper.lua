@@ -163,7 +163,7 @@ local function hallucinate(player, surface, stage, kind)
   end
   kind = kind or math.random(4)
   if kind == 1 or kind == 3 then
-    player.play_music({ name = "nexus-bosses-hallucination", fade_in_duration = 120, fade_out_duration = 120 })
+    player.play_sound({ path = "nexus-bosses-hallucination" })
   end
   if kind == 1 then
     shade(player, surface, stage)

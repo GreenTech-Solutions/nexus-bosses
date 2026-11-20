@@ -13,7 +13,13 @@ M.COLORS = {
 
 -- the music of a fight: prototypes/nb_media.lua, lengths in seconds
 ---@type {name: string, seconds: integer}[]
-M.FIGHT_TRACKS = { { name = "nexus-bosses-fight-urgent", seconds = 57 }, { name = "nexus-bosses-fight-pulse", seconds = 71 } }
+M.FIGHT_TRACKS = {
+  { name = "nexus-bosses-fight-urgent", seconds = 57 },
+  { name = "nexus-bosses-fight-perpetual-tension", seconds = 162 },
+  { name = "nexus-bosses-fight-pulse", seconds = 71 },
+  { name = "nexus-bosses-fight-undead-cyborg", seconds = 58 },
+  { name = "nexus-bosses-fight-alert-outsider", seconds = 133 },
+}
 
 ---Effective mechanic frequency combines health escalation and lair difficulty, up to the shared cap.
 ---@param summon table

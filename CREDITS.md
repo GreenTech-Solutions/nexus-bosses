@@ -31,8 +31,11 @@ not under the GPL; files were converted to OGG, trimmed, resized or recoloured w
 | File | Source | Author | License |
 | --- | --- | --- | --- |
 | `music/fight-urgent.ogg`, `music/fight-pulse.ogg` | [Dark Sci-Fi Audio Pack](https://opengameart.org/content/dark-sci-fi-audio-pack) | SRG774 | CC0 |
+| `music/fight-perpetual-tension.ogg` | [Perpetual Tension](https://opengameart.org/content/perpetual-tension) | Zander Noriega | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `music/fight-undead-cyborg.ogg` (trimmed) | [Undead Cyborg](https://opengameart.org/content/undead-cyborg) | Alexandr Zhelanov | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `music/fight-alert-outsider.ogg` | [Alert! Outsider!](https://opengameart.org/content/alert-outsider) | Alexandr Zhelanov | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | Nexus music and the music of the vault (from the mod TFMG-music, a required dependency; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
-| Clock-Interlude (hallucinations, from the mod TFMG-music; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
+| Clock-Interlude (hallucinations, played over the music; from the mod TFMG-music; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
 
 ## Graphics
 
