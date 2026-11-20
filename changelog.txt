@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 3.0.1
+Date: 2026-11-20
+  Bugfixes:
+    - [locale] describe the Last Commander; Twin Maws rise sooner in a lair and after the mechanics speed up
+    - [migration] a new game marks every save migration done, so found lairs keep their guards
+    - [whisper] the shade and the false alarm show when their music starts, after the 6 s of silence of Clock-Interlude
+---------------------------------------------------------------------------------------------------
 Version: 3.0.0
 Date: 2026-11-20
   Major Features:
