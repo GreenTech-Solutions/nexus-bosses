@@ -183,6 +183,7 @@ end)
 script.on_nth_tick(30, function(event)
   expedition.detector_tick(event.tick)
   whisper.clear_shades(event.tick)
+  whisper.show_pending(event.tick)
 end)
 
 script.on_nth_tick(whisper.CHECK_TICKS, function(event)

@@ -5,9 +5,11 @@
 -- only, except the shade, a real neutral unit that others nearby would see too. The per-player setting
 -- nexus-bosses-hallucinations turns it down or off.
 -- Average intervals by stage are 10 minutes on Whisper and 5 minutes on Chorus and Convergence.
+-- The shade and the false alarm show when their music starts, six seconds after its silent opening.
 --
 --   storage.whisper.next     [player_index] = tick of the next hallucination
 --   storage.whisper.shades   [unit_number] = {entity, until}
+--   storage.whisper.pending  [player_index] = {tick, kind, stage}, a shade or a false alarm waiting for its music
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
@@ -25,6 +27,7 @@ local NIGHT = 0.5 -- darkness of the surface
 local WHISPER_COLOR = { r = 0.6, g = 0.55, b = 0.7 }
 local LONELY_RADIUS = 64
 local SHADE_TICKS = 180
+local MUSIC_LEAD_TICKS = 360 -- Clock-Interlude opens with 6 s of silence: the hallucination shows when its music starts
 -- the shade stands near the edge of what the player sees at the default zoom (the screen is wider than tall)
 local SHADE_RADIUS = { x = 22, y = 11 }
 local MOBILE = { "character", "car", "spider-vehicle", "locomotive", "cargo-wagon", "fluid-wagon", "artillery-wagon" }
@@ -33,6 +36,7 @@ function M.init()
   storage.whisper = storage.whisper or {}
   storage.whisper.next = storage.whisper.next or {}
   storage.whisper.shades = storage.whisper.shades or {}
+  storage.whisper.pending = storage.whisper.pending or {}
 end
 
 ---The stage that whispers to a force: the last one opened, none after Silence.
@@ -164,17 +168,36 @@ local function hallucinate(player, surface, stage, kind)
   kind = kind or math.random(4)
   if kind == 1 or kind == 3 then
     player.play_sound({ path = "nexus-bosses-hallucination" })
-  end
-  if kind == 1 then
-    shade(player, surface, stage)
-    vignette(player)
+    storage.whisper.pending[player.index] = { tick = game.tick + MUSIC_LEAD_TICKS, kind = kind, stage = stage }
   elseif kind == 2 then
     whisper(player, stage)
-  elseif kind == 3 then
-    false_alarm(player, surface, stage)
   else
     vignette(player)
     whisper(player, stage)
+  end
+end
+
+---Shows pending shades and false alarms when their music starts.
+---@param tick integer
+function M.show_pending(tick)
+  local pending = storage.whisper.pending
+  local surface = util.nexus()
+  for player_index, entry in pairs(pending) do
+    if tick >= entry.tick then
+      pending[player_index] = nil
+      local player = game.get_player(player_index)
+      if surface and player and player.connected then
+        local character = player.character
+        if character and character.valid and character.surface_index == surface.index and not fight_is_here(player, surface) then
+          if entry.kind == 1 then
+            shade(player, surface, entry.stage)
+            vignette(player)
+          elseif entry.kind == 3 then
+            false_alarm(player, surface, entry.stage)
+          end
+        end
+      end
+    end
   end
 end
 
