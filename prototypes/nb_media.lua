@@ -1,8 +1,11 @@
 -- Sounds, music and effect sprites. Authors and licenses: CREDITS.md.
 --   sound          nexus-bosses-<name>, played to a force by scripts/nb_util.lua (force.play_sound)
---   ambient-sound  nexus-bosses-fight-*: script tracks, the music of a fight (force.play_music);
---                  nexus-bosses-signal and nexus-bosses-signal-*: the music of Nexus, from TFMG-music (a required
---                  dependency: its author asks for the music to be used as a dependency, not copied)
+--                  nexus-bosses-hallucination: Clock-Interlude of TFMG-music, played to a player over the music by
+--                  scripts/nb_whisper.lua (player.play_sound)
+--                  nexus-bosses-whisper: played to a player by scripts/nb_whisper.lua (player.play_sound)
+--   ambient-sound  nexus-bosses-fight-* script tracks (force.play_music); nexus-bosses-signal*: the music of Nexus,
+--                  from TFMG-music (a required dependency: its author asks for the music to be used as a dependency,
+--                  not copied)
 --   animation      nexus-bosses-summon-circle under a lit beacon; sprite nexus-bosses-spark on a feeding Storm Guardian;
 --                  sprite nexus-bosses-vignette: the edges of the screen darken in a hallucination (scripts/nb_whisper.lua)
 
@@ -14,7 +17,9 @@ local SOUNDS = "__nexus-bosses__/sounds/"
 local EFFECTS = {
   { "call", 0.9, "alert" },
   { "countdown", 0.7, "alert" },
+  { "telegraph", 0.4, "alert" },
   { "precursors", 0.8, "enemy" },
+  { "whisper", 0.8, "enemy" },
   { "queen-nests", 0.8, "enemy" },
   { "hulk-spores", 0.7, "enemy" },
   { "guardian-feeds", 0.6, "enemy" },
@@ -40,7 +45,13 @@ for _, effect in ipairs(EFFECTS) do
   }
 end
 
-for _, track in ipairs({ "fight-urgent", "fight-pulse" }) do
+for _, track in ipairs({
+  "fight-urgent",
+  "fight-perpetual-tension",
+  "fight-pulse",
+  "fight-undead-cyborg",
+  "fight-alert-outsider",
+}) do
   prototypes[#prototypes + 1] = {
     type = "ambient-sound",
     name = "nexus-bosses-" .. track,
@@ -73,6 +84,14 @@ for _, track in ipairs({
     sound = { filename = "__TFMG-music__/arrival/" .. track[1] .. ".ogg", volume = 0.5 },
   }
 end
+
+prototypes[#prototypes + 1] = {
+  type = "sound",
+  name = "nexus-bosses-hallucination",
+  filename = "__TFMG-music__/arrival/Clock-Interlude.ogg",
+  volume = 0.3,
+  category = "ambient",
+}
 
 prototypes[#prototypes + 1] = {
   type = "animation",

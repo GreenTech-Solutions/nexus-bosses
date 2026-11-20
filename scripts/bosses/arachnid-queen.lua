@@ -5,6 +5,7 @@ local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
 local records = require("scripts.nb_records")
 local spawn = require("scripts.nb_spawn")
+local telegraph = require("scripts.nb_telegraph")
 
 local M = {}
 
@@ -14,8 +15,10 @@ local ESCORT_RADIUS = 14
 local NEST_THRESHOLDS = { 2 / 3, 1 / 3 }
 local NESTS_PER_CLUTCH = 2
 local NEST_SORTIE_SECONDS = 20
+local NEST_TELEGRAPH_TICKS = 4 * 60
+local NEST_MIN_SPACING = 4
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@return boolean ok
 ---@return string|nil message_key
@@ -40,55 +43,114 @@ function M.spawn(summon, surface)
   return true, nil
 end
 
----@param summon table
+---@param summon NbSummon
+---@return integer
+local function nest_count(summon)
+  local weaken = summon.weaken or 0
+  if weaken >= 1 then
+    return 0
+  end
+  local count = math.floor(NESTS_PER_CLUTCH * (1 - weaken) + 0.5)
+  return count + (summon.lair and 1 or 0)
+end
+
+---@param summon NbSummon
+---@param surface LuaSurface
+---@param queen LuaEntity
+---@param count integer
+local function telegraph_nests(summon, surface, queen, count)
+  local positions = {}
+  local attempts = 0
+  while #positions < count and attempts < count * 12 do
+    attempts = attempts + 1
+    local center = queen.position
+    if #positions > 0 then
+      center = util.offset(queen.position, math.random() * 2 * math.pi, math.random() * 8)
+    end
+    local position = surface.find_non_colliding_position(cfg.QUEEN_NEST, center, 12, 1)
+    local separated = position ~= nil
+    for _, reserved in ipairs(positions) do
+      if position and util.distance(position, reserved) < NEST_MIN_SPACING then
+        separated = false
+        break
+      end
+    end
+    if position and separated then
+      position = util.copy_position(position)
+      positions[#positions + 1] = position
+      telegraph.filling_circle(summon, surface, position, 4, NEST_TELEGRAPH_TICKS)
+    end
+  end
+  telegraph.queue(summon, "nests", NEST_TELEGRAPH_TICKS, { positions = positions })
+end
+
+---@param summon NbSummon
 ---@param surface LuaSurface
 ---@param force LuaForce
----@param queen LuaEntity
-local function lay_nests(summon, surface, force, queen)
+---@param positions MapPosition[]
+local function lay_nests(summon, surface, force, positions)
   local laid = 0
-  for _ = 1, NESTS_PER_CLUTCH do
-    local spot = surface.find_non_colliding_position(cfg.QUEEN_NEST, queen.position, 12, 1)
-    local nest = spot and surface.create_entity({ name = cfg.QUEEN_NEST, position = spot, force = "enemy" })
+  for _, position in ipairs(positions) do
+    local nest = surface.create_entity({ name = cfg.QUEEN_NEST, position = position, force = "enemy" })
     if nest then
       records.add(summon, nest, false, "nest")
       laid = laid + 1
     end
   end
   if laid > 0 then
-    local x, y = util.xy(queen.position)
+    local x, y = util.xy(positions[1])
     util.say(force, { "nexus-bosses.msg-queen-nests", math.floor(x), math.floor(y), surface.name }, util.COLORS.warning)
     util.play(force, "queen-nests")
   end
 end
 
----@param summon table
+---@param summon NbSummon
 ---@param surface LuaSurface
----@param force LuaForce
-function M.tick(summon, surface, force)
+---@param _force LuaForce
+function M.tick(summon, surface, _force)
   local seconds = summon.active_seconds
   if seconds % spawn.REDISPATCH_SECONDS == 0 then
     spawn.redispatch(summon, surface, records.commandable_units(summon))
   end
 
   local record = records.main(summon)
-  local state = summon.queen
+  local state = assert(summon.queen)
   local threshold = NEST_THRESHOLDS[state.clutches + 1]
   if record and threshold and record.entity.health <= record.initial * threshold then
     state.clutches = state.clutches + 1
-    lay_nests(summon, surface, force, record.entity)
+    local count = nest_count(summon)
+    if count > 0 then
+      telegraph_nests(summon, surface, record.entity, count)
+    end
   end
 
-  if seconds % NEST_SORTIE_SECONDS == 0 then
+  local interval = util.interval(summon, NEST_SORTIE_SECONDS)
+  if util.due(state, "next_sortie", seconds, interval) then
     for _, nest in ipairs(records.of_role(summon, "nest")) do
       spawn.send_spawner_units(summon, surface, nest.entity)
     end
   end
 end
 
----@param summon table
+---@param summon NbSummon
+---@param surface LuaSurface
+---@param force LuaForce
+---@param entry NbPending
+function M.on_pending(summon, surface, force, entry)
+  if entry.kind == "nests" then
+    lay_nests(summon, surface, force, entry.data.positions)
+  end
+end
+
+---@param summon NbSummon
 ---@return LocalisedString|nil
 function M.status(summon)
   local nests = #records.of_role(summon, "nest")
+  local state = assert(summon.queen)
+  local threshold = NEST_THRESHOLDS[state.clutches + 1]
+  if threshold then
+    return { "nexus-bosses.status-queen-next-nests", nests, math.ceil(threshold * 100) }
+  end
   if nests > 0 then
     return { "nexus-bosses.status-queen-nests", nests }
   end
@@ -96,7 +158,7 @@ function M.status(summon)
 end
 
 ---The queen is dead: her nests die with her.
----@param summon table
+---@param summon NbSummon
 function M.on_victory(summon)
   for _, nest in ipairs(records.of_role(summon, "nest")) do
     nest.entity.die()

@@ -1,8 +1,5 @@
--- The story of the expedition. Its camp lies near the spawn and opens with the Whisper: a broken ship, broken
--- walls, dead turrets and crash site chests, and in the ship the first log of the Long Echo (the prologue), which counts
--- as a log of the expedition. The last stand of its commander opens with Silence (or, without the gate of the warp
--- drive, when the Convergence is beaten), far beyond the lairs: an escape pod with his last log (the epilogue) and his
--- badge. Both are marked on the map for every force that reaches them.
+-- The story of the expedition. Its camp is marked when the Whisper is researched. The commander's last stand, with
+-- the final log and badge, is marked when the Chorus is researched. Both places are marked on the map for each force.
 --
 --   storage.story.places  [key] = {entity, position}   key: "camp" | "last_stand"
 --   storage.story.marked  [force_name] = {[key] = true}
@@ -10,7 +7,6 @@
 
 local cfg = require("lib.nb_data")
 local util = require("scripts.nb_util")
-local progress = require("scripts.nb_progress")
 local bearing = require("scripts.nb_bearing")
 
 local M = {}
@@ -158,7 +154,8 @@ function M.sync(force)
   if whisper and whisper.researched then
     mark(force, surface, "camp")
   end
-  if progress.story_ended(force) then
+  local chorus = force.technologies[cfg.CIRCLES[2].tech]
+  if chorus and chorus.researched then
     mark(force, surface, "last_stand")
   end
 end
@@ -183,16 +180,17 @@ end
 ---A player opened the camp or the last stand: its log is found for the force. The container stays open for its loot.
 ---@param player LuaPlayer
 ---@param entity LuaEntity
+---@return string|nil key of the place if this opening found it for the first time
 function M.on_opened(player, entity)
   local key = M.key_of(entity)
   if not key then
-    return
+    return nil
   end
   local force = player.force --[[@as LuaForce]]
   local found = storage.story.found[force.name] or {}
   storage.story.found[force.name] = found
   if found[key] then
-    return
+    return nil
   end
   found[key] = game.tick
   util.say(force, { "nexus-bosses.msg-" .. key:gsub("_", "-") .. "-found" }, util.COLORS.good)
@@ -200,6 +198,7 @@ function M.on_opened(player, entity)
   if key == "camp" then
     bearing.on_log_found(force)
   end
+  return key
 end
 
 ---@return table

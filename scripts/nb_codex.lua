@@ -1,11 +1,13 @@
 -- The codex of the signal: the stages and their bosses on the left (killed, log found), the page of the chosen boss on
--- the right. Without its log a boss is only a name: the dossier, how to fight it, is in the log of the expedition.
+-- the right. Without a log the page shows the main mechanic and log location; a found log adds resistances and answers.
 
 local cfg = require("lib.nb_data")
 local progress = require("scripts.nb_progress")
 local expedition = require("scripts.nb_expedition")
 local bearing = require("scripts.nb_bearing")
 local story = require("scripts.nb_story")
+local resistance = require("scripts.nb_resist")
+local colossus = require("scripts.bosses.colossus")
 
 local M = {}
 
@@ -33,6 +35,50 @@ local function paragraph(parent, caption, style)
 end
 
 local EXPEDITION = "expedition"
+
+---One line of tactics: a bold label and its text in one wrapped paragraph.
+---@param page LuaGuiElement
+---@param label LocalisedString
+---@param value LocalisedString
+local function tactics_row(page, label, value)
+  paragraph(page, { "", "[font=default-bold]", label, "[/font]  ", value })
+end
+
+---@param page LuaGuiElement
+---@param boss_id string
+---@param force_name string
+local function add_tactics(page, boss_id, force_name)
+  if boss_id == "colossus" then
+    paragraph(page, { "nexus-bosses.codex-variants" }, "caption_label")
+    local variants = page.add({ type = "table", column_count = 3 })
+    variants.add({ type = "label", caption = { "nexus-bosses.codex-variant-name" }, style = "caption_label" })
+    variants.add({ type = "label", caption = { "nexus-bosses.codex-weak" }, style = "caption_label" })
+    variants.add({ type = "label", caption = { "nexus-bosses.codex-variant-attack" }, style = "caption_label" })
+    local defeated = progress.colossus_variants(force_name)
+    for _, variant in ipairs(cfg.COLOSSUS_VARIANTS) do
+      local entity = cfg.COLOSSUS_PREFIX .. variant.id
+      local weak = resistance.of(entity)
+      local marks = defeated[variant.id] and "[img=utility/check_mark_green] " or ""
+      variants.add({ type = "label", caption = { "", marks, { "entity-name." .. entity } } })
+      variants.add({ type = "label", caption = resistance.list_caption(weak) })
+      variants.add({ type = "label", caption = { "nexus-bosses.colossus-attack-" .. variant.id } })
+    end
+  else
+    local spec = cfg.BOSSES[boss_id]
+    if spec.entities then
+      for _, entity in ipairs(spec.entities) do
+        tactics_row(page, { "entity-name." .. entity }, resistance.caption(entity))
+      end
+    else
+      local weak, strong = resistance.of(spec.entity)
+      tactics_row(page, { "nexus-bosses.codex-weak" }, resistance.list_caption(weak))
+      tactics_row(page, { "nexus-bosses.codex-strong" }, resistance.list_caption(strong))
+    end
+  end
+
+  tactics_row(page, { "nexus-bosses.codex-mechanic" }, { "nexus-bosses.mechanic-" .. boss_id })
+  tactics_row(page, { "nexus-bosses.codex-answer" }, { "nexus-bosses.answer-" .. boss_id })
+end
 
 ---The page of the expedition: the prologue from its camp and the epilogue from the last stand of its commander.
 ---@param page LuaGuiElement
@@ -75,21 +121,36 @@ local function fill_page(page, force_name, boss_id)
   local boss = cfg.BOSSES[boss_id]
   local stage = cfg.CIRCLES[boss.circle].stage
   paragraph(page, { "", { "nexus-bosses.boss-" .. boss_id }, " · ", { "nexus-bosses.stage-" .. stage } }, "heading_2_label")
-  paragraph(page, { "nexus-bosses.lore-" .. boss_id })
   page.add({ type = "line" })
-  if expedition.has_log(force_name, boss_id) then
+  local has_log = expedition.has_log(force_name, boss_id)
+  if has_log then
     paragraph(page, { "nexus-bosses.log-" .. boss_id })
   else
+    paragraph(page, { "nexus-bosses.mechanic-" .. boss_id })
     paragraph(page, { "nexus-bosses.codex-no-log" }).style.font_color = MUTED
+  end
+  if boss_id == "colossus" then
+    local variant = colossus.ensure_next(force_name)
+    paragraph(page, { "nexus-bosses.codex-colossus-next", { "entity-name." .. cfg.COLOSSUS_PREFIX .. variant } })
+  end
+  if has_log then
+    add_tactics(page, boss_id, force_name)
   end
   page.add({ type = "line" })
   paragraph(page, { progress.is_defeated(force_name, boss_id) and "nexus-bosses.codex-defeated" or "nexus-bosses.codex-alive" })
   local lair = bearing.lair_position(boss_id)
   if lair and bearing.is_found(force_name, boss_id) then
     local x, y = lair.x, lair.y
-    local quality = bearing.next_quality(force_name, boss_id)
-    paragraph(page, { "nexus-bosses.codex-lair", math.floor(x), math.floor(y), cfg.PLANET, bearing.wins_of(force_name, boss_id),
+    local wins = bearing.wins_of(force_name, boss_id)
+    local pylon_quality = bearing.pylon_quality(force_name, boss_id)
+    local quality = pylon_quality or bearing.next_quality(force_name, boss_id)
+    local frequency = bearing.lair_frequency(force_name, boss_id)
+    paragraph(page, { "nexus-bosses.codex-lair", math.floor(x), math.floor(y), cfg.PLANET, wins,
       string.format("[item=%s,quality=%s]", cfg.trophy_name(boss_id), quality) })
+    if pylon_quality then
+      paragraph(page, { "nexus-bosses.codex-lair-pylon-trade" })
+    end
+    paragraph(page, { "nexus-bosses.codex-lair-hard", math.floor((frequency - 1) * 100) })
   else
     local technology = game.forces[force_name].technologies[cfg.BEARING_TECH]
     if technology and technology.researched then

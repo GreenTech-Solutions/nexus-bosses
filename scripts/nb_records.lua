@@ -32,7 +32,7 @@ function M.add(summon, entity, required, role, segmented)
   return record
 end
 
----The record now follows another entity (the Devourer that surfaced again).
+---The record now follows another live entity (a surfaced Devourer or a risen Twin Maw).
 ---@param summon table
 ---@param record table
 ---@param entity LuaEntity|LuaSegmentedUnit
@@ -41,6 +41,10 @@ function M.replace(summon, record, entity)
   record.entity = entity
   record.unit_number = entity.unit_number
   record.hidden = false
+  record.dead = false
+  record.gone = false
+  record.death_position = nil
+  record.death_max_health = nil
   summon.by_unit[record.unit_number] = record
 end
 
@@ -65,9 +69,14 @@ end
 ---Flags the records whose object vanished without a death event.
 ---@param summon table
 function M.refresh(summon)
-  for _, record in ipairs(summon.tracked) do
+  for index = #summon.tracked, 1, -1 do
+    local record = summon.tracked[index]
     if not (record.dead or record.gone or record.hidden or record.entity.valid) then
       record.gone = true
+    end
+    if not record.required and (record.dead or record.gone) then
+      summon.by_unit[record.unit_number] = nil
+      table.remove(summon.tracked, index)
     end
   end
 end

@@ -1,9 +1,12 @@
 # Nexus Bosses
 
 Nine bosses on Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus),
-for Factorio 2.1. You call them yourself: light a summon beacon on Nexus, hold it through the countdown and its precursor
-waves, kill the boss and take its trophy. The signal grows over three stages (Whisper, Chorus, Convergence); the nine trophies make
-the warp key, which researches Silence and opens the routes of the warp drive. The mod portal page ([Nexus Bosses](https://mods.factorio.com/mod/nexus-bosses)) is
+for Factorio 2.1. Light a summon beacon, defend it through the precursor waves, defeat the boss and claim its trophy.
+The three stages are Whisper, Chorus and Convergence. Expedition logs reveal each boss's mechanic and damage weaknesses;
+precursors guard unfound wrecks and found lairs, and a lair fight increases the main mechanic's frequency. A repaired pylon
+can weaken that mechanic. After all nine bosses are defeated, exploration and fights reveal the glyphs for the builders'
+vault. With the warp-drive gate enabled,
+the nine trophies craft a key that is consumed in the reliquary to research Silence. The mod portal page ([Nexus Bosses](https://mods.factorio.com/mod/nexus-bosses)) is
 `tools/portal/description.md`. Bug reports: the issues of this repository.
 
 Requires Nexus 1.3.6 or newer (with Nexus-Threat and Nexus-Graphics), Big Monsters, Toxic Biters, Arachnids
@@ -16,8 +19,13 @@ enemy, Electric flying enemies and TFMG: Music (the music of Nexus and the vault
 | `lib/nb_data.lua` | the stages, the bosses, costs and health, the prototypes of other mods the mod needs |
 | `prototypes/` | boss copies, beacons, trophies and the warp key, technologies, Nexus without ordinary enemies |
 | `scripts/nb_summon.lua` | one summon from beacon to victory: countdown, precursors, spawn, health bar, trophy |
-| `scripts/bosses/<boss>.lua` | the bosses the mod spawns itself and their mechanics |
-| `scripts/nb_bm.lua` | the bosses of Big Monsters: the event, moving the boss to the beacon, the map setting |
+| `scripts/bosses/<boss>.lua` | the nine bosses the mod spawns itself and their mechanics |
+| `scripts/nb_resist.lua` | weak and strong damage types computed from entity prototypes |
+| `scripts/nb_telegraph.lua`, `nb_strike.lua` | ground warnings and queued strikes |
+| `scripts/nb_spider.lua` | movement and targeting for spider-vehicle bosses |
+| `scripts/nb_guards.lua` | precursor guards for wrecks and lairs |
+| `scripts/nb_migrate.lua` | migration of saves from earlier mod data |
+| `scripts/nb_bm.lua` | Big Monsters' random-event setting, Nexus exclusion and removal of monsters from disallowed surfaces |
 | `scripts/nb_spawn.lua`, `nb_records.lua` | placing bosses and precursors, their orders; the entities of the active summon |
 | `scripts/nb_progress.lua` | defeated bosses per force, stage research, trophies, the end of the story |
 | `scripts/nb_gui.lua`, `nb_codex.lua` | the health bar; the Codex of the signal |
@@ -33,9 +41,11 @@ Console command `/nexus-bosses-abort` (administrators) stops a stuck trial.
 
 ## Remote API
 
-Remote interface `nexus-bosses` (`scripts/nb_interface.lua`). Other mods may rely on the three functions below; the rest
-of the interface (`set_ignore_player_presence`, `abort_summon`, `find_log`, `find_lair`, `repair_pylon` and the others)
-is for tests and debugging, changes the game and may change in any version.
+Remote interface `nexus-bosses` (`scripts/nb_interface.lua`). Other mods may rely on the three functions below. The other
+functions are for tests and debugging and may change in any version: `set_ignore_player_presence`, `set_countdown`,
+`abort_summon`, `migrate`, `forget_migration`, `get_pending_data`, `set_tracked_health`, `set_next_colossus`, `find_log`,
+`resist`, `toggle_detector`, `find_lair`, `set_finder`, `wake_ruin`, `find_story`, `defeat`, `close_reliquary`,
+`repair_pylon` and `hallucinate`.
 
 | Call | Since | Returns | Side effects |
 | --- | --- | --- | --- |
@@ -86,6 +96,14 @@ if api and api.get_state then
     -- the Arachnid Queen is dead for this force
   end
 end
+```
+
+## Tests
+
+The FactorioTest runner is in the Factorio mod pack. From the pack directory, point it at this mod with `-m`:
+
+```sh
+tools/test/run.sh -m /path/to/nexus-bosses
 ```
 
 ## Credits

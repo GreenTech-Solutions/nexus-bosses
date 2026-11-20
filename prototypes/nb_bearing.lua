@@ -102,7 +102,7 @@ data:extend({
     inventory_size = 1,
     inventory_type = "normal",
     picture = proto.ruin_picture("fulgoran-ruin-stonehenge"),
-    open_sound = { filename = "__base__/sound/machine-open.ogg", volume = 0.5 },
-    close_sound = { filename = "__base__/sound/machine-close.ogg", volume = 0.5 },
+    open_sound = { filename = "__nexus-bosses__/sounds/container-open.ogg", volume = 0.5 },
+    close_sound = { filename = "__nexus-bosses__/sounds/container-close.ogg", volume = 0.5 },
   },
 })

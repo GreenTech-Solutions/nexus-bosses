@@ -49,6 +49,13 @@ data:extend({
     order = "c",
   },
   {
+    type = "bool-setting",
+    name = "nexus-bosses-commander-nuke",
+    setting_type = "runtime-global",
+    default_value = true,
+    order = "d",
+  },
+  {
     type = "string-setting",
     name = "nexus-bosses-hallucinations",
     setting_type = "runtime-per-user",

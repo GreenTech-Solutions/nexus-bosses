@@ -1,48 +1,98 @@
-Nine summonable bosses for Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus). Nexus has no nests and no random attacks: a boss comes only when you light its summon beacon. The *Long Echo*, an expedition that landed before you, left logs on how to fight them.
+![Devourer dives and resurfaces inside the rear battery](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/00-fight.webp)
+
+Nine bosses can be summoned on Nexus, the last planet of [Nexus Extended Promethium Endgame](https://mods.factorio.com/mod/Nexus). Each one has a mechanic that your defense has to answer, and the fight shows it on the ground before it hits.
 
 ## How it works
 
-1. Craft a summon beacon on Nexus (50 to 110 omega alloy and 2 to 5 advanced photon processors, by stage) and place it there.
-2. A countdown starts, 60 seconds by default. It runs only while a player of your force is on Nexus. Two waves of precursors attack the beacon from the side the boss will come from. Pick the beacon up to cancel; a destroyed beacon is lost.
-3. The boss appears 150 to 250 tiles away and attacks your buildings. Kill it and it drops its trophy, every time.
+1. Craft a summon beacon for an unlocked boss and place it on Nexus.
+2. Keep a player of your force on Nexus while the countdown runs. Two waves of precursors attack the beacon. Picking it up cancels the summon; if it is destroyed, it is lost.
+3. If no defenses are within 600 tiles of the beacon for 60 seconds, the boss leaves and the beacon is lost. Otherwise, defeat the boss to claim its trophy. Defeat all three bosses in a stage to open the next one. Only one trial runs at a time.
 
-Only one summon runs at a time.
+## The nine bosses
 
-## Stages
+The exact numbers are in the Codex once the boss log is found.
 
-Three stages of three bosses. Killing all three opens the next stage.
+### Whisper
 
-- **Whisper:** Arachnid Queen, Watcher, Rogue Spidertron. Opens when you build a shield stabilizer on Nexus (when Nexus is discovered, if Nexus Threat activation is off).
-- **Chorus:** Twin Maws, Colossus, Plague Hulk. Laser and electric damage +20 %.
-- **Convergence:** Storm Guardian, Devourer, Last Commander. Bullet, railgun, rocket and cannon damage +20 %.
+| Boss | Mechanic | Weak to |
+| --- | --- | --- |
+| Arachnid Queen | Lays two nests at two thirds and one third of her health; the nests send warriors until destroyed. | Fire, Laser, Electric |
+| Watcher | While one of its drones lives, it marks a building and fires rockets at it. | Laser, Electric |
+| Rogue Spidertron | Marks the power pole with the most buildings around it, then disables everything in the circle with an EMP. | Poison |
 
-One trophy from each boss crafts the warp key. Crafting it researches Silence, which opens the routes of the warp drive to the Oort cloud and Sol. The edge of the system and the shattered planet open by their own technologies, as without this mod.
+![Arachnid Queen at the wall with two nest marks](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/03-queen.jpg)
+
+### Chorus
+
+| Boss | Mechanic | Weak to |
+| --- | --- | --- |
+| Twin Maws | While both maws live they heal each other; a fallen maw rises again unless the second one dies quickly. | Fire |
+| Colossus | One of six variants arrives, each with its own attack. | Depends on the variant |
+| Plague Hulk | Spores follow its sortie squad and stop the turrets in a marked circle. | Impact, Acid, Poison, Explosion, Laser, Electric |
+
+![Three Colossus variants: fire cluster, armour shield, electric shock](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/06-colossus.jpg)
+
+### Convergence
+
+| Boss | Mechanic | Weak to |
+| --- | --- | --- |
+| Storm Guardian | Heals during a storm and calls lightning around itself; without a storm it calls its own. | Impact, Explosion |
+| Devourer | Dives at half health and resurfaces beyond the beacon. | Acid |
+| Last Commander | Drops soldiers at marked spots, marks buildings for rocket strikes and fires an atomic rocket at the nearest turret. | None |
+
+![Last Commander atomic rocket mark over the base](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/10-last-commander.jpg)
+
+![Devourer breaks through the wall](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/01-devourer.jpg)
+
+## During the fight
+
+The health bar shows the stage, the phase, the next attack with its countdown, and the weak and resistant damage types of the boss. The Colossus bar names the variant.
+
+![Health bars of the Queen, Rogue Spidertron and armoured Colossus](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/11-health-bar.jpg)
 
 ## Between the fights
 
-- **Expedition logs.** Every boss has a wreck on Nexus. Opening it adds a log to the Codex (a shortcut) that says how the boss fights and what it resists; nothing else in the game tells you. The signal detector shortcut points to the nearest unread wreck, and every victory marks one on the map.
-- **Lairs.** The first log unlocks the direction finder. Set two finders far apart to the same boss and wait until both bearings are precise: where they cross, the lair is marked. A beacon lit within 30 tiles of the lair gives a second trophy of a better quality (uncommon first, up to legendary) and half of the beacon's cost as loot.
-- **Pylons.** Every lair has a pylon. Put in a trophy of that boss, uncommon or better, and the boss summoned in that lair comes with 10, 20, 30 or 40 % less health, by the quality of the trophy.
-- **Storm shards.** During a storm of Nexus Threat, lightning attractor ruins near a player wake up and drop a charged shard, with lightning striking around them. Up to three shards go into a charged beacon of the Storm Guardian; each one removes a third of the healing and lightning it gets from a storm. The first death of the Storm Guardian halves the lightning of every later storm.
-- **Story.** The camp of the expedition is marked when the Whisper opens, the last stand of its commander after Silence. A vault follows, behind a lock of four glyphs out of eight; every three wrong codes give a hint, and a map setting skips the puzzle. Inside are nine legendary trophies and a relic that gives research productivity +10 %.
-- **Hallucinations.** At night on Nexus, with none of your buildings within 64 tiles: a phantom enemy, a whisper in the chat, a false alert, darkened screen edges. On average every 5, 2 or 1 minutes by stage; none after Silence. A player setting makes them rare or turns them off.
+- **Expedition logs.** Wrecks contain boss logs. Finding a log opens its mechanic, weak and resistant damage types, and answer in the Codex. The signal detector points to the nearest unfound wreck; each victory marks another wreck on the map.
 
-## Changes to other mods
+  ![Codex page of the Arachnid Queen](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/02-codex.jpg)
 
-- **Nexus:** no nests or worms are generated. Added to a running game, the mod removes the enemies already on Nexus.
-- **Big Monsters:** its random events are off on every planet by default (a map setting turns them back on; Nexus stays excluded), and its monsters found where they are off are removed. Its rocket silo attacks are always off. "Allow nuker" is off by default, so the soldiers of the Last Commander carry no atomic rockets; you can turn it back on.
-- The Watcher, the Rogue Spidertron, the Colossus and the Last Commander are created by Big Monsters. If it finds no place for one within 60 seconds, the beacon is returned.
+  ![Signal detector sector on the map](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/13-search.jpg)
+
+- **Lairs and guards.** Two direction finders set to the same boss narrow their bearings until the crossing marks its lair. On the first approach to an unfound wreck or found lair, precursors are alerted when a player comes within 40 tiles; a warning circle appears and the group emerges three seconds later. Each point triggers once. A lair fight increases the boss's main mechanic frequency and gives an extra trophy and loot.
+- **Pylons.** An uncommon-or-better trophy of the lair's boss repairs its pylon. The pylon weakens that boss's main mechanic by 25 %, 50 %, 75 % or 100 %, according to trophy quality. When it weakens a Last Commander lair fight at any quality, the atomic rocket is disabled.
+
+  ![Last Commander in its lair under a repaired pylon](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/12-lair-pylon.jpg)
+
+- **Vault.** The vault becomes available after all nine bosses are defeated. Exploration and fights reveal the four glyphs for its code. With the warp-drive gate enabled, place the warp key made from the nine trophies in the reliquary; it is consumed to research Silence, and the relic rises in the vault. The relic gives research productivity +10 %.
+
+  ![Vault reliquary](https://raw.githubusercontent.com/GreenTech-Solutions/nexus-bosses/master/tools/portal/images/14-vault.jpg)
+
+- **Hallucinations.** At night on Nexus, far from your buildings, a player may see a phantom or get a false alert. The player setting makes them rare or turns them off.
+
+## FAQ
+
+### Why is Big Monsters required?
+
+It supplies the prototypes copied for the Watcher, Rogue Spidertron, six Colossus variants and Last Commander. Nexus Bosses spawns and controls its own copies.
+
+### What does Nexus Bosses disable in Big Monsters?
+
+Big Monsters' random events are off by default. The map setting can enable them on other planets; Nexus is excluded either way. Big Monsters' attacks on rocket silos are disabled.
+
+### When does the Last Commander's atomic rocket fire?
+
+When Nexus Bosses' `nexus-bosses-commander-nuke` setting is enabled (on by default), the rocket targets the nearest turret within 60 tiles of the Commander every 90 seconds, or the beacon if no turret is in range. In a lair fight, any repaired pylon that weakens the Commander disables it, regardless of trophy quality.
 
 ## Settings
 
-- Startup: boss health multiplier, beacon cost multiplier, whether the trials gate the warp drive (off: no warp key and no Silence).
-- Map: countdown length (30 to 600 s), random events of Big Monsters, open the glyph lock without the puzzle.
+- Startup: boss health multiplier, beacon cost multiplier, whether trials gate the warp drive.
+- Map: countdown length, Big Monsters random events on other planets, skip the glyph puzzle, Last Commander atomic rocket (on by default).
 - Player: hallucinations (normal, rare, off).
 
 Administrators can stop a stuck trial with `/nexus-bosses-abort`.
 
 ## Sound
 
-Each boss has its own arrival sound, and two fight tracks alternate during a fight. Nexus plays music from [TFMG: Music](https://mods.factorio.com/mod/TFMG-music), a required dependency: *FIELDS*, *TREMOR* and *ENTROPY*, with four interludes between them; the vault plays *Reflections*.
+Each boss has an arrival sound; five fight tracks play in turn during a trial, starting with a random one. Nexus and the vault use music from [TFMG: Music](https://mods.factorio.com/mod/TFMG-music), a required dependency. Clock-Interlude plays over the current music during phantom and false-alarm hallucinations.
 
-Source and bug reports: [GreenTech-Solutions/nexus-bosses](https://github.com/GreenTech-Solutions/nexus-bosses). Thanks to MFerrari for Big Monsters and the enemy mods, and to Karu_Kiruna for Nexus. Sounds, music and icons: [CREDITS.md](https://github.com/GreenTech-Solutions/nexus-bosses/blob/master/CREDITS.md).
+Source and bug reports: [GreenTech-Solutions/nexus-bosses](https://github.com/GreenTech-Solutions/nexus-bosses). Asset sources are listed in [CREDITS.md](https://github.com/GreenTech-Solutions/nexus-bosses/blob/master/CREDITS.md).

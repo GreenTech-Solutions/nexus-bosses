@@ -13,7 +13,62 @@ M.COLORS = {
 
 -- the music of a fight: prototypes/nb_media.lua, lengths in seconds
 ---@type {name: string, seconds: integer}[]
-M.FIGHT_TRACKS = { { name = "nexus-bosses-fight-urgent", seconds = 57 }, { name = "nexus-bosses-fight-pulse", seconds = 71 } }
+M.FIGHT_TRACKS = {
+  { name = "nexus-bosses-fight-urgent", seconds = 57 },
+  { name = "nexus-bosses-fight-perpetual-tension", seconds = 162 },
+  { name = "nexus-bosses-fight-pulse", seconds = 71 },
+  { name = "nexus-bosses-fight-undead-cyborg", seconds = 58 },
+  { name = "nexus-bosses-fight-alert-outsider", seconds = 133 },
+}
+
+---Effective mechanic frequency combines health escalation and lair difficulty, up to the shared cap.
+---@param summon table
+---@return number
+function M.frequency(summon)
+  local phase = cfg.ESCALATION[summon.phase_index or 0]
+  local escalation = phase and phase.factor or 1
+  return math.min(cfg.FREQUENCY_CAP, (summon.frequency or 1) * escalation)
+end
+
+---Seconds between uses: health and lair speed mechanics up; weakened lets a pylon lengthen this interval or turn it off.
+---@param summon table
+---@param seconds number the base interval
+---@param weakened boolean|nil
+---@return number|nil
+function M.interval(summon, seconds, weakened)
+  local weaken = summon.weaken or 0
+  if weakened and weaken >= 1 then
+    return nil
+  end
+  local interval = seconds / M.frequency(summon)
+  if weakened then
+    interval = interval / (1 - weaken)
+  end
+  return interval
+end
+
+---True once per interval. state[key] is the active second of the next use; nil clears it and never fires.
+---@param state table
+---@param key string
+---@param seconds integer the active seconds of the fight
+---@param interval number|nil
+---@return boolean
+function M.due(state, key, seconds, interval)
+  if not interval then
+    state[key] = nil
+    return false
+  end
+  local next_use = state[key]
+  if not next_use then
+    state[key] = seconds + interval
+    return false
+  end
+  if seconds < next_use then
+    return false
+  end
+  state[key] = seconds + interval
+  return true
+end
 
 ---@param position MapPosition
 ---@return number x
@@ -54,6 +109,13 @@ end
 ---@param position MapPosition
 function M.strike(surface, position)
   surface.create_entity({ name = "lightning", position = position })
+end
+
+---@param surface LuaSurface
+---@param position MapPosition
+function M.burrow(surface, position)
+  surface.create_entity({ name = "bm-large-tunnel", position = position, force = "neutral" })
+  surface.create_entity({ name = "big-demolisher-fissure-explosion", position = position })
 end
 
 ---@param object LuaEntity|LuaPlayer

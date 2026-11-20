@@ -9,6 +9,7 @@ local state = require("scripts.nb_state")
 local nexus = require("scripts.nb_nexus")
 local progress = require("scripts.nb_progress")
 local summon = require("scripts.nb_summon")
+local migrate = require("scripts.nb_migrate")
 local expedition = require("scripts.nb_expedition")
 local codex = require("scripts.nb_codex")
 local bearing = require("scripts.nb_bearing")
@@ -16,6 +17,7 @@ local storms = require("scripts.nb_storms")
 local story = require("scripts.nb_story")
 local whisper = require("scripts.nb_whisper")
 local vault = require("scripts.nb_vault")
+local guards = require("scripts.nb_guards")
 require("scripts.nb_interface")
 
 local beacon_filters = {}
@@ -80,6 +82,9 @@ end
 script.on_event(defines.events.on_segmented_unit_died, summon.on_segmented_unit_died,
   { { filter = "name", name = cfg.DEVOURER } })
 
+script.on_event(defines.events.on_entity_damaged, summon.on_damaged,
+  { { filter = "name", name = cfg.COLOSSUS_PREFIX .. "armored" } })
+
 script.on_event(defines.events.on_surface_created, function(event)
   nexus.on_surface_created(event.surface_index)
   local surface = game.get_surface(event.surface_index)
@@ -96,12 +101,19 @@ script.on_event(defines.events.on_gui_opened, function(event)
     return
   end
   local player = game.get_player(event.player_index) --[[@as LuaPlayer]]
+  local force = player.force --[[@as LuaForce]]
   if entity.name:sub(1, #cfg.WRECK_PREFIX) == cfg.WRECK_PREFIX then
-    expedition.on_wreck_opened(player, entity, codex)
+    if expedition.on_wreck_opened(player, entity, codex) then
+      vault.earn(force, "logs")
+    end
   elseif entity.name == cfg.FINDER then
     bearing.open_panel(player, entity)
+  elseif entity.name == cfg.CONSOLE then
+    vault.on_console_opened(player)
   elseif story.key_of(entity) then
-    story.on_opened(player, entity)
+    if story.on_opened(player, entity) == "camp" then
+      vault.earn(force, "camp")
+    end
   elseif entity.name == cfg.HATCH then
     vault.descend(player)
   elseif entity.name == cfg.STAIRS then
@@ -127,6 +139,8 @@ script.on_event(defines.events.on_gui_closed, function(event)
     bearing.on_pylon_closed(game.get_player(event.player_index) --[[@as LuaPlayer]], entity)
   elseif entity and entity.valid and entity.name == cfg.CONSOLE then
     vault.on_console_closed(game.get_player(event.player_index) --[[@as LuaPlayer]])
+  elseif entity and entity.valid and entity.name == cfg.RELIQUARY then
+    vault.on_reliquary_closed(game.get_player(event.player_index) --[[@as LuaPlayer]])
   else
     codex.on_gui_closed(event)
   end
@@ -151,13 +165,19 @@ end)
 
 script.on_event(defines.events.on_forces_merged, function(event)
   progress.on_forces_merged(event.source_name, event.destination)
+  summon.on_forces_merged(event.source_name, event.destination)
 end)
 
 script.on_nth_tick(60, function(event)
   summon.step()
   nexus.on_second(event.tick)
   storms.on_second(event.tick)
+  guards.on_second()
   vault.on_second(event.tick)
+end)
+
+script.on_nth_tick(10, function(event)
+  summon.on_pending(event.tick)
 end)
 
 script.on_nth_tick(30, function(event)
@@ -171,8 +191,10 @@ end)
 
 script.on_init(function()
   state.init()
+  summon.init()
   expedition.init()
   bearing.init()
+  guards.init()
   storms.init()
   story.init()
   whisper.init()
@@ -186,12 +208,15 @@ end)
 
 script.on_configuration_changed(function()
   state.init()
+  summon.init()
   expedition.init()
   bearing.init()
+  guards.init()
   storms.init()
   story.init()
   whisper.init()
   vault.init()
+  migrate.run()
   expedition.sync_bearing()
   story.sync_all()
   vault.sync_all()
@@ -218,3 +243,11 @@ commands.add_command("nexus-bosses-abort", { "nexus-bosses.command-abort-help" }
     game.print(message)
   end
 end)
+
+-- In-game tests (FactorioTest, tools/test/run.sh -m <this folder> in the pack). Never in a release: tests/ is export-ignored.
+if script.active_mods["factorio-test"] then
+  require("__factorio-test__/init")({
+    "tests.harness", "tests.fight", "tests.telegraph", "tests.bosses", "tests.search",
+    "tests.whisper", "tests.defeat", "tests.lair", "tests.migration", "tests.vault", "tests.duration", -- Duration researches every technology, so these tests run last.
+  })
+end

@@ -19,6 +19,8 @@ local function create(player)
   bar.style.horizontally_stretchable = true
   bar.style.color = { r = 0.85, g = 0.2, b = 0.15 }
   frame.add({ type = "label", name = "status" })
+  local resist = frame.add({ type = "label", name = "resist" })
+  resist.style.single_line = false
   local scale = player.display_scale
   frame.location = { x = math.floor((player.display_resolution.width - WIDTH * scale) / 2), y = math.floor(48 * scale) }
   return frame
@@ -28,13 +30,21 @@ end
 ---@param title LocalisedString
 ---@param share number 0..1
 ---@param status LocalisedString|nil
-function M.update(force, title, share, status)
+---@param resist LocalisedString|nil
+function M.update(force, title, share, status, resist)
   for _, player in ipairs(force.connected_players) do
-    local frame = player.gui.screen[NAME] or create(player)
+    local frame = player.gui.screen[NAME]
+    if frame and not frame.resist then
+      frame.destroy()
+      frame = nil
+    end
+    frame = frame or create(player)
     frame.title.caption = title
     frame.bar.value = share
     frame.status.caption = status or ""
     frame.status.visible = status ~= nil
+    frame.resist.caption = resist or ""
+    frame.resist.visible = resist ~= nil
   end
 end
 

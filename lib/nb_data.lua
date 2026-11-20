@@ -11,17 +11,10 @@
 ---@field precursors integer units in each precursor wave
 ---@field color Color the antenna of its beacons, its bearings and its summon circle
 
----@class NbBmSet
----@field event string event of the remote interface "bigmonster"
----@field types string[] entity types of the bosses the event creates
----@field prefixes string[] name prefixes of those bosses
----@field explore_chunks integer chunk radius around the spawn of the force that the event walks through
-
 ---@class NbBossSpec
----@field kind "own"|"bm" "own": scripts/bosses/<id>.lua spawns it, "bm": the Big Monsters event does
 ---@field entity string the entity whose icon marks the beacon, the trophy and the technologies
+---@field entities string[]|nil entities that make up a multi-entity boss
 ---@field precursors string[] units of the precursor waves
----@field bm NbBmSet|nil
 ---@field circle integer
 ---@field slot integer
 
@@ -29,8 +22,9 @@ local M = {}
 
 M.PLANET = "nexus"
 M.PLANET_TECH = "planet-discovery-nexus"
+M.DEFENCE_RADIUS = 600
 
--- Pinned on the Nexus surface: Big Monsters picks the tier of its bosses from it, and below 0.9 it makes no bosses.
+-- Enemy evolution is pinned on the Nexus surface; some spawner prototypes scale their health with it.
 M.EVOLUTION = 0.99
 M.EVOLUTION_REFRESH_TICKS = 60 * 60
 
@@ -83,14 +77,20 @@ M.LAIR_REMAINS_PREFIX = "nexus-bosses-lair-remains-"
 M.LAIR_SCORCH = "nexus-bosses-lair-scorchmark"
 -- the second trophy of a fight in the lair: one step better with every such fight
 M.LAIR_QUALITIES = { "uncommon", "rare", "epic", "legendary" }
-M.LAIR_LOOT_SHARE = 0.5 -- of the beacon recipe
+M.LAIR_LOOT_SHARE = 1 -- full beacon recipe without a pylon
+M.LAIR_LOOT_SHARE_PYLON = 0.5 -- half the beacon recipe with a pylon
+M.LAIR_FREQUENCY = 4 / 3
+M.LAIR_FREQUENCY_PER_WIN = 0.1
+M.LAIR_FREQUENCY_MAX = 1.6
+M.ESCALATION = { { below = 0.66, factor = 1.25 }, { below = 0.33, factor = 1.5 } }
+M.FREQUENCY_CAP = 2
 -- Pylons: a broken pylon of suppression stands in every found lair; a trophy of its boss of a better quality
--- repairs it, and a boss called in that lair comes with less health, by the quality of the trophy
+-- repairs it and weakens that boss's main mechanic when called in the lair
 M.PYLON = "nexus-bosses-pylon"
-M.PYLON_SHARES = { uncommon = 0.1, rare = 0.2, epic = 0.3, legendary = 0.4 }
+M.PYLON_WEAKEN = { uncommon = 0.25, rare = 0.5, epic = 0.75, legendary = 1 }
 
--- Storms: a storm of Nexus-Threat wakes the lightning attractor ruins of Nexus; a charged shard from one weakens
--- the Storm Guardian, through the charged beacons
+-- Storms: a storm of Nexus-Threat wakes the lightning attractor ruins of Nexus; charged shards in a beacon reduce
+-- only the Storm Guardian's healing
 M.RUIN_ATTRACTOR = "fulgoran-ruin-attractor"
 M.SHARD = "nexus-bosses-storm-shard"
 M.CHARGES = 3
@@ -141,75 +141,89 @@ M.QUEEN = "nexus-arachnid-queen"
 M.QUEEN_NEST = "nexus-queen-nest"
 M.MAW_FIRE = "nexus-maw-fire"
 M.MAW_ACID = "nexus-maw-acid"
+M.COMMANDER = "nexus-last-commander"
 M.HULK = "nexus-plague-hulk"
 M.GUARDIAN = "nexus-storm-guardian"
 M.DEVOURER = "nexus-devourer"
+M.WATCHER = "nexus-watcher"
+M.SPIDERTRON = "nexus-rogue-spidertron"
+M.WATCHER_DRONE = "flying-electric-unit-3"
+M.WATCHER_AMMO = "flying-saucer-laser-ammo"
+M.COLOSSUS_FIRE_PROJECTILE = "mf-cluster-fire-projectile-big"
+M.COLOSSUS_STORM_EXPLOSION = "electric-shock2"
+M.COLOSSUS_ACID_PROJECTILE = "acid-stream-spitter-behemoth"
+M.COMMANDER_NUKE = "mf-small-atomic-rocket"
+M.COMMANDER_DROP_EXPLOSION = "big-explosion"
+M.COMMANDER_DROP_UNIT = "bm_fake_human_machine_gunner_5"
+M.TURRET_TYPES = { "ammo-turret", "electric-turret", "fluid-turret", "artillery-turret" }
+M.POLE_TYPES = { "electric-pole" }
 
--- Health before the startup setting "nexus-bosses-boss-health". The hulk is a spawner, whose health the game
+-- Boss health values were tuned from tests/duration.lua with a quarter-stage battery on 19.11.2026;
+-- targets are 3 / 4–5 / 5–6 minutes by stage.
+-- Values before the startup setting "nexus-bosses-boss-health". The hulk is a spawner, whose health the game
 -- multiplies by 10^evolution: the prototype gets HULK_HEALTH / 10^0.99.
-M.QUEEN_HEALTH = 500000
+M.QUEEN_HEALTH = 3430000
 M.NEST_HEALTH = 25000
-M.HULK_HEALTH = 2000000
-M.GUARDIAN_HEALTH = 3000000
-M.DEVOURER_HEALTH = 5000000
-M.DEVOURER_HEALING_PER_TICK = 50 -- the big demolisher heals 400 a tick, 8 % of its health every second
+M.COMMANDER_HEALTH = 54400000
+M.HULK_HEALTH = 16500000
+M.GUARDIAN_HEALTH = 28400000
+M.DEVOURER_HEALTH = 52000000
+M.DEVOURER_HEALING_PER_TICK = 50 -- scaled with DEVOURER_HEALTH and the startup boss-health setting
+M.WATCHER_HEALTH = 210000
+M.SPIDERTRON_HEALTH = 2600000
+M.MAW_FIRE_HEALTH_SHARE = 4.6 -- share of the original Big Monsters health
+M.MAW_ACID_HEALTH_SHARE = 2.6 -- share of the original Big Monsters health
+M.ESCORT_CAP = 18
 
-local BM_COLOSSUS_PREFIXES = {
-  -- with a soldier chance above 0 the event may pick a human boss, flamethrowers without "boss" in the name
-  "biterzilla", "maf-giant-", "bm-motherbiterzilla", "bm_fake_human_boss_", "bm_fake_human_flamethrower_",
+-- Colossus health shares are based on the original Big Monsters prototypes; variants are selected when the force
+-- first needs to know its next variant.
+M.COLOSSUS_VARIANTS = {
+  { id = "fire", original = "biterzilla15", health_share = 11.6 },
+  { id = "storm", original = "biterzilla25", health_share = 11.3 },
+  { id = "armored", original = "biterzilla35", health_share = 5.6 },
+  { id = "mother", original = "bm-motherbiterzilla5", health_share = 4.9 },
+  { id = "fire-spitter", original = "maf-giant-fire-spitter5", health_share = 6.6 },
+  { id = "acid-spitter", original = "maf-giant-acid-spitter5", health_share = 9.4 },
 }
+M.COLOSSUS_PREFIX = "nexus-colossus-"
 
 local SPECS = {
   ["arachnid-queen"] = {
-    kind = "own",
-    entity = "maf-boss-arachnid-biter-10",
+    entity = M.QUEEN,
     precursors = { "arachnid-biter-warrior-unit", "arachnid-spitter-bigspitter-unit" },
   },
   ["watcher"] = {
-    kind = "bm",
-    entity = "maf_flying_saucer_8",
-    precursors = { "flying-electric-unit-3" },
-    bm = { event = "flying_saucer", types = { "spider-vehicle" }, prefixes = { "maf_flying_saucer_" }, explore_chunks = 16 },
+    entity = M.WATCHER,
+    precursors = { M.WATCHER_DRONE },
   },
   ["rogue-spidertron"] = {
-    kind = "bm",
-    entity = "bm-spidertron_5",
+    entity = M.SPIDERTRON,
     precursors = { "arachnid-biter-tiger-unit" },
-    bm = { event = "spidertron", types = { "spider-vehicle" }, prefixes = { "bm-spidertron_" }, explore_chunks = 16 },
   },
   ["twin-maws"] = {
-    kind = "own",
-    entity = "maf-worm-boss-fire-shooter",
+    entity = M.MAW_FIRE,
+    entities = { M.MAW_FIRE, M.MAW_ACID },
     precursors = { "behemoth-spitter" },
   },
   ["colossus"] = {
-    kind = "bm",
-    entity = "biterzilla15",
+    entity = M.COLOSSUS_PREFIX .. "fire",
     precursors = { "behemoth-biter" },
-    bm = { event = "biterzilla", types = { "unit" }, prefixes = BM_COLOSSUS_PREFIXES, explore_chunks = 16 },
   },
   ["plague-hulk"] = {
-    kind = "own",
-    entity = "tb_infected_ship_boss",
+    entity = M.HULK,
     precursors = { "big-toxic-biter" },
   },
   ["storm-guardian"] = {
-    kind = "own",
-    entity = "walking-electric-unit-boss-10",
-    precursors = { "walking-electric-unit-3", "flying-electric-unit-3" },
+    entity = M.GUARDIAN,
+    precursors = { "walking-electric-unit-3", M.WATCHER_DRONE },
   },
   ["devourer"] = {
-    kind = "own",
-    entity = "big-demolisher",
+    entity = M.DEVOURER,
     precursors = { "behemoth-biter" },
   },
   ["last-commander"] = {
-    kind = "bm",
-    entity = "bm_fake_human_ultimate_boss_cannon_20",
-    precursors = { "bm_fake_human_machine_gunner_5" },
-    bm = {
-      event = "ultimate_boss", types = { "unit" }, prefixes = { "bm_fake_human_ultimate_boss_" }, explore_chunks = 24,
-    },
+    entity = M.COMMANDER,
+    precursors = { M.COMMANDER_DROP_UNIT },
   },
 }
 
@@ -222,10 +236,9 @@ for circle_index, circle in ipairs(M.CIRCLES) do
     local spec = assert(SPECS[id], id)
     M.ORDER[#M.ORDER + 1] = id
     M.BOSSES[id] = {
-      kind = spec.kind,
       entity = spec.entity,
+      entities = spec.entities,
       precursors = spec.precursors,
-      bm = spec.bm,
       circle = circle_index,
       slot = slot,
     }
@@ -247,20 +260,25 @@ M.REQUIRED = {
   { "unit", "walking-electric-unit-5", "Electric_flying_enemies" },
   { "unit", "flying-electric-unit-5", "Electric_flying_enemies" },
   { "unit", "walking-electric-unit-3", "Electric_flying_enemies" },
-  { "unit", "flying-electric-unit-3", "Electric_flying_enemies" },
+  { "unit", M.WATCHER_DRONE, "Electric_flying_enemies" },
   { "turret", "maf-worm-boss-fire-shooter", "Big-Monsters" },
   { "turret", "bm-worm-boss-acid-shooter", "Big-Monsters" },
   { "spider-vehicle", "maf_flying_saucer_8", "Big-Monsters" },
   { "spider-vehicle", "bm-spidertron_5", "Big-Monsters" },
-  { "unit", "biterzilla15", "Big-Monsters" },
   { "unit", "bm_fake_human_ultimate_boss_cannon_20", "Big-Monsters" },
-  { "unit", "bm_fake_human_machine_gunner_5", "Big-Monsters" },
+  { "unit", M.COMMANDER_DROP_UNIT, "Big-Monsters" },
+  { "stream", M.COLOSSUS_FIRE_PROJECTILE, "Big-Monsters" },
+  { "explosion", M.COLOSSUS_STORM_EXPLOSION, "Big-Monsters" },
+  { "stream", M.COLOSSUS_ACID_PROJECTILE, "Big-Monsters" },
+  { "projectile", M.COMMANDER_NUKE, "Big-Monsters" },
+  { "explosion", M.COMMANDER_DROP_EXPLOSION, "base" },
   { "segmented-unit", "big-demolisher", "space-age" },
   { "planet", "nexus", "Nexus" },
   { "container", "crash-site-spaceship-wreck-medium-1", "base" },
   { "container", "crash-site-spaceship-wreck-medium-2", "base" },
   { "container", "crash-site-spaceship-wreck-medium-3", "base" },
   { "radar", "radar", "base" },
+  { "ammo", M.WATCHER_AMMO, "Big-Monsters" },
   { "container", "crash-site-spaceship", "base" },
   { "container", "crash-site-spaceship-wreck-big-1", "base" },
   { "container", "crash-site-chest-1", "base" },
@@ -269,6 +287,9 @@ M.REQUIRED = {
   { "simple-entity", "fulgoran-ruin-medium", "space-age" },
   { "simple-entity", "fulgoran-ruin-vault", "space-age" },
 }
+for _, variant in ipairs(M.COLOSSUS_VARIANTS) do
+  M.REQUIRED[#M.REQUIRED + 1] = { "unit", variant.original, "Big-Monsters" }
+end
 
 ---@param id string
 ---@return string

@@ -3,16 +3,27 @@
 The code of Nexus Bosses is GPLv3 ([LICENSE](LICENSE)). The assets below are separate works under their own licenses,
 not under the GPL; files were converted to OGG, trimmed, resized or recoloured where noted.
 
+## Boss prototypes
+
+| Prototypes | Source | Author |
+| --- | --- | --- |
+| Watcher, Rogue Spidertron, six Colossus variants, Last Commander | [Big Monsters](https://mods.factorio.com/mod/Big-Monsters) | MFerrari |
+
 ## Sounds
 
 | File | Source | Author | License |
 | --- | --- | --- | --- |
 | `sounds/call.ogg` | [Braam](https://freesound.org/people/unfa/sounds/647712/) | unfa | CC0 |
-| `sounds/countdown.ogg` | [Alarm](https://opengameart.org/content/alarm-1) | EZduzziteh | CC0 |
-| `sounds/precursors.ogg`, `sounds/arrive-arachnid-queen.ogg`, `sounds/arrive-colossus.ogg` | [80 CC0 creature SFX](https://opengameart.org/content/80-cc0-creature-sfx) | rubberduck | CC0 |
-| `sounds/arrive-twin-maws.ogg`, `sounds/queen-nests.ogg` | [80 CC0 creature SFX #2](https://opengameart.org/content/80-cc0-creture-sfx-2) | rubberduck | CC0 |
+| `sounds/countdown.ogg` (trimmed) | [Warning Noise](https://opengameart.org/content/warning-noise) | Jerimee | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `sounds/telegraph.ogg` (trimmed) | [7 Space Sounds](https://opengameart.org/content/7-space-sounds) | Joth | CC0 |
+| `sounds/container-open.ogg`, `sounds/container-close.ogg` (trimmed) | [100 CC0 metal and wood SFX](https://opengameart.org/content/100-cc0-metal-and-wood-sfx) | rubberduck | CC0 |
+| `sounds/precursors.ogg` (trimmed) | [Scary Echoey Horn Esque Sound](https://opengameart.org/content/scary-echoey-horn-esque-sound) | Kat | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| `sounds/whisper.ogg` | [Aliens surrounding](https://opengameart.org/content/aliens-surrounding) | levitate | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `sounds/arrive-plague-hulk.ogg`, `sounds/arrive-twin-maws.ogg` | [Silent beast growls](https://opengameart.org/content/silent-beast-growls4) | pauliuw | CC0 |
+| `sounds/arrive-arachnid-queen.ogg`, `sounds/arrive-colossus.ogg` | [80 CC0 creature SFX](https://opengameart.org/content/80-cc0-creature-sfx) | rubberduck | CC0 |
+| `sounds/queen-nests.ogg` | [80 CC0 creature SFX #2](https://opengameart.org/content/80-cc0-creture-sfx-2) | rubberduck | CC0 |
 | `sounds/arrive-watcher.ogg`, `sounds/arrive-last-commander.ogg`, `sounds/stage-complete.ogg`, `sounds/silence.ogg` (trimmed) | [Sci-Fi Sound Effects Library](https://opengameart.org/content/sci-fi-sound-effects-library) | Little Robot Sound Factory, [www.littlerobotsoundfactory.com](http://www.littlerobotsoundfactory.com) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
-| `sounds/arrive-rogue-spidertron.ogg`, `sounds/arrive-plague-hulk.ogg`, `sounds/devourer-burrow.ogg`, `sounds/trophy.ogg` | [Sci-fi Sounds](https://kenney.nl/assets/sci-fi-sounds) | Kenney | CC0 |
+| `sounds/arrive-rogue-spidertron.ogg`, `sounds/devourer-burrow.ogg`, `sounds/trophy.ogg` | [Sci-fi Sounds](https://kenney.nl/assets/sci-fi-sounds) | Kenney | CC0 |
 | `sounds/arrive-storm-guardian.ogg`, `sounds/guardian-feeds.ogg` | [Electricity Game Sound Pack](https://opengameart.org/node/150369) | faxcorp | CC0 |
 | `sounds/arrive-storm-guardian-stinger.ogg` | [Distant Screams - Dark Ambient Music Pack](https://opengameart.org/content/distant-screams-dark-ambient-horror-music-pack) | Ricardo Cuello | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | `sounds/arrive-devourer.ogg` | [Earthquake and Open sesame](https://opengameart.org/content/earthquake-and-open-sesame) | mieki256 | CC0 |
@@ -25,7 +36,11 @@ not under the GPL; files were converted to OGG, trimmed, resized or recoloured w
 | File | Source | Author | License |
 | --- | --- | --- | --- |
 | `music/fight-urgent.ogg`, `music/fight-pulse.ogg` | [Dark Sci-Fi Audio Pack](https://opengameart.org/content/dark-sci-fi-audio-pack) | SRG774 | CC0 |
+| `music/fight-perpetual-tension.ogg` | [Perpetual Tension](https://opengameart.org/content/perpetual-tension) | Zander Noriega | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `music/fight-undead-cyborg.ogg` (trimmed) | [Undead Cyborg](https://opengameart.org/content/undead-cyborg) | Alexandr Zhelanov | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `music/fight-alert-outsider.ogg` | [Alert! Outsider!](https://opengameart.org/content/alert-outsider) | Alexandr Zhelanov | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | Nexus music and the music of the vault (from the mod TFMG-music, a required dependency; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
+| Clock-Interlude (hallucinations, played over the music; from the mod TFMG-music; not included) | [TFMG: Music](https://mods.factorio.com/mod/TFMG-music) | oobanooba | MIT, used as a dependency as its author asks |
 
 ## Graphics
 

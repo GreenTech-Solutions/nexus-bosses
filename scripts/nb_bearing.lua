@@ -3,8 +3,9 @@
 -- to a boss in a panel next to its window; after every sector it scans it draws a bearing toward the lair, off by a
 -- random angle that narrows with every scan. Two precise bearings of a force on the same boss that cross at a wide
 -- enough angle find the lair: it is marked on the map and the remains of the boss appear there. A beacon lit within
--- cfg.LAIR_RADIUS of the lair of its boss gives, at the victory, a second trophy of a better quality (one step better
--- with every fight in that lair) and loot worth a share of the beacon.
+-- cfg.LAIR_RADIUS of the lair of its boss gives a second trophy and loot at victory. Without a pylon, the trophy gains
+-- one quality step with every lair win and the loot is a full beacon recipe. With a repaired pylon, the trophy matches
+-- its quality and the loot is half a beacon recipe. Both kinds of victory make the next lair fight harder.
 --
 --   storage.bearing.lairs     [boss_id] = position
 --   storage.bearing.remains   [boss_id] = true once the remains stand
@@ -72,6 +73,15 @@ end
 function M.wins_of(force_name, boss_id)
   local wins = storage.bearing.wins[force_name]
   return wins and wins[boss_id] or 0
+end
+
+---The lair frequency multiplier granted by the force's wins against the boss.
+---@param force_name string
+---@param boss_id string
+---@return number
+function M.lair_frequency(force_name, boss_id)
+  return math.min(cfg.LAIR_FREQUENCY_MAX,
+    cfg.LAIR_FREQUENCY + cfg.LAIR_FREQUENCY_PER_WIN * M.wins_of(force_name, boss_id))
 end
 
 ---The quality of the second trophy of the next fight in the lair.
@@ -330,11 +340,12 @@ local function status_of(finder, force_name)
     return { "nexus-bosses.finder-waiting" }
   end
   local spread = spread_of(finder.scans)
+  local precision = spread <= PRECISE and 100 or math.floor(100 * (1 - spread / SPREAD_START))
+  local signal = { "nexus-bosses.finder-signal", precision }
   if finder.parallel then
-    return { "nexus-bosses.finder-parallel", string.format("%.1f", spread) }
+    return { "", signal, " ", { "nexus-bosses.finder-parallel", string.format("%.1f", spread) } }
   end
-  return { spread <= PRECISE and "nexus-bosses.finder-precise" or "nexus-bosses.finder-scanning",
-    string.format("%.1f", spread), finder.scans }
+  return signal
 end
 
 ---@param player LuaPlayer
@@ -423,13 +434,21 @@ function M.in_lair(force_name, boss_id, position)
   return lair ~= nil and M.is_found(force_name, boss_id) and util.distance(lair, position) <= cfg.LAIR_RADIUS
 end
 
----A victory in the lair: the second trophy, one quality step better than the last, and loot.
+---A lair victory uses the pylon's trophy quality and half the loot when it weakened the fight; otherwise it upgrades
+---the trophy by one quality step and drops a full beacon recipe.
 ---@param force LuaForce
 ---@param surface LuaSurface
 ---@param boss_id string
 ---@param position MapPosition
-function M.lair_victory(force, surface, boss_id, position)
+---@param weaken number
+function M.lair_victory(force, surface, boss_id, position, weaken)
   local quality = M.next_quality(force.name, boss_id)
+  ---@type number
+  local loot_share = cfg.LAIR_LOOT_SHARE
+  if weaken > 0 then
+    quality = assert(M.pylon_quality(force.name, boss_id))
+    loot_share = cfg.LAIR_LOOT_SHARE_PYLON
+  end
   local wins = storage.bearing.wins[force.name] or {}
   storage.bearing.wins[force.name] = wins
   wins[boss_id] = (wins[boss_id] or 0) + 1
@@ -437,7 +456,7 @@ function M.lair_victory(force, surface, boss_id, position)
   local circle = cfg.CIRCLES[cfg.BOSSES[boss_id].circle]
   local cost = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
   for _, loot in ipairs({ { cfg.ALLOY_ITEM, circle.alloy }, { cfg.PROCESSOR_ITEM, circle.processors } }) do
-    local count = math.max(1, math.floor(loot[2] * cost * cfg.LAIR_LOOT_SHARE + 0.5))
+    local count = math.max(1, math.floor(loot[2] * cost * loot_share + 0.5))
     surface.spill_item_stack({ position = position, stack = { name = loot[1], count = count }, enable_looted = true,
       allow_belts = false })
   end
@@ -474,17 +493,17 @@ function M.pylon_quality(force_name, boss_id)
   return qualities and qualities[boss_id]
 end
 
----The share of health a boss called at a position loses to the pylon of its lair.
+---How much the pylon weakens the main mechanic of a boss called in its lair.
 ---@param force_name string
 ---@param boss_id string
 ---@param position MapPosition
 ---@return number 0..1
-function M.pylon_share(force_name, boss_id, position)
+function M.pylon_weaken(force_name, boss_id, position)
   local quality = M.pylon_quality(force_name, boss_id)
   if not (quality and M.in_lair(force_name, boss_id, position)) then
     return 0
   end
-  return cfg.PYLON_SHARES[quality] or 0
+  return cfg.PYLON_WEAKEN[quality] or 0
 end
 
 -- the colours of the qualities, for the glow of a repaired pylon
@@ -530,7 +549,7 @@ function M.repair_pylon(force, boss_id, quality)
   qualities[boss_id] = quality
   draw_pylon(force, boss_id)
   util.say(force, { "nexus-bosses.msg-pylon-repaired", { "nexus-bosses.boss-" .. boss_id },
-    math.floor((cfg.PYLON_SHARES[quality] or 0) * 100) }, util.COLORS.good)
+    math.floor((cfg.PYLON_WEAKEN[quality] or 0) * 100) }, util.COLORS.good)
   util.play(force, "stage-complete")
 end
 
@@ -551,7 +570,7 @@ function M.on_pylon_closed(player, pylon)
   for _, item in ipairs(inventory.get_contents()) do
     local quality = item.quality --[[@as string]]
     local level = prototypes.quality[quality].level
-    if item.name == trophy and cfg.PYLON_SHARES[quality] and level > current_level and not repaired then
+    if item.name == trophy and cfg.PYLON_WEAKEN[quality] and level > current_level and not repaired then
       inventory.remove({ name = item.name, quality = quality, count = 1 })
       repaired = quality
     end

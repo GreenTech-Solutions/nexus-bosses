@@ -8,7 +8,7 @@ local util = require("scripts.nb_util")
 local M = {}
 
 ---@param force_name string
----@return {defeated: table<string, boolean>}
+---@return {defeated: table<string, boolean>, colossus_variants: table<string, boolean>|nil}
 local function record_of(force_name)
   local record = storage.progress[force_name]
   if not record then
@@ -142,6 +142,21 @@ function M.mark_defeated(force, boss_id)
   return first
 end
 
+---@param force LuaForce
+---@param variant_id string
+function M.mark_colossus_variant(force, variant_id)
+  local record = record_of(force.name)
+  record.colossus_variants = record.colossus_variants or {}
+  record.colossus_variants[variant_id] = true
+end
+
+---@param force_name string
+---@return table<string, boolean>
+function M.colossus_variants(force_name)
+  local record = storage.progress[force_name]
+  return record and record.colossus_variants or {}
+end
+
 ---The trophy of the boss falls where the boss fell, marked on the map.
 ---@param force LuaForce
 ---@param surface LuaSurface
@@ -192,6 +207,10 @@ function M.on_forces_merged(source_name, destination)
     local target = record_of(destination.name)
     for boss_id in pairs(source.defeated) do
       target.defeated[boss_id] = true
+    end
+    target.colossus_variants = target.colossus_variants or {}
+    for variant_id in pairs(source.colossus_variants or {}) do
+      target.colossus_variants[variant_id] = true
     end
     M.sync_unlocks(destination, false)
   end
