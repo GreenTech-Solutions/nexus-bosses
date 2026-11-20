@@ -1,4 +1,38 @@
 ---------------------------------------------------------------------------------------------------
+Version: 3.0.0
+Date: 2026-11-20
+  Major Features:
+    - Silence is no longer researched by crafting the warp key: the key goes into the reliquary of the vault, which opens after the Convergence. The reliquary holds no legendary trophies.
+  Features:
+    - [bosses] mechanics speed up as a boss loses health, the Last Commander fights in three phases, the Storm Guardian calls its own storm
+    - [bosses] own Colossus in six variants, named when the beacon is lit
+    - [bosses] own Last Commander, Twin Maws heal and rise, no events of Big Monsters
+    - [bosses] own Watcher and Rogue Spidertron with telegraphed attacks
+    - [bosses] the pylon trades loot and trophy quality for an easier lair; mechanics aim at the busiest pole, the sortie and the turret group
+    - [fight] a boss leaves after a minute with no defence near the beacon, the beacon is lost
+    - [fight] phase, weaknesses and resistances in the health bar and the Codex
+    - [fight] telegraphs before the attacks of the Queen, the Devourer, the Plague Hulk and the Storm Guardian
+    - [fight] the bar and the codex say what comes next and how to answer; the Colossus variant and the side hold until a victory; the shell breaks under weak damage
+    - [lairs] the pylon weakens the mechanic of its boss, a lair fight is harder
+    - [migration] saves of 2.x keep their progress and get the glyphs of their finds
+    - [search] detector sector on the map, signal strength of the finder, guards of the finds
+    - [sound] new countdown and precursor sounds, a whisper sound of its own, growls for the Plague Hulk and the Twin Maws
+    - [sound] own telegraph and container sounds instead of sounds of the base game
+    - [sound] three more fight tracks and a random first one; the hallucination music plays over the current track instead of replacing it
+    - [vault] the vault is the finale, the warp key in its reliquary opens Silence
+    - [whisper] rarer hallucinations, with music of their own
+  Balancing:
+    - [bosses] boss health for fights of three to six minutes
+    - [watcher] 210 000 health instead of 280 000, so the fight takes 180 s from the first hit now that the Watcher keeps its distance
+  Bugfixes:
+    - [bosses] strikes and spores reach their targets, the pylon weakens a mechanic once, one telegraph queue and target search
+    - [fight] fixes from the review of 3.0: relic on 2.x saves, Devourer territory, lighter searches, escalation of three bosses
+    - [gui] Codex tactics lines wrap instead of running past the window, and the Last Commander bar names the reinforcement countdown
+    - [sound] the telegraph sound points at the programmable speaker alarm of the base game
+    - [watcher] the Watcher stops 30 tiles from every player building, not only from the one nearest the beacon, so a fight no longer ends in seconds when it walks into the battery
+  Locale:
+    - in-game text states the facts of each fight
+---------------------------------------------------------------------------------------------------
 Version: 2.6.0
 Date: 2026-11-18
   Features:
