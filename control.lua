@@ -199,6 +199,7 @@ script.on_init(function()
   story.init()
   whisper.init()
   vault.init()
+  migrate.mark_done()
   nexus.on_init()
   progress.on_configuration_changed() -- a game that has discovered Nexus already
   expedition.spawn_open_stages()

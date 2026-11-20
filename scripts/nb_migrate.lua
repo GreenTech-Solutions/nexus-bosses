@@ -1,4 +1,5 @@
--- Migrations for saves from earlier versions of Nexus Bosses.
+-- Migrations for saves from earlier versions of Nexus Bosses. Each one runs once: storage.migrated[name] marks it done.
+-- A new game has nothing to migrate, so on_init marks every migration done (M.mark_done).
 
 local cfg = require("lib.nb_data")
 local summon = require("scripts.nb_summon")
@@ -8,6 +9,18 @@ local story = require("scripts.nb_story")
 local vault = require("scripts.nb_vault")
 
 local M = {}
+
+-- Every migration of M.run, in order; a new migration is added here too.
+M.NAMES = { "bm-summon", "vault-relic", "lair-guards", "glyphs", "whisper-timers" }
+
+---Marks every migration as done for a new game.
+---@return nil
+function M.mark_done()
+  storage.migrated = storage.migrated or {}
+  for _, name in ipairs(M.NAMES) do
+    storage.migrated[name] = true
+  end
+end
 
 ---Runs each migration once when the mod configuration changes.
 function M.run()
