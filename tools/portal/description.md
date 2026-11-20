@@ -93,6 +93,6 @@ Administrators can stop a stuck trial with `/nexus-bosses-abort`.
 
 ## Sound
 
-Each boss has an arrival sound; two fight tracks alternate during a trial. Nexus and the vault use music from [TFMG: Music](https://mods.factorio.com/mod/TFMG-music), a required dependency. Clock-Interlude plays during phantom and false-alarm hallucinations.
+Each boss has an arrival sound; five fight tracks play in turn during a trial, starting with a random one. Nexus and the vault use music from [TFMG: Music](https://mods.factorio.com/mod/TFMG-music), a required dependency. Clock-Interlude plays over the current music during phantom and false-alarm hallucinations.
 
 Source and bug reports: [GreenTech-Solutions/nexus-bosses](https://github.com/GreenTech-Solutions/nexus-bosses). Asset sources are listed in [CREDITS.md](https://github.com/GreenTech-Solutions/nexus-bosses/blob/master/CREDITS.md).
