@@ -1,5 +1,5 @@
--- The brood of the Last Commander (Big Monsters' BroodHumans) includes soldiers with atomic rockets while
--- bm-allow-nuker is on, its default. A trial should not end in a crater: off by default, the player can turn it back on.
+-- Big Monsters arms some of its human soldiers with atomic rockets while bm-allow-nuker is on, its default. Nexus
+-- Bosses does not spawn them: its Last Commander has a setting of its own. Off by default, the player can turn it on.
 local nuker = data.raw["bool-setting"]["bm-allow-nuker"]
 if nuker then
   nuker.default_value = false

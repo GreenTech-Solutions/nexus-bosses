@@ -118,7 +118,7 @@ function M.tick(summon, surface, force)
   end
 end
 
----@param _summon table
+---@param _summon NbSummon
 ---@param surface LuaSurface
 ---@param _force LuaForce
 ---@param entry NbPending

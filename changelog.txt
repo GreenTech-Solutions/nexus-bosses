@@ -28,7 +28,6 @@ Date: 2026-11-20
     - [bosses] strikes and spores reach their targets, the pylon weakens a mechanic once, one telegraph queue and target search
     - [fight] fixes from the review of 3.0: relic on 2.x saves, Devourer territory, lighter searches, escalation of three bosses
     - [gui] Codex tactics lines wrap instead of running past the window, and the Last Commander bar names the reinforcement countdown
-    - [sound] the telegraph sound points at the programmable speaker alarm of the base game
     - [watcher] the Watcher stops 30 tiles from every player building, not only from the one nearest the beacon, so a fight no longer ends in seconds when it walks into the battery
   Locale:
     - in-game text states the facts of each fight

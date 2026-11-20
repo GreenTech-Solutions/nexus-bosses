@@ -34,7 +34,8 @@ M.STORM_MULTIPLIER = 0.5
 M.BEACON_PREFIX = "nexus-summon-"
 M.TROPHY_PREFIX = "nexus-trophy-"
 M.WARP_KEY = "nexus-warp-key"
--- Researched by crafting the warp key; takes over the routes (unlock-space-location) of the warp drive.
+-- Researched when a warp key is placed in the reliquary of the vault (scripted trigger); takes over the routes
+-- (unlock-space-location) of the warp drive.
 M.SILENCE_TECH = "nexus-silence"
 
 -- The expedition: a wreck with a log for every boss, on a ring around the spawn of the force, one ring a stage
@@ -42,15 +43,16 @@ M.WRECK_PREFIX = "nexus-expedition-wreck-"
 M.WRECK_VARIANTS = 3
 M.EXPEDITION_RINGS = { { 100, 250 }, { 250, 450 }, { 450, 700 } }
 -- The story of the expedition: its camp, where the first log lies (opens with the Whisper), and the last stand of
--- its commander, the epilogue (opens with Silence)
+-- its commander, the epilogue (opens with the Chorus)
 M.CAMP = "nexus-expedition-camp"
 M.CAMP_RING = { 100, 150 }
 M.LAST_STAND = "nexus-expedition-last-stand"
 M.LAST_STAND_RING = { 1150, 1250 }
 M.BADGE = "nexus-bosses-commander-badge"
 
--- The vault of the builders: a glyph lock at a vault ruin of Fulgora on Nexus, opened after Silence; a hatch leads
--- down to a surface of its own with a few dark halls, and the last one holds the treasure
+-- The vault of the builders: a glyph lock at a vault ruin of Fulgora on Nexus, marked once all nine bosses are
+-- defeated and opened by its glyph code; a hatch leads down to a surface of its own with a few dark halls, and the
+-- last one holds the treasure
 M.VAULT_RUIN = "fulgoran-ruin-vault"
 M.VAULT_RING = { 250, 1000 }
 M.GLYPHS = 8

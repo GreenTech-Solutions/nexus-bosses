@@ -2,6 +2,7 @@
 
 local cfg = require("lib.nb_data")
 local helpers = require("tests.helpers")
+local migrate = require("scripts.nb_migrate")
 local progress = require("scripts.nb_progress")
 local records = require("scripts.nb_records")
 
@@ -83,6 +84,73 @@ describe("save migrations", function()
       and storage.migrated["lair-guards"] == true and storage.migrated.glyphs == true
       and storage.migrated["whisper-timers"] == true) then
       error("the migration did not mark every migration as complete")
+    end
+  end)
+
+  test("every migration of run is listed in NAMES", function()
+    local expected = {}
+    local old_migrated = copy(storage.migrated) or {}
+    local old_vault = copy(storage.vault)
+    local old_relic = old_vault and old_vault.relic
+    local old_done = copy(storage.guards.done) or {}
+    local old_whisper_next = copy(storage.whisper.next) or {}
+
+    storage.migrated = {}
+    for _, name in ipairs(migrate.NAMES) do
+      expected[name] = true
+      remote.call("nexus-bosses", "forget_migration", name)
+    end
+
+    remote.call("nexus-bosses", "migrate")
+    local actual = {}
+    for name, done in pairs(storage.migrated) do
+      if done == true then
+        actual[name] = true
+      end
+    end
+    assert(same(expected, actual), "M.NAMES does not match the migrations run marks done")
+
+    local new_relic = storage.vault and storage.vault.relic
+    if new_relic and new_relic ~= old_relic and new_relic.valid then
+      new_relic.destroy()
+    end
+    storage.vault = old_vault
+    storage.guards.done = old_done
+    storage.whisper.next = old_whisper_next
+    storage.migrated = old_migrated
+  end)
+
+  test("a new game keeps the guards of a found lair", function()
+    local force = game.forces.player
+    local surface = helpers.nexus()
+    local boss_id = cfg.ORDER[3]
+    local spot = surface.find_non_colliding_position(cfg.PYLON, { x = 300, y = 300 }, 10, 1)
+    assert(spot, "there was no clear spot for the new game test pylon")
+    local pylon = surface.create_entity({ name = cfg.PYLON, position = spot, force = "neutral" })
+    assert(pylon, "the new game test pylon could not be created")
+
+    local old_found = copy(storage.bearing.found) or {}
+    local old_wins = copy(storage.bearing.wins) or {}
+    local old_pylons = copy(storage.bearing.pylons) or {}
+    local old_done = copy(storage.guards.done) or {}
+    local old_migrated = copy(storage.migrated) or {}
+    storage.bearing.found = { [force.name] = { [boss_id] = game.tick } }
+    storage.bearing.wins = { [force.name] = {} }
+    storage.bearing.pylons = { [boss_id] = pylon }
+    storage.guards.done = {}
+    storage.migrated = {}
+    migrate.mark_done()
+
+    remote.call("nexus-bosses", "migrate")
+    assert(not storage.guards.done["lair:" .. boss_id], "a new game's found lair was marked as already guarded")
+
+    storage.bearing.found = old_found
+    storage.bearing.wins = old_wins
+    storage.bearing.pylons = old_pylons
+    storage.guards.done = old_done
+    storage.migrated = old_migrated
+    if pylon.valid then
+      pylon.destroy()
     end
   end)
 
