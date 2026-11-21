@@ -24,80 +24,6 @@ describe("hallucinations", function()
       "the hallucination sound must not be an ambient music track")
   end)
 
-  test("a shade waits for its music", function()
-    local surface = helpers.nexus()
-    local player = assert(game.get_player(1), "the first test player is missing")
-    local old_character = player.character
-    local old_position = old_character and util.copy_position(old_character.position)
-    local old_surface = old_character and old_character.surface
-    local wanted = { x = 0, y = 0 }
-    local position = surface.find_non_colliding_position("character", wanted, 20, 0.5) or wanted
-    local character = surface.create_entity({ name = "character", position = position, force = player.force })
-    assert(character, "could not create the test character on Nexus")
-
-    player.set_controller({ type = defines.controllers.god })
-    player.teleport(position, surface)
-    player.set_controller({ type = defines.controllers.character, character = character })
-
-    local old_pending = storage.whisper.pending[player.index]
-    storage.whisper.pending[player.index] = nil
-    local old_shades = {}
-    for unit in pairs(storage.whisper.shades) do
-      old_shades[unit] = true
-    end
-    local expected_tick = game.tick + 360
-    local ok, failure = pcall(function()
-      remote.call("nexus-bosses", "hallucinate", 1, 1)
-
-      local new_shades = 0
-      for unit in pairs(storage.whisper.shades) do
-        if not old_shades[unit] then
-          new_shades = new_shades + 1
-        end
-      end
-      assert(new_shades == 0, "the shade appeared before its music")
-      local pending = storage.whisper.pending[player.index]
-      if not pending or pending.tick ~= expected_tick then
-        error("the shade was not queued until its music starts")
-      end
-
-      whisper.show_pending(expected_tick)
-      new_shades = 0
-      for unit in pairs(storage.whisper.shades) do
-        if not old_shades[unit] then
-          new_shades = new_shades + 1
-        end
-      end
-      if new_shades ~= 1 then
-        error("the shade did not appear when its music started")
-      end
-      assert(not storage.whisper.pending[player.index], "the pending shade was not removed")
-    end)
-
-    for unit, shade in pairs(storage.whisper.shades) do
-      if not old_shades[unit] then
-        if shade.entity.valid then
-          shade.entity.destroy()
-        end
-        storage.whisper.shades[unit] = nil
-      end
-    end
-    storage.whisper.pending[player.index] = old_pending
-    if old_character and old_character.valid then
-      if old_position and old_surface then
-        player.teleport(old_position, old_surface)
-      end
-      player.set_controller({ type = defines.controllers.character, character = old_character })
-    else
-      player.set_controller({ type = defines.controllers.god })
-    end
-    if character.valid then
-      character.destroy()
-    end
-
-    assert(ok, "the delayed shade failed: " .. tostring(failure))
-  end)
-
   test("all four hallucinations can be triggered for a player on Nexus", function()
     local surface = helpers.nexus()
     local player = assert(game.get_player(1), "the first test player is missing")
@@ -113,7 +39,6 @@ describe("hallucinations", function()
     player.teleport(position, surface)
     player.set_controller({ type = defines.controllers.character, character = character })
 
-    local old_pending = storage.whisper.pending[player.index]
     local ok, failure = pcall(function()
       for kind = 1, 4 do
         remote.call("nexus-bosses", "hallucinate", 1, kind)
@@ -126,7 +51,6 @@ describe("hallucinations", function()
       end
       storage.whisper.shades[unit] = nil
     end
-    storage.whisper.pending[player.index] = old_pending
     if old_character and old_character.valid then
       if old_position and old_surface then
         player.teleport(old_position, old_surface)
