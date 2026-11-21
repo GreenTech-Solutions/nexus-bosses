@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 3.0.2
+Date: 2026-11-21
+  Bugfixes:
+    - [whisper] the shade and the false alarm show with their music again, TFMG-music 0.5.2 starts Clock-Interlude without silence
+---------------------------------------------------------------------------------------------------
 Version: 3.0.1
 Date: 2026-11-20
   Bugfixes:
