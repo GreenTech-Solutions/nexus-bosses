@@ -6,7 +6,8 @@
 ---@field reward string|nil researched by the script when the three bosses of the circle are beaten
 ---@field bosses string[]
 ---@field alloy integer omega alloy per beacon
----@field processors integer advanced photon processors per beacon
+---@field part string the photon part of the stage in its beacons: its tier of the photon electronics of Nexus
+---@field parts integer parts per beacon
 ---@field seconds number crafting time of a beacon
 ---@field precursors integer units in each precursor wave
 ---@field color Color the antenna of its beacons, its bearings and its summon circle
@@ -46,6 +47,7 @@ M.EXPEDITION_RINGS = { { 100, 250 }, { 250, 450 }, { 450, 700 } }
 -- its commander, the epilogue (opens with the Chorus)
 M.CAMP = "nexus-expedition-camp"
 M.CAMP_RING = { 100, 150 }
+M.CAMP_PARTS = 4 -- parts of the Whisper in the camp ship: one beacon and one direction finder
 M.LAST_STAND = "nexus-expedition-last-stand"
 M.LAST_STAND_RING = { 1150, 1250 }
 M.BADGE = "nexus-bosses-commander-badge"
@@ -99,8 +101,9 @@ M.CHARGES = 3
 M.CHARGED_BOSS = "storm-guardian"
 
 M.ALLOY_ITEM = "omega-alloy"
-M.PROCESSOR_ITEM = "advanced-photon-processor"
 
+-- Each stage takes its own tier of the Nexus photon chain (chip, processor, advanced processor), so beacons cost
+-- more with every stage; all three tiers are unlocked by photon-electronics.
 ---@type NbCircle[]
 M.CIRCLES = {
   {
@@ -109,7 +112,8 @@ M.CIRCLES = {
     reward = "nexus-chorus",
     bosses = { "arachnid-queen", "watcher", "rogue-spidertron" },
     alloy = 50,
-    processors = 2,
+    part = "photon-chip",
+    parts = 2,
     seconds = 30,
     precursors = 6,
     color = { r = 0.55, g = 0.85, b = 1 }, -- blue
@@ -120,7 +124,8 @@ M.CIRCLES = {
     reward = "nexus-convergence",
     bosses = { "twin-maws", "colossus", "plague-hulk" },
     alloy = 75,
-    processors = 3,
+    part = "photon-processor",
+    parts = 3,
     seconds = 60,
     precursors = 10,
     color = { r = 1, g = 0.8, b = 0.35 }, -- amber
@@ -131,7 +136,8 @@ M.CIRCLES = {
     reward = nil, -- the end is the warp key, crafted from the nine trophies
     bosses = { "storm-guardian", "devourer", "last-commander" },
     alloy = 110,
-    processors = 5,
+    part = "advanced-photon-processor",
+    parts = 5,
     seconds = 120,
     precursors = 14,
     color = { r = 1, g = 0.4, b = 0.35 }, -- red

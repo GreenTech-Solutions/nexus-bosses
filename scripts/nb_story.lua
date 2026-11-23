@@ -110,7 +110,7 @@ local function place(surface, key)
   end
   entity.destructible = false
   if key == "camp" then
-    entity.insert({ name = cfg.PROCESSOR_ITEM, count = 3 })
+    entity.insert({ name = cfg.CIRCLES[1].part, count = cfg.CAMP_PARTS })
     build_camp(surface, entity.position)
   else
     entity.insert({ name = cfg.BADGE, count = 1 })

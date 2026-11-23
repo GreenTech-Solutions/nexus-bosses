@@ -455,7 +455,7 @@ function M.lair_victory(force, surface, boss_id, position, weaken)
   progress.drop_trophy(force, surface, boss_id, position, quality)
   local circle = cfg.CIRCLES[cfg.BOSSES[boss_id].circle]
   local cost = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
-  for _, loot in ipairs({ { cfg.ALLOY_ITEM, circle.alloy }, { cfg.PROCESSOR_ITEM, circle.processors } }) do
+  for _, loot in ipairs({ { cfg.ALLOY_ITEM, circle.alloy }, { circle.part, circle.parts } }) do
     local count = math.max(1, math.floor(loot[2] * cost * loot_share + 0.5))
     surface.spill_item_stack({ position = position, stack = { name = loot[1], count = count }, enable_looted = true,
       allow_belts = false })

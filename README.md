@@ -9,7 +9,7 @@ vault. With the warp-drive gate enabled,
 the nine trophies craft a key that is consumed in the reliquary to research Silence. The mod portal page ([Nexus Bosses](https://mods.factorio.com/mod/nexus-bosses)) is
 `tools/portal/description.md`. Bug reports: the issues of this repository.
 
-Requires Nexus 1.3.6 or newer (with Nexus-Threat and Nexus-Graphics), Big Monsters, Toxic Biters, Arachnids
+Requires Nexus 1.3.8 or newer (with Nexus-Threat and Nexus-Graphics), Big Monsters, Toxic Biters, Arachnids
 enemy, Electric flying enemies and TFMG: Music (the music of Nexus and the vault); razi-protocol is optional.
 
 ## Code

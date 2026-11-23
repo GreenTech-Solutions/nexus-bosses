@@ -65,7 +65,7 @@ describe("save migrations", function()
   end)
 
   test("migration is idempotent", function()
-    for _, name in ipairs({ "bm-summon", "vault-relic", "lair-guards", "glyphs", "whisper-timers" }) do
+    for _, name in ipairs({ "bm-summon", "vault-relic", "lair-guards", "glyphs", "whisper-timers", "camp-parts" }) do
       remote.call("nexus-bosses", "forget_migration", name)
     end
     storage.whisper.next[1] = game.tick + 600
@@ -82,7 +82,7 @@ describe("save migrations", function()
     assert(same(first_whisper_timers, storage.whisper.next), "the second migration call changed whisper timers")
     if not (storage.migrated["bm-summon"] == true and storage.migrated["vault-relic"] == true
       and storage.migrated["lair-guards"] == true and storage.migrated.glyphs == true
-      and storage.migrated["whisper-timers"] == true) then
+      and storage.migrated["whisper-timers"] == true and storage.migrated["camp-parts"] == true) then
       error("the migration did not mark every migration as complete")
     end
   end)
@@ -185,6 +185,32 @@ describe("save migrations", function()
     storage.bearing.wins[force_name] = previous_wins
     storage.vault.earned[force_name] = previous_earned
     storage.vault.revealed[force_name] = previous_revealed
+  end)
+
+  test("a camp made before the stage parts trades its advanced photon processors for the part of the Whisper", function()
+    local previous_camp = storage.story.places.camp
+    local surface = helpers.nexus()
+    local spot = surface.find_non_colliding_position(cfg.CAMP, { x = 400, y = -400 }, 20, 1)
+    assert(spot, "there was no clear spot for the camp migration test")
+    local camp = surface.create_entity({ name = cfg.CAMP, position = spot, force = "neutral" })
+    assert(camp, "the camp migration test container could not be created")
+    storage.story.places.camp = { entity = camp, position = camp.position }
+
+    local inventory = assert(camp.get_inventory(defines.inventory.chest), "the test camp has no chest inventory")
+    assert(inventory.insert({ name = "advanced-photon-processor", count = 3 }) == 3,
+      "the old camp processors could not be inserted")
+    remote.call("nexus-bosses", "forget_migration", "camp-parts")
+    remote.call("nexus-bosses", "migrate")
+
+    assert(inventory.get_item_count("advanced-photon-processor") == 0,
+      "the camp migration left advanced photon processors in the ship")
+    assert(inventory.get_item_count(cfg.CIRCLES[1].part) == 3,
+      "the camp migration did not replace the processors with three parts of the Whisper")
+
+    storage.story.places.camp = previous_camp
+    if camp.valid then
+      camp.destroy()
+    end
   end)
 
   test("a legacy BM summon is cancelled and its beacon is returned", function()

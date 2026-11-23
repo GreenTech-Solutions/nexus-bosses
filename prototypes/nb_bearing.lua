@@ -49,10 +49,11 @@ data:extend({
     name = cfg.FINDER,
     enabled = false,
     energy_required = 20,
+    -- The direction finder unlocks with the Whisper and takes its photon part.
     ingredients = {
       { type = "item", name = "radar", amount = 1 },
       { type = "item", name = cfg.ALLOY_ITEM, amount = 20 },
-      { type = "item", name = cfg.PROCESSOR_ITEM, amount = 2 },
+      { type = "item", name = cfg.CIRCLES[1].part, amount = 2 },
     },
     results = { { type = "item", name = cfg.FINDER, amount = 1 } },
   },
