@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 3.0.3
+Date: 2026-11-23
+  Balancing:
+    - [beacons] Whisper beacons take photon chips and Chorus beacons photon processors, so a beacon costs more with every stage; the direction finder and the camp take the part of the Whisper, a camp made earlier trades its processors for it; requires Nexus 1.3.8
+---------------------------------------------------------------------------------------------------
 Version: 3.0.2
 Date: 2026-11-21
   Bugfixes:
