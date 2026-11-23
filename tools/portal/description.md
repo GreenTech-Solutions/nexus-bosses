@@ -79,6 +79,10 @@ It supplies the prototypes copied for the Watcher, Rogue Spidertron, six Colossu
 
 Big Monsters' random events are off by default. The map setting can enable them on other planets; Nexus is excluded either way. Big Monsters' attacks on rocket silos are disabled.
 
+### Summon beacons cost too much?
+
+The startup setting "Beacon cost multiplier" scales the omega alloy and the advanced photon processors of every beacon recipe. [Nexus Rebalanced](https://mods.factorio.com/mod/nexus-rebalanced) makes the photon electronics of Nexus cheaper, and the beacons with them.
+
 ### When does the Last Commander's atomic rocket fire?
 
 When Nexus Bosses' `nexus-bosses-commander-nuke` setting is enabled (on by default), the rocket targets the nearest turret within 60 tiles of the Commander every 90 seconds, or the beacon if no turret is in range. In a lair fight, any repaired pylon that weakens the Commander disables it, regardless of trophy quality.
