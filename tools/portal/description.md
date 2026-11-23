@@ -81,7 +81,7 @@ Big Monsters' random events are off by default. The map setting can enable them 
 
 ### Summon beacons cost too much?
 
-The startup setting "Beacon cost multiplier" scales the omega alloy and the advanced photon processors of every beacon recipe. [Nexus Rebalanced](https://mods.factorio.com/mod/nexus-rebalanced) makes the photon electronics of Nexus cheaper, and the beacons with them.
+The startup setting "Beacon cost multiplier" scales the omega alloy and the photon part of every beacon recipe: photon chips for the Whisper, photon processors for the Chorus, advanced photon processors for the Convergence. [Nexus Rebalanced](https://mods.factorio.com/mod/nexus-rebalanced) makes the photon electronics of Nexus cheaper, and the beacons with them.
 
 ### When does the Last Commander's atomic rocket fire?
 
