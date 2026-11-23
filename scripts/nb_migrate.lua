@@ -10,8 +10,11 @@ local vault = require("scripts.nb_vault")
 
 local M = {}
 
+-- The camp used to put this item in its ship.
+local OLD_CAMP_ITEM = "advanced-photon-processor"
+
 -- Every migration of M.run, in order; a new migration is added here too.
-M.NAMES = { "bm-summon", "vault-relic", "lair-guards", "glyphs", "whisper-timers" }
+M.NAMES = { "bm-summon", "vault-relic", "lair-guards", "glyphs", "whisper-timers", "camp-parts" }
 
 ---Marks every migration as done for a new game.
 ---@return nil
@@ -88,6 +91,28 @@ function M.run()
   if not migrated["whisper-timers"] then
     storage.whisper.next = {}
     migrated["whisper-timers"] = true
+  end
+
+  if not migrated["camp-parts"] then
+    -- Before this version, the camp put advanced photon processors in the ship. The Whisper beacon now takes its
+    -- stage part, so an existing camp receives it instead of its processors, one for one.
+    local camp = storage.story.places.camp
+    if camp and camp.entity.valid then
+      local inventory = camp.entity.get_inventory(defines.inventory.chest)
+      if inventory then
+        local count = inventory.get_item_count(OLD_CAMP_ITEM)
+        if count > 0 then
+          local removed = inventory.remove({ name = OLD_CAMP_ITEM, count = count })
+          if removed > 0 then
+            local inserted = inventory.insert({ name = cfg.CIRCLES[1].part, count = removed })
+            if inserted < removed then
+              inventory.insert({ name = OLD_CAMP_ITEM, count = removed - inserted })
+            end
+          end
+        end
+      end
+    end
+    migrated["camp-parts"] = true
   end
 end
 

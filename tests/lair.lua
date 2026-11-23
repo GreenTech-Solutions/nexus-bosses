@@ -25,6 +25,36 @@ local function item_count(surface, position, name, quality)
   return count
 end
 
+---@param recipe LuaRecipePrototype
+---@param name string
+---@return number|nil
+local function ingredient_amount(recipe, name)
+  for _, ingredient in ipairs(recipe.ingredients) do
+    if ingredient.name == name then
+      return ingredient.amount
+    end
+  end
+  return nil
+end
+
+---@param recipe_name string
+---@param circle NbCircle
+---@param circle_index integer
+---@param cost number
+local function check_beacon_recipe(recipe_name, circle, circle_index, cost)
+  local recipe = prototypes.recipe[recipe_name]
+  local alloy = math.max(1, math.floor(circle.alloy * cost + 0.5))
+  local parts = math.max(1, math.floor(circle.parts * cost + 0.5))
+  assert(ingredient_amount(recipe, cfg.ALLOY_ITEM) == alloy,
+    recipe_name .. " does not take the expected amount of omega alloy")
+  assert(ingredient_amount(recipe, circle.part) == parts,
+    recipe_name .. " does not take the expected amount of its stage part")
+  if circle_index < 3 then
+    assert(ingredient_amount(recipe, "advanced-photon-processor") == nil,
+      recipe_name .. " still takes advanced photon processors")
+  end
+end
+
 describe("pylon and lair mechanics", function()
   before_each(function()
     helpers.reset()
@@ -76,7 +106,7 @@ describe("pylon and lair mechanics", function()
     local cost = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
     local trophy = cfg.trophy_name(boss_id)
     local alloy_before = item_count(surface, position, cfg.ALLOY_ITEM)
-    local processors_before = item_count(surface, position, cfg.PROCESSOR_ITEM)
+    local parts_before = item_count(surface, position, circle.part)
     local trophy_before = item_count(surface, position, trophy, "rare")
     local wins_before = bearing.wins_of(force.name, boss_id)
 
@@ -87,9 +117,9 @@ describe("pylon and lair mechanics", function()
     assert(item_count(surface, position, cfg.ALLOY_ITEM) - alloy_before
       == math.max(1, math.floor(circle.alloy * cost * cfg.LAIR_LOOT_SHARE_PYLON + 0.5)),
       "the pylon lair victory did not drop half the beacon recipe's alloy")
-    assert(item_count(surface, position, cfg.PROCESSOR_ITEM) - processors_before
-      == math.max(1, math.floor(circle.processors * cost * cfg.LAIR_LOOT_SHARE_PYLON + 0.5)),
-      "the pylon lair victory did not drop half the beacon recipe's processors")
+    assert(item_count(surface, position, circle.part) - parts_before
+      == math.max(1, math.floor(circle.parts * cost * cfg.LAIR_LOOT_SHARE_PYLON + 0.5)),
+      "the pylon lair victory did not drop half the beacon recipe's parts")
     assert(bearing.wins_of(force.name, boss_id) == wins_before + 1,
       "the pylon lair victory did not increase the win count")
   end)
@@ -104,7 +134,7 @@ describe("pylon and lair mechanics", function()
     local cost = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
     local trophy = cfg.trophy_name(boss_id)
     local alloy_before = item_count(surface, position, cfg.ALLOY_ITEM)
-    local processors_before = item_count(surface, position, cfg.PROCESSOR_ITEM)
+    local parts_before = item_count(surface, position, circle.part)
     local trophy_before = item_count(surface, position, trophy, quality)
     local wins_before = bearing.wins_of(force.name, boss_id)
 
@@ -115,11 +145,31 @@ describe("pylon and lair mechanics", function()
     assert(item_count(surface, position, cfg.ALLOY_ITEM) - alloy_before
       == math.max(1, math.floor(circle.alloy * cost * cfg.LAIR_LOOT_SHARE + 0.5)),
       "the lair victory without a pylon did not drop the full recipe's alloy")
-    assert(item_count(surface, position, cfg.PROCESSOR_ITEM) - processors_before
-      == math.max(1, math.floor(circle.processors * cost * cfg.LAIR_LOOT_SHARE + 0.5)),
-      "the lair victory without a pylon did not drop the full recipe's processors")
+    assert(item_count(surface, position, circle.part) - parts_before
+      == math.max(1, math.floor(circle.parts * cost * cfg.LAIR_LOOT_SHARE + 0.5)),
+      "the lair victory without a pylon did not drop the full recipe's parts")
     assert(bearing.wins_of(force.name, boss_id) == wins_before + 1,
       "the lair victory without a pylon did not increase the win count")
+  end)
+
+  test("each beacon and the direction finder take the omega alloy and the part of their stage", function()
+    local cost = settings.startup["nexus-bosses-beacon-cost"].value --[[@as number]]
+    for circle_index, circle in ipairs(cfg.CIRCLES) do
+      for _, id in ipairs(circle.bosses) do
+        check_beacon_recipe(cfg.beacon_name(id), circle, circle_index, cost)
+        if id == cfg.CHARGED_BOSS then
+          for charge = 1, cfg.CHARGES do
+            check_beacon_recipe(cfg.charged_beacon_name(charge), circle, circle_index, cost)
+          end
+        end
+      end
+    end
+
+    local finder = prototypes.recipe[cfg.FINDER]
+    assert(ingredient_amount(finder, cfg.ALLOY_ITEM) == 20,
+      "the direction finder does not take 20 omega alloy")
+    assert(ingredient_amount(finder, cfg.CIRCLES[1].part) == 2,
+      "the direction finder does not take two parts of the Whisper")
   end)
 
   test("a legendary pylon leaves the Queen at full health and prevents her nests", function()

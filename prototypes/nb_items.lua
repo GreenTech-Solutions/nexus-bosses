@@ -103,7 +103,7 @@ local function make_beacon(id, charge)
   local icons = beacon_icons(id)
   local ingredients = {
     { type = "item", name = cfg.ALLOY_ITEM, amount = cost(circle.alloy) },
-    { type = "item", name = cfg.PROCESSOR_ITEM, amount = cost(circle.processors) },
+    { type = "item", name = circle.part, amount = cost(circle.parts) },
   }
   -- stage, who comes, where to learn how to fight it, then the rules of every beacon
   local description = {
